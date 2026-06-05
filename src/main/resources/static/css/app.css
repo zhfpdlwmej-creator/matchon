@@ -197,7 +197,9 @@ a { color: inherit; text-decoration: none; }
 .modal-back { position: fixed; inset: 0; background: rgba(15,25,20,.5); z-index: 40; display: none; align-items: flex-end; justify-content: center; }
 .modal-back.open { display: flex; animation: fadeIn .15s; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal { background: #fff; width: 100%; max-width: var(--maxw); border-radius: 22px 22px 0 0; padding: 22px 18px calc(28px + env(safe-area-inset-bottom)); max-height: 90vh; overflow-y: auto; animation: slideUp .22s ease; }
+.modal { background: #fff; width: 100%; max-width: var(--maxw); min-width: 0; border-radius: 22px 22px 0 0; padding: 22px 18px calc(28px + env(safe-area-inset-bottom)); max-height: 90vh; overflow-y: auto; overflow-x: hidden; animation: slideUp .22s ease; }
+.modal-back { padding: 0; }
+.modal * { max-width: 100%; }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .modal h3 { margin: 0 0 14px; font-size: 18px; }
 .row-2 { display: flex; gap: 10px; }
@@ -224,9 +226,11 @@ img, svg, video { max-width: 100%; height: auto; }
 .member-row select { max-width: 92px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 9px; background: #fafbfb; font-size: 13px; }
 
 /* row-2 / 입력: 자식이 줄어들 수 있게 (시간·날짜 인풋 오버플로 방지) */
-.row-2 { flex-wrap: nowrap; }
-.row-2 > * { min-width: 0; }
-.card-form input, .card-form select, .comment-input input { min-width: 0; max-width: 100%; }
+.row-2 { flex-wrap: nowrap; width: 100%; }
+.row-2 > * { min-width: 0; flex: 1 1 0; }
+.card-form input, .card-form select, .comment-input input { min-width: 0; max-width: 100%; width: 100%; }
+/* iOS 날짜/시간 네이티브 인풋이 칸을 밀어내지 않도록 */
+input[type="date"], input[type="time"], input[type="number"] { -webkit-appearance: none; appearance: none; }
 
 /* 댓글 입력 줄 */
 .comment-input { flex-wrap: nowrap; }
