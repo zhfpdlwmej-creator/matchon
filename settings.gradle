@@ -1,0 +1,6 @@
+plugins {
+	// 시스템에 JDK21 이 없을 때 Gradle 가 적합한 JDK 를 자동 다운로드(toolchain auto-provisioning)
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+rootProject.name = 'matchon'

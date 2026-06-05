@@ -1,0 +1,100 @@
+plugins {
+	id 'java'
+	id 'war'
+	id 'org.springframework.boot' version '3.3.4'
+	id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.jacob'
+version = '0.0.1-SNAPSHOT'
+description = 'matchon - 축구/풋살 동호회 출석 관리 서비스'
+
+// Supabase 가 PostgreSQL 17 이라 Spring Boot 기본 Flyway(10.10)는 미지원.
+// PG17 을 지원하는 최신 10.x 로 올림 (flyway-core + flyway-database-postgresql 동시 적용)
+ext['flyway.version'] = '10.22.0'
+
+// Java 17 타겟 (Spring Boot 3.3 공식 지원). 빌드 JVM 은 JDK21(gradle.properties)로 컴파일하되
+// 바이트코드는 17 로 생성 → 구버전 Eclipse(JavaSE-17 지원)에서도 Run As 가능.
+// Eclipse 를 Java21 지원 버전으로 올리면 아래를 21 로 바꿔도 됨.
+java {
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+	mavenCentral()
+}
+
+// QueryDSL Q-class 생성 위치
+def querydslDir = "${buildDir}/generated/querydsl"
+
+dependencies {
+	// --- Spring Boot 코어 ---
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// --- JSP (내장 톰캣 + Jasper) ---
+	implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+	implementation 'jakarta.servlet:jakarta.servlet-api'
+	implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.0'
+	implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.1'
+
+	// --- JWT (jjwt 0.12.x) ---
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+	// --- QueryDSL (jakarta) ---
+	implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+	annotationProcessor 'com.querydsl:querydsl-apt:5.1.0:jakarta'
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+
+	// --- DB (Supabase PostgreSQL) ---
+	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'   // PG17 지원 모듈
+
+	// --- 기타 ---
+	implementation 'com.google.code.gson:gson:2.11.0'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+}
+
+// QueryDSL 생성 소스 디렉토리 등록
+sourceSets {
+	main {
+		java {
+			srcDirs += querydslDir
+		}
+	}
+}
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.compilerArgs.add('-parameters')   // Spring 이 @RequestParam/@PathVariable 이름을 읽도록
+	options.generatedSourceOutputDirectory = file(querydslDir)
+}
+clean {
+	delete file(querydslDir)
+}
+
+tasks.withType(Javadoc).configureEach {
+	options.encoding = 'UTF-8'
+}
+
+// bootRun 시 JSP(webapp) 인식
+bootRun {
+	if (System.getenv('SPRING_PROFILES_ACTIVE') == null) {
+		systemProperty 'spring.profiles.active', 'local'
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

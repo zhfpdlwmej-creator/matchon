@@ -1,0 +1,8 @@
+.gradle/
+build/
+bin/
+.git/
+.settings/
+*.log
+# 로컬 비밀(Supabase 비번 등)은 이미지에 넣지 않음 — 운영은 Railway 환경변수로 주입
+src/main/resources/application-local.yml

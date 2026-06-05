@@ -1,0 +1,24 @@
+# 이 파일을 application-local.yml 로 복사한 뒤 실제 값으로 채워서 쓰세요.
+# application-local.yml 은 .gitignore 에 등록되어 커밋되지 않습니다.
+#
+# MariaDB 준비:
+#   CREATE DATABASE matchon DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+#   CREATE USER 'matchon'@'%' IDENTIFIED BY 'matchon1234';
+#   GRANT ALL PRIVILEGES ON matchon.* TO 'matchon'@'%';
+
+spring:
+  datasource:
+    url: jdbc:mariadb://localhost:3306/matchon?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: matchon
+    password: matchon1234
+
+app:
+  jwt:
+    secret: matchon-dev-secret-key-please-change-in-production-32bytes
+  kakao:
+    javascript-key: YOUR_KAKAO_JS_KEY
+    rest-api-key: YOUR_KAKAO_REST_API_KEY
+    redirect-uri: http://localhost:8282/auth/kakao/callback
+    client-secret: YOUR_KAKAO_CLIENT_SECRET_OR_LEAVE_EMPTY
+  notify:
+    mode: log   # 개발 중에는 log (콘솔 출력), 실발송은 kakao
