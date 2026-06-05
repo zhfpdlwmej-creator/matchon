@@ -38,6 +38,15 @@ public class TeamService {
 		return teamRepo.findAllById(teamIds);
 	}
 
+	/** 내가 팀장/운영진인 팀 목록 (매칭 등록·신청용) */
+	public List<Team> manageableTeams(Long userId) {
+		List<Long> teamIds = memberRepo.findByUserId(userId).stream()
+				.filter(m -> m.getRole().canManage())
+				.map(TeamMember::getTeamId).toList();
+		if (teamIds.isEmpty()) return List.of();
+		return teamRepo.findAllById(teamIds);
+	}
+
 	public List<TeamMember> members(Long teamId) {
 		return memberRepo.findByTeamId(teamId);
 	}

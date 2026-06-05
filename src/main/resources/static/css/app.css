@@ -205,3 +205,57 @@ a { color: inherit; text-decoration: none; }
 .paid-tag { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
 .paid-yes { background: #e9f7ef; color: var(--green); }
 .paid-no { background: #fdeced; color: var(--red); }
+
+/* ===== 반응형 안정화 (짤림/겹침/가로스크롤 방지) ===== */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, svg, video { max-width: 100%; height: auto; }
+
+/* 헤더: 긴 팀명은 … 처리, 배지는 안 줄어듦 */
+.app-header-inner { gap: 10px; }
+.team-switch { min-width: 0; flex: 0 1 auto; overflow: hidden; }
+.team-switch strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role-badge { flex: 0 0 auto; white-space: nowrap; }
+
+/* 멤버 행: 긴 닉네임 … 처리, 오른쪽 컨트롤 고정 */
+.member-row { flex-wrap: nowrap; }
+.member-row .name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-row > span.pos-badge, .member-row .pos-badge { flex: 0 0 auto; }
+.member-row .right { flex: 0 0 auto; }
+.member-row select { max-width: 92px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 9px; background: #fafbfb; font-size: 13px; }
+
+/* row-2 / 입력: 자식이 줄어들 수 있게 (시간·날짜 인풋 오버플로 방지) */
+.row-2 { flex-wrap: nowrap; }
+.row-2 > * { min-width: 0; }
+.card-form input, .card-form select, .comment-input input { min-width: 0; max-width: 100%; }
+
+/* 댓글 입력 줄 */
+.comment-input { flex-wrap: nowrap; }
+.comment-input input { flex: 1 1 auto; }
+.comment-input .btn-primary { flex: 0 0 auto; }
+
+/* 통계 퍼센트: 좁으면 줄바꿈 */
+.stat-pcts { flex-wrap: wrap; gap: 10px 14px; }
+.stat-row .top .name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 초대코드/버튼 줄: 좁으면 줄바꿈 */
+.invite-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.invite-row strong { font-size: 22px; letter-spacing: 3px; }
+
+/* 매칭 — 수준 배지 / 선택 버튼 */
+.lvl-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; color: #fff; white-space: nowrap; }
+.lv-high { background: #dc3340; } .lv-mid { background: #e08a16; } .lv-low { background: #1a9d52; }
+.lvl-picker { display: flex; gap: 10px; }
+.lvl-picker .lvl { flex: 1; padding: 14px 0; border: 1.5px solid var(--line); background: #fafbfb; border-radius: 13px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all .12s; }
+.lvl-picker .lvl.on { background: var(--green); color: #fff; border-color: var(--green); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,157,82,.28); }
+
+/* 아주 좁은 화면(≤360px) 미세 조정 */
+@media (max-width: 360px) {
+	.app-wrap { padding: 14px 12px; }
+	.att-summary { gap: 7px; }
+	.att-summary .box .num { font-size: 21px; }
+	.attend-buttons { gap: 7px; }
+	.attend-buttons .att-btn { font-size: 14px; padding: 13px 0; }
+	.pos-picker { gap: 7px; }
+	.pos-picker .pos { font-size: 14px; }
+	.team-switch { font-size: 16px; }
+}

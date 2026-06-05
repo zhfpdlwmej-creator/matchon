@@ -148,6 +148,25 @@ public class MainController {
 		return "admin/index";
 	}
 
+	/** 팀 매칭 목록 (지역별 친선경기 모집) */
+	@GetMapping("/matches")
+	public String matches(Model model) {
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		model.addAttribute("user", userService.get(uid));
+		return "match/list";
+	}
+
+	/** 매칭 상세 */
+	@GetMapping("/matches/{matchId}")
+	public String matchDetail(@PathVariable Long matchId, Model model) {
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		model.addAttribute("user", userService.get(uid));
+		model.addAttribute("matchId", matchId);
+		return "match/detail";
+	}
+
 	@GetMapping("/profile")
 	public String profile(Model model) {
 		Long uid = CurrentUser.id();

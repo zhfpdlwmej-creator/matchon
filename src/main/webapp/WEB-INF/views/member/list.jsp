@@ -12,8 +12,8 @@
 <div class="app-wrap">
 	<div class="card">
 		<h3>팀원 초대</h3>
-		<div style="display:flex;align-items:center;gap:10px;">
-			<strong id="inviteCode" style="font-size:24px;letter-spacing:3px;">${team.inviteCode}</strong>
+		<div class="invite-row">
+			<strong id="inviteCode">${team.inviteCode}</strong>
 			<button class="btn-ghost btn-sm" id="copyCode">코드 복사</button>
 			<c:if test="${canManage}"><button class="btn-ghost btn-sm" id="regenCode">재발급</button></c:if>
 		</div>

@@ -61,6 +61,11 @@
 		<a href="/team/${team.id}/schedules" class="card" style="text-align:center;">📅<div class="small">전체 일정</div></a>
 		<a href="/team/${team.id}/members" class="card" style="text-align:center;">👥<div class="small">팀원 보기</div></a>
 	</div>
+	<a href="/matches" class="card" style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#1a9d52,#0f5e31);color:#fff;">
+		<span style="font-size:28px;">⚔️</span>
+		<span style="flex:1;"><strong>팀 매칭 찾기</strong><div class="small" style="opacity:.9;">지역별 친선경기 모집 · 신청</div></span>
+		<span style="font-size:20px;opacity:.8;">›</span>
+	</a>
 </div>
 
 <%@ include file="layout/bottomnav.jsp" %>
