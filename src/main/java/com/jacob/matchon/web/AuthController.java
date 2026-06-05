@@ -107,9 +107,10 @@ public class AuthController {
 			String kakaoId = String.valueOf(body.get("id"));
 			String nick = extractNickname(body);
 
-			// 3) 유저 매칭/생성
+			// 3) 유저 매칭/생성 + 카카오 실명 동기화
 			User user = userService.findByKakaoId(kakaoId)
 					.orElseGet(() -> userService.createFromKakao(kakaoId, nick));
+			userService.syncName(user.getId(), nick);
 
 			issueToken(res, user.getId());
 			return "redirect:/";

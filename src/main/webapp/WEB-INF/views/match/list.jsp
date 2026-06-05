@@ -5,6 +5,7 @@
 <head>
 	<title>matchon · 팀 매칭</title>
 	<%@ include file="../layout/head.jsp" %>
+	<script src="/js/regions.js" defer></script>
 	<c:if test="${not empty kakaoJsKey}">
 		<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJsKey}&libraries=services&autoload=false"></script>
 	</c:if>
@@ -18,11 +19,11 @@
 </header>
 
 <div class="app-wrap">
-	<div class="muted small" style="padding:2px 4px 8px;">지역별로 친선경기를 모집하고 신청하세요. (팀장·운영진만 등록/신청)</div>
+	<div class="muted small" style="padding:2px 4px 8px;">지역별 친선경기 모집·신청 (팀장·운영진만 등록/신청)</div>
 
-	<div class="card" style="display:flex;gap:8px;align-items:center;">
-		<input type="text" id="regionFilter" placeholder="지역 검색 (예: 송파)" style="flex:1;min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fafbfb;">
-		<button class="btn-primary btn-sm" id="searchBtn">검색</button>
+	<div class="card">
+		<div class="small" style="font-weight:700;margin-bottom:8px;">지역으로 보기</div>
+		<div id="filterRegion"></div>
 	</div>
 
 	<div class="section-title">모집중인 매칭</div>
@@ -48,20 +49,22 @@
 			<input type="hidden" id="level">
 
 			<div class="row-2">
-				<div><label>인원</label><input type="number" id="headcount" min="1" value="6" placeholder="예: 6"></div>
+				<div><label>인원</label><input type="number" id="headcount" min="1" value="6"></div>
 				<div><label>날짜</label><input type="date" id="matchDate"></div>
 			</div>
-			<div class="row-2">
-				<div><label>시작시간</label><input type="time" id="startTime"></div>
-				<div><label>지역</label><input type="text" id="region" placeholder="예: 서울 송파구"></div>
-			</div>
+			<label>시작시간</label>
+			<input type="time" id="startTime">
+
+			<label>지역 (도 → 시/군/구)</label>
+			<div id="createRegion"></div>
+			<input type="hidden" id="region">
 
 			<label>장소 (지도에서 위치 선택)</label>
 			<div style="display:flex;gap:8px;margin-bottom:8px;">
 				<input type="text" id="placeName" placeholder="장소명 또는 검색어" style="flex:1;min-width:0;">
 				<button type="button" class="btn-ghost btn-sm" id="placeSearch">검색</button>
 			</div>
-			<div id="map" style="width:100%;height:200px;border-radius:12px;background:#eef1f0;"></div>
+			<div id="map" style="width:100%;height:190px;border-radius:12px;background:#eef1f0;"></div>
 			<div class="muted small" id="mapHint" style="margin-top:6px;">지도를 탭하면 그 위치로 장소가 지정됩니다.</div>
 			<input type="hidden" id="lat"><input type="hidden" id="lng">
 
@@ -76,18 +79,20 @@
 	</div>
 </div>
 
+<%@ include file="../layout/bottomnav.jsp" %>
+
 <script>
 const LEVEL_CLASS = { HIGH: 'lv-high', MID: 'lv-mid', LOW: 'lv-low' };
 let map, marker, geocoder, places, mapReady = false;
+let currentRegion = '';
 
 function lvBadge(lv, label) { return '<span class="lvl-badge ' + (LEVEL_CLASS[lv]||'') + '">' + label + '</span>'; }
 
 async function loadList() {
-	const region = $('#regionFilter').val().trim();
-	const r = await api.get('/api/match/list' + (region ? ('?region=' + encodeURIComponent(region)) : ''));
+	const r = await api.get('/api/match/list' + (currentRegion ? ('?region=' + encodeURIComponent(currentRegion)) : ''));
 	const box = $('#matchList').empty();
 	if (!r.ok) return;
-	if (!r.matches.length) { box.html('<div class="empty"><span class="big">⚽</span>모집중인 매칭이 없습니다.<br>우하단 ＋ 로 매칭을 올려보세요.</div>'); return; }
+	if (!r.matches.length) { box.html('<div class="empty"><span class="big">⚽</span>' + (currentRegion ? esc(currentRegion) + ' 지역에 ' : '') + '모집중인 매칭이 없습니다.<br>우하단 ＋ 로 매칭을 올려보세요.</div>'); return; }
 	r.matches.forEach(m => {
 		const when = m.matchDate ? (m.matchDate.replaceAll('-', '.') + (m.startTime ? ' ' + m.startTime.slice(0,5) : '')) : '일정 협의';
 		box.append(
@@ -103,18 +108,16 @@ async function loadList() {
 }
 
 function ensureMap() {
-	if (!window.kakao || !kakao.maps) { $('#mapHint').text('지도 키가 설정되지 않아 지도는 비활성화됩니다. 장소명/지역만 입력해도 됩니다.'); return; }
+	if (!window.kakao || !kakao.maps) { $('#mapHint').text('지도 키 미설정 — 장소명/지역만 입력해도 됩니다.'); $('#map').hide(); return; }
 	kakao.maps.load(function () {
-		if (mapReady) return;
-		const center = new kakao.maps.LatLng(37.5145, 127.1066); // 잠실 근처 기본
+		if (mapReady) { map.relayout(); return; }
+		const center = new kakao.maps.LatLng(37.5145, 127.1066);
 		map = new kakao.maps.Map(document.getElementById('map'), { center: center, level: 5 });
 		marker = new kakao.maps.Marker({ position: center });
 		geocoder = new kakao.maps.services.Geocoder();
 		places = new kakao.maps.services.Places();
 		mapReady = true;
-		kakao.maps.event.addListener(map, 'click', function (e) {
-			setPoint(e.latLng);
-		});
+		kakao.maps.event.addListener(map, 'click', e => setPoint(e.latLng));
 		setTimeout(() => map.relayout(), 100);
 	});
 }
@@ -122,34 +125,24 @@ function setPoint(latlng) {
 	marker.setPosition(latlng); marker.setMap(map);
 	$('#lat').val(latlng.getLat()); $('#lng').val(latlng.getLng());
 	if (geocoder) geocoder.coord2Address(latlng.getLng(), latlng.getLat(), function (res, st) {
-		if (st === kakao.maps.services.Status.OK && res[0]) {
-			const a = res[0].address;
-			if (!$('#region').val()) $('#region').val((a.region_1depth_name + ' ' + a.region_2depth_name).trim());
-			if (!$('#placeName').val()) $('#placeName').val(a.address_name);
-		}
+		if (st === kakao.maps.services.Status.OK && res[0] && !$('#placeName').val()) $('#placeName').val(res[0].address.address_name);
 	});
 }
 
-function openModal() {
-	$('#matchModal').addClass('open');
-	ensureMap();
-	setTimeout(() => { if (mapReady) map.relayout(); }, 200);
-}
+function openModal() { $('#matchModal').addClass('open'); ensureMap(); setTimeout(() => { if (mapReady) map.relayout(); }, 250); }
 function closeModal() { $('#matchModal').removeClass('open'); }
 
 $(function () {
+	// 지역 필터
+	buildRegionPicker('#filterRegion', { includeAll: true, onChange: function (region) { currentRegion = region; loadList(); } });
+	// 등록용 지역
+	buildRegionPicker('#createRegion', { onChange: function (region) { $('#region').val(region); } });
 	loadList();
-	$('#searchBtn').on('click', loadList);
-	$('#regionFilter').on('keypress', e => { if (e.which === 13) loadList(); });
 
-	// 내 팀 로드
 	api.get('/api/match/my-teams').then(r => {
 		const sel = $('#hostTeam').empty();
-		if (r.ok && r.teams.length) {
-			r.teams.forEach(t => sel.append('<option value="' + t.id + '">' + esc(t.name) + '</option>'));
-		} else {
-			sel.append('<option value="">팀장/운영진인 팀이 없습니다</option>');
-		}
+		if (r.ok && r.teams.length) r.teams.forEach(t => sel.append('<option value="' + t.id + '">' + esc(t.name) + '</option>'));
+		else sel.append('<option value="">팀장/운영진인 팀이 없습니다</option>');
 	});
 
 	$('#addBtn').on('click', openModal);
@@ -157,8 +150,7 @@ $(function () {
 	$('#matchModal').on('click', e => { if (e.target.id === 'matchModal') closeModal(); });
 
 	$('#lvlPicker .lvl').on('click', function () {
-		$('#lvlPicker .lvl').removeClass('on'); $(this).addClass('on');
-		$('#level').val($(this).data('lv'));
+		$('#lvlPicker .lvl').removeClass('on'); $(this).addClass('on'); $('#level').val($(this).data('lv'));
 	});
 
 	$('#placeSearch').on('click', function () {
@@ -167,16 +159,15 @@ $(function () {
 		places.keywordSearch(kw, function (data, status) {
 			if (status === kakao.maps.services.Status.OK && data[0]) {
 				const ll = new kakao.maps.LatLng(data[0].y, data[0].x);
-				map.setCenter(ll); setPoint(ll);
-				$('#placeName').val(data[0].place_name);
-			} else { alert('검색 결과가 없습니다.'); }
+				map.setCenter(ll); setPoint(ll); $('#placeName').val(data[0].place_name);
+			} else alert('검색 결과가 없습니다.');
 		});
 	});
 
 	$('#matchForm').on('submit', async function (e) {
 		e.preventDefault();
 		const teamId = $('#hostTeam').val();
-		if (!teamId) { alert('호스트로 등록할 팀이 없습니다. 먼저 팀을 만들거나 팀장 권한이 필요합니다.'); return; }
+		if (!teamId) { alert('호스트로 등록할 팀이 없습니다. 팀장 권한이 필요합니다.'); return; }
 		if (!$('#level').val()) { alert('팀 수준(상/중/하)을 선택해주세요.'); return; }
 		const body = {
 			level: $('#level').val(),

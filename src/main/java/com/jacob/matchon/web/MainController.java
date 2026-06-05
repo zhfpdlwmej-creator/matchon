@@ -104,7 +104,7 @@ public class MainController {
 	public String teams(Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
-		model.addAttribute("user", userService.get(uid));
+		putNavContext(uid, model);
 		return "team/teams";
 	}
 
@@ -153,7 +153,7 @@ public class MainController {
 	public String matches(Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
-		model.addAttribute("user", userService.get(uid));
+		putNavContext(uid, model);
 		return "match/list";
 	}
 
@@ -162,9 +162,17 @@ public class MainController {
 	public String matchDetail(@PathVariable Long matchId, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
-		model.addAttribute("user", userService.get(uid));
+		putNavContext(uid, model);
 		model.addAttribute("matchId", matchId);
 		return "match/detail";
+	}
+
+	/** 하단 메뉴용 컨텍스트(대표 팀) 주입 — 팀이 없으면 nav 는 /teams 로 폴백 */
+	private void putNavContext(Long uid, Model model) {
+		model.addAttribute("user", userService.get(uid));
+		List<Team> teams = teamService.myTeams(uid);
+		model.addAttribute("teams", teams);
+		if (!teams.isEmpty()) model.addAttribute("team", teams.get(0));
 	}
 
 	@GetMapping("/profile")

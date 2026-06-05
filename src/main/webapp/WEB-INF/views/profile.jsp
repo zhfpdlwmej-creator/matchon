@@ -16,8 +16,9 @@
 </header>
 <div class="app-wrap">
 	<div class="card-form">
-		<label>닉네임</label>
-		<input type="text" id="nickname" maxlength="20" value="${user.nickname}">
+		<label>이름 (카카오 계정)</label>
+		<div style="padding:13px 14px;border:1px solid var(--line);border-radius:11px;background:#f4f6f5;font-weight:700;">${user.nickname}</div>
+		<div class="muted small" style="margin-top:6px;">이름은 카카오 계정 이름으로 자동 설정됩니다.</div>
 		<label>선호 포지션</label>
 		<div class="pos-picker" id="posPicker">
 			<button type="button" class="pos" data-pos="GK">GK</button>
@@ -59,10 +60,7 @@ $(function () {
 		$('#position').val($(this).data('pos'));
 	});
 	$('#saveBtn').on('click', async function () {
-		const r = await api.post('/api/user/profile', {
-			nickname: $('#nickname').val().trim(),
-			position: $('#position').val()
-		});
+		const r = await api.post('/api/user/profile', { position: $('#position').val() });
 		alert(r.ok ? '저장했습니다.' : (r.message || '실패'));
 	});
 });

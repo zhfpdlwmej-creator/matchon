@@ -51,6 +51,18 @@ public class UserService {
 		return u;
 	}
 
+	/** 로그인 때마다 카카오 이름으로 동기화 (실명 고정) */
+	@Transactional
+	public void syncName(Long userId, String kakaoName) {
+		if (kakaoName == null || kakaoName.isBlank()) return;
+		User u = get(userId);
+		String n = kakaoName.trim();
+		if (n.length() > 20) n = n.substring(0, 20);
+		if (!n.equals(u.getNickname())) {
+			u.setNickname(n);
+		}
+	}
+
 	@Transactional
 	public User updateProfile(Long userId, String nickname, Position position) {
 		User u = get(userId);

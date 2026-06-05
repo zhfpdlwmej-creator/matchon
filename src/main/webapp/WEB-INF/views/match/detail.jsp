@@ -50,6 +50,8 @@
 	</div>
 </div>
 
+<%@ include file="../layout/bottomnav.jsp" %>
+
 <script>
 const MATCH_ID = ${matchId};
 const LEVEL_CLASS = { HIGH: 'lv-high', MID: 'lv-mid', LOW: 'lv-low' };

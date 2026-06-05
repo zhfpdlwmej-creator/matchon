@@ -33,6 +33,9 @@
 		<button type="submit" class="btn-ghost btn-block" style="margin-top:14px;">가입하기</button>
 	</form>
 </div>
+
+<%@ include file="layout/bottomnav.jsp" %>
+
 <script>
 async function loadTeams() {
 	const r = await api.get('/api/team/list');

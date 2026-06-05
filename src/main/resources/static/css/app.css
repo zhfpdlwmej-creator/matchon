@@ -245,6 +245,12 @@ input[type="date"], input[type="time"], input[type="number"] { -webkit-appearanc
 .invite-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .invite-row strong { font-size: 22px; letter-spacing: 3px; }
 
+/* 지역 선택 — 가로 스크롤 칩 */
+.region-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.region-row::-webkit-scrollbar { display: none; }
+.region-chip { flex: 0 0 auto; padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; background: #fafbfb; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; color: var(--text); }
+.region-chip.on { background: var(--green); color: #fff; border-color: var(--green); }
+
 /* 매칭 — 수준 배지 / 선택 버튼 */
 .lvl-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; color: #fff; white-space: nowrap; }
 .lv-high { background: #dc3340; } .lv-mid { background: #e08a16; } .lv-low { background: #1a9d52; }
