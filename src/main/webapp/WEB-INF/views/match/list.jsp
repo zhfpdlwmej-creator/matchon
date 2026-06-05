@@ -56,7 +56,7 @@
 				<div><label>날짜</label><input type="date" id="matchDate"></div>
 			</div>
 			<label>시작시간</label>
-			<input type="time" id="startTime">
+			<input type="text" id="startTime">
 
 			<label>지역 (도 → 시/군/구)</label>
 			<div id="createRegion"></div>
@@ -173,6 +173,7 @@ $(function () {
 	buildRegionPicker('#filterRegion', { includeAll: true, onChange: function (region) { currentRegion = region; loadList(); } });
 	// 등록용 지역
 	buildRegionPicker('#createRegion', { onChange: function (region) { $('#region').val(region); } });
+	bindTime('#startTime');
 	loadMine();
 	loadList();
 
@@ -207,6 +208,7 @@ $(function () {
 		const teamId = $('#hostTeam').val();
 		if (!teamId) { alert('호스트로 등록할 팀이 없습니다. 팀장 권한이 필요합니다.'); return; }
 		if (!$('#level').val()) { alert('팀 수준(상/중/하)을 선택해주세요.'); return; }
+		if ($('#startTime').val() && !validTime($('#startTime').val())) { alert('시작시간을 HH:MM 형식으로 입력해주세요. 예: 14:00'); return; }
 		const body = {
 			level: $('#level').val(),
 			headcount: parseInt($('#headcount').val() || '0', 10),

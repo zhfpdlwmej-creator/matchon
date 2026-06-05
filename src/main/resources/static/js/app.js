@@ -44,6 +44,30 @@
 		return '<span class="pos-badge pos-' + pos + '">' + pos + '</span>';
 	};
 
+	/* 숫자 입력 천단위 콤마 */
+	global.commaNumber = function (v) {
+		var n = String(v == null ? '' : v).replace(/[^\d]/g, '');
+		return n ? Number(n).toLocaleString('ko-KR') : '';
+	};
+	global.unComma = function (v) {
+		return parseInt(String(v == null ? '' : v).replace(/[^\d]/g, ''), 10) || 0;
+	};
+	global.bindComma = function (sel) {
+		$(sel).attr('inputmode', 'numeric').on('input', function () { this.value = commaNumber(this.value); });
+	};
+
+	/* 시간 직접 입력 — 숫자만 치면 HH:MM 자동 포맷 (예: 2000 → 20:00) */
+	global.formatTimeInput = function (v) {
+		var d = String(v == null ? '' : v).replace(/[^\d]/g, '').slice(0, 4);
+		if (d.length >= 3) return d.slice(0, 2) + ':' + d.slice(2);
+		return d;
+	};
+	global.bindTime = function (sel) {
+		$(sel).attr({ inputmode: 'numeric', maxlength: 5, placeholder: '예: 20:00' })
+			.on('input', function () { this.value = formatTimeInput(this.value); });
+	};
+	global.validTime = function (v) { return /^([01]\d|2[0-3]):([0-5]\d)$/.test(v); };
+
 	/* 경기 일정을 카카오톡 단톡방에 공유 (투표 버튼 포함).
 	   o = { teamName, title, when, place, url } */
 	global.kakaoShareSchedule = function (o) {

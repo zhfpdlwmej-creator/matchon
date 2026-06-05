@@ -29,7 +29,7 @@
 					<c:if test="${nearest.place != null}"> · 📍 ${nearest.place}</c:if>
 				</div>
 				<c:if test="${nearest.fee > 0}">
-					<div class="meta muted small" style="line-height:1.8;">🏟️ 구장비용(총) ${nearest.fee}원</div>
+					<div class="meta muted small" style="line-height:1.8;">🏟️ 구장비용(총) <span id="nearestFee"></span>원</div>
 				</c:if>
 
 				<div class="att-summary" id="homeSummary" style="margin:20px 0;">
@@ -101,6 +101,7 @@ function fmtDate(iso) {
 }
 $(function () {
 	$('#nearestDate').text(fmtDate('${nearest.matchDate}'));
+	if (FEE > 0) $('#nearestFee').text(commaNumber(FEE));
 	loadHome();
 	$('#homeAttendBtns .att-btn').on('click', async function () {
 		const s = $(this).data('s');

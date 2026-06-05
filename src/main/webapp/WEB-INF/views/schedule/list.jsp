@@ -41,13 +41,13 @@
 				<div><label>날짜</label><input type="date" id="schDate" required></div>
 			</div>
 			<div class="row-2">
-				<div><label>시작시간</label><input type="time" id="schStart" required></div>
-				<div><label>종료시간</label><input type="time" id="schEnd"></div>
+				<div><label>시작시간</label><input type="text" id="schStart" required></div>
+				<div><label>종료시간</label><input type="text" id="schEnd"></div>
 			</div>
 			<label>장소</label>
 			<input type="text" id="schPlace" maxlength="120" placeholder="예: 잠실 풋살장 A구장">
 			<label>구장비용 총액 (원)</label>
-			<input type="number" id="schFee" min="0" step="1000" value="0" placeholder="예: 60000 (참석 인원으로 자동 분배)">
+			<input type="text" id="schFee" value="0" placeholder="예: 60,000 (참석 인원으로 자동 분배)">
 			<div class="muted small" style="margin-top:4px;">구장 대여비 총액을 입력하면, 참석 인원으로 나눠 <b>인당 금액</b>이 자동 계산됩니다.</div>
 			<label>메모</label>
 			<textarea id="schMemo" maxlength="500" placeholder="준비물, 주차 안내 등"></textarea>
@@ -135,7 +135,7 @@ function openModal(s) {
 	$('#schStart').val(s ? s.startTime.slice(0,5) : '');
 	$('#schEnd').val(s && s.endTime ? s.endTime.slice(0,5) : '');
 	$('#schPlace').val(s ? (s.place || '') : '');
-	$('#schFee').val(s ? s.fee : 0);
+	$('#schFee').val(commaNumber(s ? s.fee : 0));
 	$('#schMemo').val(s ? (s.memo || '') : '');
 	$('#schDelete').toggle(!!s);
 	$('#schModal').addClass('open');
@@ -147,19 +147,22 @@ $(function () {
 	$('#prevMonth').on('click', () => { cur.setMonth(cur.getMonth() - 1); loadMonth(); });
 	$('#nextMonth').on('click', () => { cur.setMonth(cur.getMonth() + 1); loadMonth(); });
 	if (CAN_MANAGE) {
+		bindComma('#schFee'); bindTime('#schStart'); bindTime('#schEnd');
 		$('#addBtn').on('click', () => openModal(null));
 		$('#schCancel').on('click', closeModal);
 		$('#schModal').on('click', e => { if (e.target.id === 'schModal') closeModal(); });
 		$('#schForm').on('submit', async function (e) {
 			e.preventDefault();
 			const id = $('#schId').val();
+			if (!validTime($('#schStart').val())) { alert('시작시간을 HH:MM 형식으로 입력해주세요. 예: 20:00'); return; }
+			if ($('#schEnd').val() && !validTime($('#schEnd').val())) { alert('종료시간을 HH:MM 형식으로 입력해주세요.'); return; }
 			const body = {
 				title: $('#schTitle').val().trim(),
 				matchDate: $('#schDate').val(),
 				startTime: $('#schStart').val(),
 				endTime: $('#schEnd').val() || null,
 				place: $('#schPlace').val().trim(),
-				fee: parseInt($('#schFee').val() || '0', 10),
+				fee: unComma($('#schFee').val()),
 				memo: $('#schMemo').val().trim()
 			};
 			const r = id
