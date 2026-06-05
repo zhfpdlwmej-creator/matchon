@@ -61,6 +61,11 @@ public class TeamService {
 		return memberRepo.existsByTeamIdAndUserId(teamId, userId);
 	}
 
+	public boolean isLeader(Long teamId, Long userId) {
+		return memberRepo.findByTeamIdAndUserId(teamId, userId)
+				.map(m -> m.getRole() == Role.LEADER).orElse(false);
+	}
+
 	public TeamMember membership(Long teamId, Long userId) {
 		return memberRepo.findByTeamIdAndUserId(teamId, userId)
 				.orElseThrow(() -> new ApiException(403, "팀 멤버가 아닙니다."));

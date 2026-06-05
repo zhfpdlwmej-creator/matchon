@@ -54,6 +54,7 @@
 
 <script>
 const MATCH_ID = ${matchId};
+const TEAM_ID = ${empty team ? 'null' : team.id};   // 현재(활동) 팀
 const LEVEL_CLASS = { HIGH: 'lv-high', MID: 'lv-mid', LOW: 'lv-low' };
 const STATUS_LABEL = { OPEN: '모집중', MATCHED: '성사', CLOSED: '마감' };
 const APP_STATUS = { PENDING: '대기', ACCEPTED: '수락됨', REJECTED: '거절됨' };
@@ -62,7 +63,7 @@ let mp = null, isHost = false;
 function lvBadge(lv, label) { return '<span class="lvl-badge ' + (LEVEL_CLASS[lv]||'') + '">' + label + '</span>'; }
 
 async function load() {
-	const r = await api.get('/api/match/' + MATCH_ID);
+	const r = await api.get('/api/match/' + MATCH_ID + (TEAM_ID ? '?teamId=' + TEAM_ID : ''));
 	if (!r.ok) { alert('매칭을 불러올 수 없습니다.'); location.href = '/matches'; return; }
 	mp = r.match; isHost = r.isHost;
 

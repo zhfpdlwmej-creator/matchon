@@ -19,7 +19,9 @@
 </header>
 
 <div class="app-wrap">
-	<div class="muted small" style="padding:2px 4px 8px;">지역별 친선경기 모집·신청 (팀장만 등록/신청)</div>
+	<div class="muted small" style="padding:2px 4px 8px;">
+		<c:if test="${not empty team}">현재 팀: <b style="color:var(--green);">${team.name}</b> 기준 · </c:if>지역별 친선경기 모집·신청 (팀장만 등록/신청)
+	</div>
 
 	<div class="section-title">내 매칭</div>
 	<div id="myMatches"><div class="muted small" style="padding:6px 4px;">불러오는 중...</div></div>
@@ -41,7 +43,7 @@
 		<h3>매칭 올리기</h3>
 		<form id="matchForm" class="card-form" style="padding:0;box-shadow:none;">
 			<label>우리 팀 (호스트)</label>
-			<select id="hostTeam"></select>
+			<input type="text" id="hostTeamName" readonly style="background:#f4f6f5;font-weight:700;">
 
 			<label>팀 수준</label>
 			<div class="lvl-picker" id="lvlPicker">
@@ -86,6 +88,9 @@
 
 <script>
 const LEVEL_CLASS = { HIGH: 'lv-high', MID: 'lv-mid', LOW: 'lv-low' };
+const TEAM_ID = ${empty team ? 'null' : team.id};   // 현재(활동) 팀
+const TEAM_NAME = "${team.name}";
+const IS_LEADER = ${isLeader};                       // 현재 팀의 팀장인가
 let map, marker, mapReady = false;
 let currentRegion = '';
 
@@ -95,11 +100,12 @@ const POST_STATUS = { OPEN: '모집중', MATCHED: '성사', CLOSED: '마감' };
 const MY_STATUS = { PENDING: '⏳ 대기중', ACCEPTED: '✅ 수락됨(성사)', REJECTED: '거절됨' };
 
 async function loadMine() {
-	const r = await api.get('/api/match/mine');
 	const box = $('#myMatches').empty();
+	if (!TEAM_ID) { box.html('<div class="card muted small" style="text-align:center;">팀을 선택하면 그 팀의 매칭이 표시됩니다.</div>'); return; }
+	const r = await api.get('/api/match/mine?teamId=' + TEAM_ID);
 	if (!r.ok) { box.html(''); return; }
 	if (!r.hosting.length && !r.applied.length) {
-		box.html('<div class="card muted small" style="text-align:center;">아직 등록·신청한 매칭이 없어요.</div>');
+		box.html('<div class="card muted small" style="text-align:center;">' + esc(TEAM_NAME) + ' 팀의 등록·신청한 매칭이 없어요.</div>');
 		return;
 	}
 	r.hosting.forEach(m => {
@@ -126,7 +132,10 @@ async function loadMine() {
 }
 
 async function loadList() {
-	const r = await api.get('/api/match/list' + (currentRegion ? ('?region=' + encodeURIComponent(currentRegion)) : ''));
+	const q = [];
+	if (currentRegion) q.push('region=' + encodeURIComponent(currentRegion));
+	if (TEAM_ID) q.push('teamId=' + TEAM_ID);
+	const r = await api.get('/api/match/list' + (q.length ? '?' + q.join('&') : ''));
 	const box = $('#matchList').empty();
 	if (!r.ok) return;
 	if (!r.matches.length) { box.html('<div class="empty"><span class="big">⚽</span>' + (currentRegion ? esc(currentRegion) + ' 지역에 ' : '') + '모집중인 매칭이 없습니다.<br>우하단 ＋ 로 매칭을 올려보세요.</div>'); return; }
@@ -177,11 +186,9 @@ $(function () {
 	loadMine();
 	loadList();
 
-	api.get('/api/match/my-teams').then(r => {
-		const sel = $('#hostTeam').empty();
-		if (r.ok && r.teams.length) r.teams.forEach(t => sel.append('<option value="' + t.id + '">' + esc(t.name) + '</option>'));
-		else sel.append('<option value="">팀장인 팀이 없습니다</option>');
-	});
+	// 호스트 = 현재 팀 (고정). 등록 버튼은 현재 팀의 팀장에게만
+	$('#hostTeamName').val(TEAM_NAME || '');
+	$('#addBtn').toggle(!!TEAM_ID && IS_LEADER);
 
 	$('#addBtn').on('click', openModal);
 	$('#cancelBtn').on('click', closeModal);
@@ -205,8 +212,8 @@ $(function () {
 
 	$('#matchForm').on('submit', async function (e) {
 		e.preventDefault();
-		const teamId = $('#hostTeam').val();
-		if (!teamId) { alert('호스트로 등록할 팀이 없습니다. 팀장 권한이 필요합니다.'); return; }
+		if (!TEAM_ID || !IS_LEADER) { alert('현재 팀의 팀장만 매칭을 등록할 수 있습니다.'); return; }
+		const teamId = TEAM_ID;
 		if (!$('#level').val()) { alert('팀 수준(상/중/하)을 선택해주세요.'); return; }
 		if ($('#startTime').val() && !validTime($('#startTime').val())) { alert('시작시간을 HH:MM 형식으로 입력해주세요. 예: 14:00'); return; }
 		const body = {

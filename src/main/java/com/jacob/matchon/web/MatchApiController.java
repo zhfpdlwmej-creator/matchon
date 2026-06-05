@@ -31,30 +31,32 @@ public class MatchApiController {
 		return Map.of("ok", true, "teams", teams);
 	}
 
-	/** 모집중 매칭 목록 (지역 필터) */
+	/** 모집중 매칭 목록 (지역 필터). teamId = 현재 팀(내 팀 배지 기준) */
 	@GetMapping("/list")
-	public Map<String, Object> list(@RequestParam(required = false) String region) {
-		Long uid = CurrentUser.required();
-		Set<Long> mine = teamService.leaderTeams(uid).stream()
-				.map(Team::getId).collect(Collectors.toSet());
+	public Map<String, Object> list(@RequestParam(required = false) String region,
+									@RequestParam(required = false) Long teamId) {
+		CurrentUser.required();
+		Set<Long> mine = teamId == null ? Set.of() : Set.of(teamId);
 		List<Map<String, Object>> rows = matchService.listOpen(region).stream()
 				.map(p -> postView(p, mine)).toList();
 		return Map.of("ok", true, "matches", rows);
 	}
 
-	/** 내 매칭 — 내가 올린 것(신청 현황) + 내가 신청한 것(상태) */
+	/** 내 매칭 — 현재 팀이 올린 것(신청 현황) + 현재 팀이 신청한 것(상태) */
 	@GetMapping("/mine")
-	public Map<String, Object> mine() {
+	public Map<String, Object> mine(@RequestParam(required = false) Long teamId) {
 		Long uid = CurrentUser.required();
-		Set<Long> mineSet = teamService.leaderTeams(uid).stream().map(Team::getId).collect(Collectors.toSet());
+		if (teamId == null) return Map.of("ok", true, "hosting", List.of(), "applied", List.of());
+		teamService.membership(teamId, uid); // 현재 팀 멤버 확인
+		Set<Long> mineSet = Set.of(teamId);
 
-		List<Map<String, Object>> hosting = matchService.myHosting(uid).stream().map(p -> {
+		List<Map<String, Object>> hosting = matchService.hostingByTeam(teamId).stream().map(p -> {
 			Map<String, Object> m = postView(p, mineSet);
 			m.put("pending", matchService.pendingCount(p.getId()));
 			return m;
 		}).toList();
 
-		List<Map<String, Object>> applied = matchService.myApplications(uid).stream().map(a -> {
+		List<Map<String, Object>> applied = matchService.applicationsByTeam(teamId).stream().map(a -> {
 			MatchPost p = matchService.get(a.getMatchPostId());
 			Team host = teamService.get(p.getHostTeamId());
 			Team myTeam = teamService.get(a.getApplicantTeamId());
@@ -73,14 +75,13 @@ public class MatchApiController {
 		return Map.of("ok", true, "hosting", hosting, "applied", applied);
 	}
 
-	/** 매칭 상세 */
+	/** 매칭 상세. teamId = 현재(활동) 팀 기준으로 호스트/신청 판정 */
 	@GetMapping("/{id}")
-	public Map<String, Object> detail(@PathVariable Long id) {
+	public Map<String, Object> detail(@PathVariable Long id, @RequestParam(required = false) Long teamId) {
 		Long uid = CurrentUser.required();
 		MatchPost p = matchService.get(id);
-		List<Team> manage = teamService.leaderTeams(uid);
-		Set<Long> mine = manage.stream().map(Team::getId).collect(Collectors.toSet());
-		boolean isHost = mine.contains(p.getHostTeamId());
+		Set<Long> mine = teamId == null ? Set.of() : Set.of(teamId);
+		boolean isHost = teamId != null && teamId.equals(p.getHostTeamId());
 
 		Map<String, Object> res = new HashMap<>();
 		res.put("ok", true);
@@ -90,7 +91,7 @@ public class MatchApiController {
 		List<MatchApplication> apps = matchService.applications(id);
 		Set<Long> appliedTeams = apps.stream().map(MatchApplication::getApplicantTeamId).collect(Collectors.toSet());
 
-		// 호스트면 신청 목록(수락 관리) 노출
+		// 현재 팀이 호스트면 신청 목록(수락 관리) 노출
 		if (isHost) {
 			Map<Long, User> users = userService.mapByIds(apps.stream().map(MatchApplication::getApplicantUserId).toList());
 			res.put("applications", apps.stream().map(a -> {
@@ -106,13 +107,14 @@ public class MatchApiController {
 			}).toList());
 		}
 
-		// 신청 가능한 내 팀: 호스트팀 제외 + 이미 신청한 팀 제외 (호스트라도 다른 내 팀으로 신청 가능)
-		List<Map<String, Object>> applicable = manage.stream()
-				.filter(t -> !t.getId().equals(p.getHostTeamId()))
-				.filter(t -> !appliedTeams.contains(t.getId()))
-				.map(t -> teamMap(t.getId(), t.getName())).toList();
+		// 현재 팀으로 신청 가능: 호스트 아님 + 미신청 + 내가 그 팀 팀장
+		List<Map<String, Object>> applicable = new ArrayList<>();
+		if (teamId != null && !teamId.equals(p.getHostTeamId())
+				&& !appliedTeams.contains(teamId)
+				&& teamService.isLeader(teamId, uid)) {
+			applicable.add(teamMap(teamId, teamService.get(teamId).getName()));
+		}
 		res.put("applicableTeams", applicable);
-
 		return res;
 	}
 

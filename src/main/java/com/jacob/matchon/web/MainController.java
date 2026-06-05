@@ -217,7 +217,12 @@ public class MainController {
 		List<Team> teams = teamService.myTeams(uid);
 		model.addAttribute("teams", teams);
 		Long cur = currentTeamId(req, uid);
-		if (cur != null) model.addAttribute("team", teamService.get(cur));
+		boolean isLeader = false;
+		if (cur != null) {
+			model.addAttribute("team", teamService.get(cur));
+			isLeader = teamService.isLeader(cur, uid);
+		}
+		model.addAttribute("isLeader", isLeader);
 	}
 
 	@GetMapping("/profile")

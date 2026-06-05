@@ -46,16 +46,14 @@ public class MatchService {
 		return appRepo.countByMatchPostIdAndStatus(postId, ApplicationStatus.PENDING);
 	}
 
-	/** 내가 팀장으로 올린 매칭 */
-	public List<MatchPost> myHosting(Long userId) {
-		List<Long> ids = teamService.leaderTeams(userId).stream().map(Team::getId).toList();
-		return ids.isEmpty() ? List.of() : postRepo.findByHostTeamIdInOrderByCreatedAtDesc(ids);
+	/** 특정 팀이 올린 매칭 */
+	public List<MatchPost> hostingByTeam(Long teamId) {
+		return postRepo.findByHostTeamIdInOrderByCreatedAtDesc(List.of(teamId));
 	}
 
-	/** 내가 팀장으로 신청한 매칭 신청들 */
-	public List<MatchApplication> myApplications(Long userId) {
-		List<Long> ids = teamService.leaderTeams(userId).stream().map(Team::getId).toList();
-		return ids.isEmpty() ? List.of() : appRepo.findByApplicantTeamIdInOrderByCreatedAtDesc(ids);
+	/** 특정 팀이 신청한 매칭 신청들 */
+	public List<MatchApplication> applicationsByTeam(Long teamId) {
+		return appRepo.findByApplicantTeamIdInOrderByCreatedAtDesc(List.of(teamId));
 	}
 
 	// ---------- 등록 ----------
