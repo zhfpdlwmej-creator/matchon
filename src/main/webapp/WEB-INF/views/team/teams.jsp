@@ -34,7 +34,7 @@
 	</form>
 </div>
 
-<%@ include file="layout/bottomnav.jsp" %>
+<%@ include file="../layout/bottomnav.jsp" %>
 
 <script>
 async function loadTeams() {
