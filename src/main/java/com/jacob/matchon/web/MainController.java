@@ -66,7 +66,8 @@ public class MainController {
 
 		List<Team> teams = teamService.myTeams(uid);
 		if (teams.isEmpty()) return "redirect:/teams";
-		return "redirect:/team/" + teams.get(0).getId();
+		// 마지막으로 보던 팀(쿠키) 기준, 없으면 첫 팀
+		return "redirect:/team/" + currentTeamId(req, uid);
 	}
 
 	/**
@@ -100,102 +101,130 @@ public class MainController {
 		res.addCookie(c);
 	}
 
+	private static final String CUR_TEAM_COOKIE = "cur_team";
+
+	/** 현재 보고 있는 팀을 쿠키에 기억 */
+	private void setCurrentTeam(HttpServletResponse res, Long teamId) {
+		Cookie c = new Cookie(CUR_TEAM_COOKIE, String.valueOf(teamId));
+		c.setPath("/");
+		c.setMaxAge(60 * 60 * 24 * 365);
+		res.addCookie(c);
+	}
+
+	/** 쿠키의 현재 팀(내가 속한 팀이면) → 없으면 첫 팀. 팀 없으면 null */
+	private Long currentTeamId(HttpServletRequest req, Long uid) {
+		List<Team> teams = teamService.myTeams(uid);
+		if (teams.isEmpty()) return null;
+		String v = readCookie(req, CUR_TEAM_COOKIE);
+		if (v != null && !v.isBlank()) {
+			try {
+				Long id = Long.valueOf(v.trim());
+				if (teams.stream().anyMatch(t -> t.getId().equals(id))) return id;
+			} catch (NumberFormatException ignore) {
+			}
+		}
+		return teams.get(0).getId();
+	}
+
 	@GetMapping("/teams")
-	public String teams(Model model) {
+	public String teams(HttpServletRequest req, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
-		putNavContext(uid, model);
+		putNavContext(uid, req, model);
 		return "team/teams";
 	}
 
 	@GetMapping("/team/{teamId}")
-	public String teamHome(@PathVariable Long teamId, Model model) {
+	public String teamHome(@PathVariable Long teamId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
 		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		setCurrentTeam(res, teamId);
 		Optional<MatchSchedule> nearest = scheduleService.nearest(teamId);
 		model.addAttribute("nearest", nearest.orElse(null));
 		return "home";
 	}
 
 	@GetMapping("/team/{teamId}/schedules")
-	public String schedules(@PathVariable Long teamId, Model model) {
+	public String schedules(@PathVariable Long teamId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
 		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		setCurrentTeam(res, teamId);
 		return "schedule/list";
 	}
 
 	@GetMapping("/team/{teamId}/schedule/{scheduleId}")
-	public String scheduleDetail(@PathVariable Long teamId, @PathVariable Long scheduleId, Model model) {
+	public String scheduleDetail(@PathVariable Long teamId, @PathVariable Long scheduleId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
 		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		setCurrentTeam(res, teamId);
 		model.addAttribute("scheduleId", scheduleId);
 		return "schedule/detail";
 	}
 
 	@GetMapping("/team/{teamId}/members")
-	public String members(@PathVariable Long teamId, Model model) {
+	public String members(@PathVariable Long teamId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
 		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		setCurrentTeam(res, teamId);
 		return "member/list";
 	}
 
 	@GetMapping("/team/{teamId}/stats")
-	public String stats(@PathVariable Long teamId, Model model) {
+	public String stats(@PathVariable Long teamId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
 		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		setCurrentTeam(res, teamId);
 		return "stats/list";
 	}
 
 	@GetMapping("/team/{teamId}/admin")
-	public String admin(@PathVariable Long teamId, Model model) {
+	public String admin(@PathVariable Long teamId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
 		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		setCurrentTeam(res, teamId);
 		// 권한 표시는 화면에서 myRole 로 제어
 		return "admin/index";
 	}
 
 	/** 팀 매칭 목록 (지역별 친선경기 모집) */
 	@GetMapping("/matches")
-	public String matches(Model model) {
+	public String matches(HttpServletRequest req, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
-		putNavContext(uid, model);
+		putNavContext(uid, req, model);
 		return "match/list";
 	}
 
 	/** 매칭 상세 */
 	@GetMapping("/matches/{matchId}")
-	public String matchDetail(@PathVariable Long matchId, Model model) {
+	public String matchDetail(@PathVariable Long matchId, HttpServletRequest req, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
-		putNavContext(uid, model);
+		putNavContext(uid, req, model);
 		model.addAttribute("matchId", matchId);
 		return "match/detail";
 	}
 
-	/** 하단 메뉴용 컨텍스트(대표 팀) 주입 — 팀이 없으면 nav 는 /teams 로 폴백 */
-	private void putNavContext(Long uid, Model model) {
+	/** 하단 메뉴용 컨텍스트(현재 선택 팀) 주입 — 팀이 없으면 nav 는 /teams 로 폴백 */
+	private void putNavContext(Long uid, HttpServletRequest req, Model model) {
 		model.addAttribute("user", userService.get(uid));
 		List<Team> teams = teamService.myTeams(uid);
 		model.addAttribute("teams", teams);
-		if (!teams.isEmpty()) model.addAttribute("team", teams.get(0));
+		Long cur = currentTeamId(req, uid);
+		if (cur != null) model.addAttribute("team", teamService.get(cur));
 	}
 
 	@GetMapping("/profile")
-	public String profile(Model model) {
+	public String profile(HttpServletRequest req, Model model) {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
-		List<Team> teams = teamService.myTeams(uid);
-		model.addAttribute("user", userService.get(uid));
-		model.addAttribute("teams", teams);
-		// 하단 네비가 team.id 를 사용하므로 대표 팀 1개를 컨텍스트로 제공
-		if (!teams.isEmpty()) model.addAttribute("team", teams.get(0));
+		putNavContext(uid, req, model);
 		return "profile";
 	}
 
