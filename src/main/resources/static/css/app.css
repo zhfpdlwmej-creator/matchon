@@ -272,6 +272,12 @@ input[type="date"], input[type="time"], input[type="number"] { -webkit-appearanc
 .invite-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .invite-row strong { font-size: 22px; letter-spacing: 3px; }
 
+/* 탭 (등록한/신청한 매칭) */
+.tabs { display: flex; gap: 5px; margin-bottom: 12px; background: #e9edec; padding: 4px; border-radius: 12px; }
+.tab { flex: 1; padding: 10px 0; border: none; background: transparent; border-radius: 9px; font-weight: 700; font-size: 14px; color: var(--muted); cursor: pointer; transition: all .12s; }
+.tab.on { background: #fff; color: var(--green); box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.tab .cnt { font-size: 12px; opacity: .7; }
+
 /* 지역 선택 — 가로 스크롤 칩 */
 .region-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .region-row::-webkit-scrollbar { display: none; }
