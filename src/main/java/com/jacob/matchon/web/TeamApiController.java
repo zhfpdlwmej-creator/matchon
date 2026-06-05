@@ -76,6 +76,14 @@ public class TeamApiController {
 		return Map.of("ok", true, "team", teamView(t, uid));
 	}
 
+	/** 팀 탈퇴 (팀장 제외) */
+	@PostMapping("/team/{teamId}/leave")
+	public Map<String, Object> leave(@PathVariable Long teamId) {
+		Long uid = CurrentUser.required();
+		teamService.leaveTeam(teamId, uid);
+		return Map.of("ok", true);
+	}
+
 	/** 초대코드 재발급 */
 	@PostMapping("/team/{teamId}/invite-code")
 	public Map<String, Object> regenCode(@PathVariable Long teamId) {

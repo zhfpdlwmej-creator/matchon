@@ -75,6 +75,34 @@ public class TeamService {
 		return m;
 	}
 
+	/** 권한 검사 — 팀장(팀 생성자)만 통과 */
+	public TeamMember requireLeader(Long teamId, Long userId) {
+		TeamMember m = membership(teamId, userId);
+		if (m.getRole() != Role.LEADER) {
+			throw new ApiException(403, "팀장만 가능합니다.");
+		}
+		return m;
+	}
+
+	/** 내가 팀장인 팀 목록 (매칭 등록/신청용) */
+	public List<Team> leaderTeams(Long userId) {
+		List<Long> teamIds = memberRepo.findByUserId(userId).stream()
+				.filter(m -> m.getRole() == Role.LEADER)
+				.map(TeamMember::getTeamId).toList();
+		if (teamIds.isEmpty()) return List.of();
+		return teamRepo.findAllById(teamIds);
+	}
+
+	/** 팀 탈퇴 — 팀장은 탈퇴 불가(운영진/회원만) */
+	@Transactional
+	public void leaveTeam(Long teamId, Long userId) {
+		TeamMember m = membership(teamId, userId);
+		if (m.getRole() == Role.LEADER) {
+			throw new ApiException(400, "팀장은 탈퇴할 수 없습니다. 운영진/회원만 탈퇴 가능합니다.");
+		}
+		memberRepo.delete(m);
+	}
+
 	// --- 생성/가입 ---
 
 	@Transactional

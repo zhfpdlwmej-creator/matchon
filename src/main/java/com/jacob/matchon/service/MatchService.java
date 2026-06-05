@@ -46,7 +46,7 @@ public class MatchService {
 
 	@Transactional
 	public MatchPost create(Long userId, Long hostTeamId, MatchForm form) {
-		teamService.requireManager(hostTeamId, userId); // 팀장/운영진만
+		teamService.requireLeader(hostTeamId, userId); // 팀장/운영진만
 		MatchLevel level = parseLevel(form.getLevel());
 		if (level == null) throw new ApiException(400, "팀 수준(상/중/하)을 선택해주세요.");
 
@@ -70,7 +70,7 @@ public class MatchService {
 	@Transactional
 	public void close(Long postId, Long userId) {
 		MatchPost p = get(postId);
-		teamService.requireManager(p.getHostTeamId(), userId);
+		teamService.requireLeader(p.getHostTeamId(), userId);
 		p.setStatus(MatchStatus.CLOSED);
 	}
 
@@ -82,7 +82,7 @@ public class MatchService {
 		if (post.getStatus() != MatchStatus.OPEN) {
 			throw new ApiException(409, "이미 마감되었거나 성사된 매칭입니다.");
 		}
-		teamService.requireManager(applicantTeamId, userId); // 신청도 팀장/운영진
+		teamService.requireLeader(applicantTeamId, userId); // 신청도 팀장/운영진
 		if (applicantTeamId.equals(post.getHostTeamId())) {
 			throw new ApiException(400, "내 팀이 올린 매칭에는 신청할 수 없습니다.");
 		}
@@ -104,7 +104,7 @@ public class MatchService {
 		MatchApplication app = appRepo.findById(applicationId)
 				.orElseThrow(() -> new ApiException(404, "신청을 찾을 수 없습니다."));
 		MatchPost post = get(app.getMatchPostId());
-		teamService.requireManager(post.getHostTeamId(), userId); // 호스트 권한
+		teamService.requireLeader(post.getHostTeamId(), userId); // 호스트 권한
 
 		app.setStatus(ApplicationStatus.ACCEPTED);
 		post.setStatus(MatchStatus.MATCHED);

@@ -19,7 +19,7 @@
 </header>
 
 <div class="app-wrap">
-	<div class="muted small" style="padding:2px 4px 8px;">지역별 친선경기 모집·신청 (팀장·운영진만 등록/신청)</div>
+	<div class="muted small" style="padding:2px 4px 8px;">지역별 친선경기 모집·신청 (팀장만 등록/신청)</div>
 
 	<div class="card">
 		<div class="small" style="font-weight:700;margin-bottom:8px;">지역으로 보기</div>
@@ -102,7 +102,7 @@ async function loadList() {
 			(m.mine ? '<span class="muted small" style="margin-left:auto;">내 팀</span>' : '') + '</div>' +
 			'<div class="title">' + esc(m.hostTeamName) + '</div>' +
 			'<div class="meta">👥 ' + m.headcount + '명 · 📅 ' + when + (m.placeName ? ' · 📍 ' + esc(m.placeName) : '') + '</div>' +
-			'<div class="meta muted small">신청 ' + m.applications + '팀</div>' +
+			'<div class="meta muted small">👤 등록자 ' + esc(m.hostName) + ' · 신청 ' + m.applications + '팀</div>' +
 			'</a>');
 	});
 }
@@ -141,7 +141,7 @@ $(function () {
 	api.get('/api/match/my-teams').then(r => {
 		const sel = $('#hostTeam').empty();
 		if (r.ok && r.teams.length) r.teams.forEach(t => sel.append('<option value="' + t.id + '">' + esc(t.name) + '</option>'));
-		else sel.append('<option value="">팀장/운영진인 팀이 없습니다</option>');
+		else sel.append('<option value="">팀장인 팀이 없습니다</option>');
 	});
 
 	$('#addBtn').on('click', openModal);

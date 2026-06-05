@@ -110,7 +110,9 @@ public class MainController {
 
 	@GetMapping("/team/{teamId}")
 	public String teamHome(@PathVariable Long teamId, Model model) {
-		if (!putTeamContext(teamId, model)) return "redirect:/login";
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
 		Optional<MatchSchedule> nearest = scheduleService.nearest(teamId);
 		model.addAttribute("nearest", nearest.orElse(null));
 		return "home";
@@ -118,32 +120,42 @@ public class MainController {
 
 	@GetMapping("/team/{teamId}/schedules")
 	public String schedules(@PathVariable Long teamId, Model model) {
-		if (!putTeamContext(teamId, model)) return "redirect:/login";
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
 		return "schedule/list";
 	}
 
 	@GetMapping("/team/{teamId}/schedule/{scheduleId}")
 	public String scheduleDetail(@PathVariable Long teamId, @PathVariable Long scheduleId, Model model) {
-		if (!putTeamContext(teamId, model)) return "redirect:/login";
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
 		model.addAttribute("scheduleId", scheduleId);
 		return "schedule/detail";
 	}
 
 	@GetMapping("/team/{teamId}/members")
 	public String members(@PathVariable Long teamId, Model model) {
-		if (!putTeamContext(teamId, model)) return "redirect:/login";
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
 		return "member/list";
 	}
 
 	@GetMapping("/team/{teamId}/stats")
 	public String stats(@PathVariable Long teamId, Model model) {
-		if (!putTeamContext(teamId, model)) return "redirect:/login";
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
 		return "stats/list";
 	}
 
 	@GetMapping("/team/{teamId}/admin")
 	public String admin(@PathVariable Long teamId, Model model) {
-		if (!putTeamContext(teamId, model)) return "redirect:/login";
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
 		// 권한 표시는 화면에서 myRole 로 제어
 		return "admin/index";
 	}
@@ -187,14 +199,9 @@ public class MainController {
 		return "profile";
 	}
 
-	/** 공통 팀 컨텍스트 주입. 미로그인/비멤버면 false */
-	private boolean putTeamContext(Long teamId, Model model) {
-		Long uid = CurrentUser.id();
-		if (uid == null) return false;
+	/** 공통 팀 컨텍스트 주입. 해당 팀의 멤버가 아니면 false (uid 는 호출부에서 이미 검증) */
+	private boolean putTeamContext(Long teamId, Long uid, Model model) {
 		User user = userService.get(uid);
-		if (!user.isSetupDone()) {
-			model.addAttribute("redirectWelcome", true);
-		}
 		TeamMember me = teamService.members(teamId).stream()
 				.filter(m -> m.getUserId().equals(uid)).findFirst().orElse(null);
 		if (me == null) return false;

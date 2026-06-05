@@ -26,7 +26,7 @@ public class MatchApiController {
 	@GetMapping("/my-teams")
 	public Map<String, Object> myTeams() {
 		Long uid = CurrentUser.required();
-		List<Map<String, Object>> teams = teamService.manageableTeams(uid).stream()
+		List<Map<String, Object>> teams = teamService.leaderTeams(uid).stream()
 				.map(t -> teamMap(t.getId(), t.getName())).toList();
 		return Map.of("ok", true, "teams", teams);
 	}
@@ -35,7 +35,7 @@ public class MatchApiController {
 	@GetMapping("/list")
 	public Map<String, Object> list(@RequestParam(required = false) String region) {
 		Long uid = CurrentUser.required();
-		Set<Long> mine = teamService.manageableTeams(uid).stream()
+		Set<Long> mine = teamService.leaderTeams(uid).stream()
 				.map(Team::getId).collect(Collectors.toSet());
 		List<Map<String, Object>> rows = matchService.listOpen(region).stream()
 				.map(p -> postView(p, mine)).toList();
@@ -47,7 +47,7 @@ public class MatchApiController {
 	public Map<String, Object> detail(@PathVariable Long id) {
 		Long uid = CurrentUser.required();
 		MatchPost p = matchService.get(id);
-		List<Team> manage = teamService.manageableTeams(uid);
+		List<Team> manage = teamService.leaderTeams(uid);
 		Set<Long> mine = manage.stream().map(Team::getId).collect(Collectors.toSet());
 		boolean isHost = mine.contains(p.getHostTeamId());
 
@@ -122,6 +122,7 @@ public class MatchApiController {
 		m.put("id", p.getId());
 		m.put("hostTeamId", p.getHostTeamId());
 		m.put("hostTeamName", host.getName());
+		m.put("hostName", userService.findById(p.getHostUserId()).map(User::getNickname).orElse("?"));
 		m.put("level", p.getLevel().name());
 		m.put("levelLabel", p.getLevel().label());
 		m.put("headcount", p.getHeadcount());

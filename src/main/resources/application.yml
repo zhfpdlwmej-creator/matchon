@@ -34,6 +34,8 @@ spring:
     hikari:
       maximum-pool-size: 5
       connection-timeout: 30000
+      # 모든 커넥션 세션 타임존을 KST 로 → now() 및 트리거가 한국시간으로 저장/조회
+      connection-init-sql: SET TIME ZONE 'Asia/Seoul'
 
   jpa:
     hibernate:

@@ -23,6 +23,10 @@ public class UserService {
 		return userRepo.findByKakaoId(kakaoId);
 	}
 
+	public Optional<User> findById(Long id) {
+		return userRepo.findById(id);
+	}
+
 	public User get(Long id) {
 		return userRepo.findById(id)
 				.orElseThrow(() -> new ApiException(404, "사용자를 찾을 수 없습니다."));

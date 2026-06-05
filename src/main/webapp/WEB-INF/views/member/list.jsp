@@ -26,6 +26,13 @@
 
 	<div class="section-title">팀원 <span id="memCount"></span></div>
 	<div class="card" id="memberList"><div class="empty">불러오는 중...</div></div>
+
+	<c:if test="${myRole != 'LEADER'}">
+		<button class="btn-ghost btn-block" id="leaveBtn" style="margin-top:6px;color:var(--red);">이 팀 나가기</button>
+	</c:if>
+	<c:if test="${myRole == 'LEADER'}">
+		<div class="muted small" style="text-align:center;padding:8px;">팀장은 탈퇴할 수 없습니다.</div>
+	</c:if>
 </div>
 
 <%@ include file="../layout/bottomnav.jsp" %>
@@ -95,6 +102,12 @@ $(function () {
 	$('#memberList').on('change', '.roleSel', async function () {
 		const r = await api.post('/api/team/' + TEAM_ID + '/role', { userId: $(this).data('uid'), role: $(this).val() });
 		if (!r.ok) { alert(r.message || '실패'); load(); }
+	});
+
+	$('#leaveBtn').on('click', async function () {
+		if (!confirm('이 팀에서 나가시겠어요?\n다시 들어오려면 초대코드가 필요합니다.')) return;
+		const r = await api.post('/api/team/' + TEAM_ID + '/leave', {});
+		if (r.ok) { alert('팀에서 나갔습니다.'); location.href = '/'; } else alert(r.message || '실패');
 	});
 });
 </script>
