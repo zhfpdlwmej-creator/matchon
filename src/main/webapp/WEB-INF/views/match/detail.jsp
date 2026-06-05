@@ -76,16 +76,17 @@ async function load() {
 
 	showMap();
 
+	// 호스트면 신청 관리 영역
 	if (isHost) {
 		$('#hostArea').show();
 		renderApps(r.applications || []);
-	} else if (mp.status === 'OPEN') {
+	}
+	// 신청 가능한 내 팀이 있으면(호스트라도 다른 팀으로) 신청 폼 노출
+	const applicable = r.applicableTeams || [];
+	if (mp.status === 'OPEN' && applicable.length) {
 		$('#applyCard').show();
 		const sel = $('#applyTeam').empty();
-		(r.applicableTeams || []).forEach(t => sel.append('<option value="' + t.id + '">' + esc(t.name) + '</option>'));
-		if (!(r.applicableTeams || []).length) {
-			sel.append('<option value="">신청 가능한 팀이 없습니다 (팀장/운영진 필요)</option>');
-		}
+		applicable.forEach(t => sel.append('<option value="' + t.id + '">' + esc(t.name) + '</option>'));
 	}
 }
 

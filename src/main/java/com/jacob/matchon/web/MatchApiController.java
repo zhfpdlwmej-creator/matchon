@@ -87,9 +87,11 @@ public class MatchApiController {
 		res.put("match", postView(p, mine));
 		res.put("isHost", isHost);
 
-		// 호스트면 신청 목록 노출
+		List<MatchApplication> apps = matchService.applications(id);
+		Set<Long> appliedTeams = apps.stream().map(MatchApplication::getApplicantTeamId).collect(Collectors.toSet());
+
+		// 호스트면 신청 목록(수락 관리) 노출
 		if (isHost) {
-			List<MatchApplication> apps = matchService.applications(id);
 			Map<Long, User> users = userService.mapByIds(apps.stream().map(MatchApplication::getApplicantUserId).toList());
 			res.put("applications", apps.stream().map(a -> {
 				Team t = teamService.get(a.getApplicantTeamId());
@@ -102,13 +104,15 @@ public class MatchApiController {
 				m.put("status", a.getStatus().name());
 				return m;
 			}).toList());
-		} else {
-			// 신청자면: 신청 가능한 내 팀(호스트팀 제외)
-			List<Map<String, Object>> applicable = manage.stream()
-					.filter(t -> !t.getId().equals(p.getHostTeamId()))
-					.map(t -> teamMap(t.getId(), t.getName())).toList();
-			res.put("applicableTeams", applicable);
 		}
+
+		// 신청 가능한 내 팀: 호스트팀 제외 + 이미 신청한 팀 제외 (호스트라도 다른 내 팀으로 신청 가능)
+		List<Map<String, Object>> applicable = manage.stream()
+				.filter(t -> !t.getId().equals(p.getHostTeamId()))
+				.filter(t -> !appliedTeams.contains(t.getId()))
+				.map(t -> teamMap(t.getId(), t.getName())).toList();
+		res.put("applicableTeams", applicable);
+
 		return res;
 	}
 
