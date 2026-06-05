@@ -21,6 +21,9 @@
 <div class="app-wrap">
 	<div class="muted small" style="padding:2px 4px 8px;">지역별 친선경기 모집·신청 (팀장만 등록/신청)</div>
 
+	<div class="section-title">내 매칭</div>
+	<div id="myMatches"><div class="muted small" style="padding:6px 4px;">불러오는 중...</div></div>
+
 	<div class="card">
 		<div class="small" style="font-weight:700;margin-bottom:8px;">지역으로 보기</div>
 		<div id="filterRegion"></div>
@@ -88,6 +91,40 @@ let currentRegion = '';
 
 function lvBadge(lv, label) { return '<span class="lvl-badge ' + (LEVEL_CLASS[lv]||'') + '">' + label + '</span>'; }
 
+const POST_STATUS = { OPEN: '모집중', MATCHED: '성사', CLOSED: '마감' };
+const MY_STATUS = { PENDING: '⏳ 대기중', ACCEPTED: '✅ 수락됨(성사)', REJECTED: '거절됨' };
+
+async function loadMine() {
+	const r = await api.get('/api/match/mine');
+	const box = $('#myMatches').empty();
+	if (!r.ok) { box.html(''); return; }
+	if (!r.hosting.length && !r.applied.length) {
+		box.html('<div class="card muted small" style="text-align:center;">아직 등록·신청한 매칭이 없어요.</div>');
+		return;
+	}
+	r.hosting.forEach(m => {
+		const badge = m.pending > 0
+			? '<span class="lvl-badge" style="background:#e0454f;margin-left:auto;">🔔 새 신청 ' + m.pending + '</span>'
+			: '<span class="muted small" style="margin-left:auto;">' + (POST_STATUS[m.status]||m.status) + '</span>';
+		box.append(
+			'<a class="schedule-item" href="/matches/' + m.id + '">' +
+			'<div style="display:flex;align-items:center;gap:8px;">' + lvBadge(m.level, '내가 올림') +
+			'<span class="date">' + esc(m.region || '지역 미정') + '</span>' + badge + '</div>' +
+			'<div class="title">' + esc(m.hostTeamName) + '</div>' +
+			'<div class="meta muted small">신청 ' + m.applications + '팀' + (m.pending > 0 ? ' · 수락 대기 ' + m.pending : '') + ' · 탭하여 관리</div>' +
+			'</a>');
+	});
+	r.applied.forEach(a => {
+		box.append(
+			'<a class="schedule-item" href="/matches/' + a.matchId + '">' +
+			'<div style="display:flex;align-items:center;gap:8px;">' + lvBadge(a.level, '내가 신청') +
+			'<span class="date">' + esc(a.region || '지역 미정') + '</span>' +
+			'<span class="muted small" style="margin-left:auto;">' + (MY_STATUS[a.myStatus]||a.myStatus) + '</span></div>' +
+			'<div class="title">' + esc(a.myTeamName) + ' → ' + esc(a.hostTeamName) + '</div>' +
+			'</a>');
+	});
+}
+
 async function loadList() {
 	const r = await api.get('/api/match/list' + (currentRegion ? ('?region=' + encodeURIComponent(currentRegion)) : ''));
 	const box = $('#matchList').empty();
@@ -136,6 +173,7 @@ $(function () {
 	buildRegionPicker('#filterRegion', { includeAll: true, onChange: function (region) { currentRegion = region; loadList(); } });
 	// 등록용 지역
 	buildRegionPicker('#createRegion', { onChange: function (region) { $('#region').val(region); } });
+	loadMine();
 	loadList();
 
 	api.get('/api/match/my-teams').then(r => {

@@ -42,6 +42,22 @@ public class MatchService {
 		return appRepo.countByMatchPostId(postId);
 	}
 
+	public long pendingCount(Long postId) {
+		return appRepo.countByMatchPostIdAndStatus(postId, ApplicationStatus.PENDING);
+	}
+
+	/** 내가 팀장으로 올린 매칭 */
+	public List<MatchPost> myHosting(Long userId) {
+		List<Long> ids = teamService.leaderTeams(userId).stream().map(Team::getId).toList();
+		return ids.isEmpty() ? List.of() : postRepo.findByHostTeamIdInOrderByCreatedAtDesc(ids);
+	}
+
+	/** 내가 팀장으로 신청한 매칭 신청들 */
+	public List<MatchApplication> myApplications(Long userId) {
+		List<Long> ids = teamService.leaderTeams(userId).stream().map(Team::getId).toList();
+		return ids.isEmpty() ? List.of() : appRepo.findByApplicantTeamIdInOrderByCreatedAtDesc(ids);
+	}
+
 	// ---------- 등록 ----------
 
 	@Transactional

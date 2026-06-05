@@ -42,6 +42,37 @@ public class MatchApiController {
 		return Map.of("ok", true, "matches", rows);
 	}
 
+	/** 내 매칭 — 내가 올린 것(신청 현황) + 내가 신청한 것(상태) */
+	@GetMapping("/mine")
+	public Map<String, Object> mine() {
+		Long uid = CurrentUser.required();
+		Set<Long> mineSet = teamService.leaderTeams(uid).stream().map(Team::getId).collect(Collectors.toSet());
+
+		List<Map<String, Object>> hosting = matchService.myHosting(uid).stream().map(p -> {
+			Map<String, Object> m = postView(p, mineSet);
+			m.put("pending", matchService.pendingCount(p.getId()));
+			return m;
+		}).toList();
+
+		List<Map<String, Object>> applied = matchService.myApplications(uid).stream().map(a -> {
+			MatchPost p = matchService.get(a.getMatchPostId());
+			Team host = teamService.get(p.getHostTeamId());
+			Team myTeam = teamService.get(a.getApplicantTeamId());
+			Map<String, Object> m = new HashMap<>();
+			m.put("matchId", p.getId());
+			m.put("hostTeamName", host.getName());
+			m.put("myTeamName", myTeam.getName());
+			m.put("region", p.getRegion());
+			m.put("level", p.getLevel().name());
+			m.put("levelLabel", p.getLevel().label());
+			m.put("postStatus", p.getStatus().name());
+			m.put("myStatus", a.getStatus().name());
+			return m;
+		}).toList();
+
+		return Map.of("ok", true, "hosting", hosting, "applied", applied);
+	}
+
 	/** 매칭 상세 */
 	@GetMapping("/{id}")
 	public Map<String, Object> detail(@PathVariable Long id) {
