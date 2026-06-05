@@ -53,8 +53,6 @@
 				</div>
 				<div class="acc-list" id="accList" style="display:none;"></div>
 
-				<div class="pos-by" id="homePosBy" style="margin-top:12px;"></div>
-
 				<div id="homeSettle" class="settle-box" style="display:none;"></div>
 
 				<div class="attend-buttons" id="homeAttendBtns" style="margin-top:16px;">
@@ -137,11 +135,6 @@ async function loadHome() {
 			$('#iShortCell').hide();
 		}
 	} else { $('#progressWrap').hide(); $('#iShortCell').hide(); }
-
-	// 참석자 포지션 집계
-	const pb = $('#homePosBy').empty();
-	pb.append('<span class="chip" style="font-weight:700;background:#e9f7ef;">참석 포지션</span>');
-	['GK','DF','MF','FW'].forEach(p => pb.append('<span class="chip">' + posBadge(p) + ' ' + (sm.byPosition[p] || 0) + '명</span>'));
 
 	if (accOpen) renderAcc(accOpen);
 

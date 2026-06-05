@@ -19,7 +19,7 @@
 		<div class="cal-grid" id="calGrid"></div>
 	</div>
 
-	<div class="section-title">이번 달 일정</div>
+	<div class="section-title">다가오는 일정</div>
 	<div id="scheduleList"><div class="empty">불러오는 중...</div></div>
 </div>
 
@@ -90,7 +90,13 @@ async function loadMonth() {
 	const r = await api.get('/api/schedule/list?teamId=' + TEAM_ID + '&year=' + y + '&month=' + m);
 	const schedules = r.ok ? r.schedules : [];
 	renderCalendar(y, m, schedules);
-	renderList(schedules);
+}
+
+// 달력과 별개로, 다가오는 일정(오늘 이후)을 월에 상관없이 전부 표시
+async function loadUpcoming() {
+	const r = await api.get('/api/schedule/list?teamId=' + TEAM_ID);
+	const all = r.ok ? r.schedules : [];
+	renderList(all.filter(s => !s.isPast));
 }
 
 function renderCalendar(y, m, schedules) {
@@ -115,7 +121,7 @@ function renderCalendar(y, m, schedules) {
 
 function renderList(schedules) {
 	const box = $('#scheduleList').empty();
-	if (!schedules.length) { box.html('<div class="empty">이번 달 일정이 없습니다.</div>'); return; }
+	if (!schedules.length) { box.html('<div class="empty">예정된 일정이 없습니다.</div>'); return; }
 	schedules.forEach(s => {
 		const dow = ['일','월','화','수','목','금','토'][new Date(s.matchDate + 'T00:00:00').getDay()];
 		const d = s.matchDate.split('-');
@@ -147,6 +153,7 @@ function closeModal() { $('#schModal').removeClass('open'); }
 
 $(function () {
 	loadMonth();
+	loadUpcoming();
 	$('#prevMonth').on('click', () => { cur.setMonth(cur.getMonth() - 1); loadMonth(); });
 	$('#nextMonth').on('click', () => { cur.setMonth(cur.getMonth() + 1); loadMonth(); });
 	if (CAN_MANAGE) {
@@ -174,7 +181,7 @@ $(function () {
 				: await api.post('/api/schedule?teamId=' + TEAM_ID, body);
 			if (r.ok) {
 				closeModal();
-				loadMonth();
+				loadMonth(); loadUpcoming();
 				if (!id && r.schedule) offerShare(r.schedule);  // 새 등록만 공유 제안
 			} else alert(r.message || '저장 실패');
 		});
@@ -182,7 +189,7 @@ $(function () {
 			const id = $('#schId').val();
 			if (!id || !confirm('이 일정을 삭제할까요?')) return;
 			const r = await api.del('/api/schedule/' + id);
-			if (r.ok) { closeModal(); loadMonth(); } else alert(r.message || '삭제 실패');
+			if (r.ok) { closeModal(); loadMonth(); loadUpcoming(); } else alert(r.message || '삭제 실패');
 		});
 	}
 });
