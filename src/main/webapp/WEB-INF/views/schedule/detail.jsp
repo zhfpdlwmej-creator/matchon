@@ -37,6 +37,7 @@
 			<div class="box pending"><div class="num" id="sPending">-</div><div class="lbl">미정</div></div>
 		</div>
 		<div class="pos-by" id="posBy"></div>
+		<div id="settle" class="settle-box"></div>
 
 		<div class="section-title" style="margin-left:0;">참석자</div>
 		<div id="attendList"></div>
@@ -61,6 +62,8 @@ const TEAM_ID = ${team.id};
 const SCHEDULE_ID = ${scheduleId};
 const CAN_MANAGE = ${canManage};
 const MY_ID = ${user.id};
+let totalFee = 0;   // 구장비용 총액
+let isPast = false; // 경기 종료 여부
 
 function fmtDate(iso) {
 	const d = new Date(iso + 'T00:00:00');
@@ -77,8 +80,28 @@ async function loadInfo() {
 	let meta = '⏰ ' + s.startTime.slice(0,5) + (s.endTime ? ' ~ ' + s.endTime.slice(0,5) : '');
 	if (s.place) meta += ' · 📍 ' + s.place;
 	$('#dMeta').text(meta);
-	$('#dFee').text(s.fee > 0 ? '💰 참가비 ' + won(s.fee) : '');
+	totalFee = s.fee || 0;
+	isPast = !!s.isPast;
+	$('#dFee').text(totalFee > 0 ? '🏟️ 구장비용(총) ' + won(totalFee) : '');
 	$('#dMemo').text(s.memo || '');
+	renderSettle();
+}
+
+/** 인당 금액 = 총 구장비용 ÷ 참석 인원 (올림) */
+function renderSettle(attendCount) {
+	const box = $('#settle');
+	if (totalFee <= 0) { box.hide(); return; }
+	const n = (attendCount != null) ? attendCount : (parseInt($('#sAttend').text(), 10) || 0);
+	box.show();
+	if (n > 0) {
+		const per = Math.ceil(totalFee / n);
+		box.html(
+			'<div class="settle-title">' + (isPast ? '최종 정산' : '예상 정산') + '</div>' +
+			'<div class="settle-amt">인당 ' + won(per) + '</div>' +
+			'<div class="settle-sub">구장비용 ' + won(totalFee) + ' ÷ 참석 ' + n + '명</div>');
+	} else {
+		box.html('<div class="settle-sub">구장비용 ' + won(totalFee) + ' · 참석 인원이 정해지면 인당 금액이 표시됩니다.</div>');
+	}
 }
 
 async function loadAttendance() {
@@ -91,6 +114,9 @@ async function loadAttendance() {
 	$('#attendBtns .att-btn').removeClass('on');
 	$('#attendBtns .att-btn[data-s="' + r.myStatus + '"]').addClass('on');
 
+	// 인당 금액 정산
+	renderSettle(sm.attend);
+
 	// 포지션별
 	const pb = $('#posBy').empty();
 	['GK','DF','MF','FW'].forEach(p => {
@@ -100,7 +126,7 @@ async function loadAttendance() {
 	// 참석자
 	const al = $('#attendList').empty();
 	if (!sm.attendList.length) al.html('<div class="muted small" style="padding:8px 0;">아직 참석자가 없습니다.</div>');
-	sm.attendList.forEach(m => al.append(memberRow(m, true)));
+	sm.attendList.forEach(m => al.append(memberRow(m)));
 
 	// 불참/미정
 	const ol = $('#otherList').empty();
@@ -112,19 +138,9 @@ async function loadAttendance() {
 	});
 }
 
-function memberRow(m, withPaid) {
-	let right = '';
-	if (withPaid) {
-		const tag = m.paid ? '<span class="paid-tag paid-yes">납부</span>' : '<span class="paid-tag paid-no">미납</span>';
-		if (CAN_MANAGE) {
-			right = '<button class="btn-ghost btn-sm paidToggle" data-uid="' + m.userId + '" data-paid="' + m.paid + '">' +
-				(m.paid ? '납부취소' : '납부확인') + '</button>';
-		} else {
-			right = tag;
-		}
-	}
+function memberRow(m) {
 	return '<div class="member-row"><span>' + posBadge(m.position) + '</span><span class="name">' + esc(m.nickname) +
-		'</span><span class="right">' + right + '</span></div>';
+		'</span></div>';
 }
 
 async function loadComments() {
@@ -150,13 +166,6 @@ $(function () {
 	$('#attendBtns .att-btn').on('click', async function () {
 		const s = $(this).data('s');
 		const r = await api.post('/api/attendance', { scheduleId: SCHEDULE_ID, status: s });
-		if (r.ok) loadAttendance(); else alert(r.message || '실패');
-	});
-
-	$('#attendList').on('click', '.paidToggle', async function () {
-		const uid = $(this).data('uid');
-		const paid = !($(this).data('paid') === true || $(this).data('paid') === 'true');
-		const r = await api.post('/api/attendance/paid', { scheduleId: SCHEDULE_ID, userId: uid, paid: paid });
 		if (r.ok) loadAttendance(); else alert(r.message || '실패');
 	});
 

@@ -24,7 +24,7 @@
 					<c:if test="${nearest.place != null}"> · 📍 ${nearest.place}</c:if>
 				</div>
 				<c:if test="${nearest.fee > 0}">
-					<div class="meta muted small">💰 참가비 ${nearest.fee}원</div>
+					<div class="meta muted small">🏟️ 구장비용(총) ${nearest.fee}원</div>
 				</c:if>
 
 				<div class="att-summary" id="homeSummary" style="margin:14px 0;">
@@ -32,6 +32,7 @@
 					<div class="box absent"><div class="num" id="hsAbsent">-</div><div class="lbl">불참</div></div>
 					<div class="box pending"><div class="num" id="hsPending">-</div><div class="lbl">미정</div></div>
 				</div>
+				<div id="homeSettle" class="settle-box" style="display:none;"></div>
 
 				<div class="attend-buttons" id="homeAttendBtns">
 					<button class="att-btn attend" data-s="ATTEND">참석</button>
@@ -62,14 +63,26 @@
 <c:if test="${nearest != null}">
 <script>
 const SCHEDULE_ID = ${nearest.id};
+const FEE = ${nearest.fee};
 async function loadHome() {
 	const r = await api.get('/api/attendance/list?scheduleId=' + SCHEDULE_ID);
 	if (!r.ok) return;
-	$('#hsAttend').text(r.summary.attend);
+	const att = r.summary.attend;
+	$('#hsAttend').text(att);
 	$('#hsAbsent').text(r.summary.absent);
 	$('#hsPending').text(r.summary.pending);
 	$('#homeAttendBtns .att-btn').removeClass('on');
 	$('#homeAttendBtns .att-btn[data-s="' + r.myStatus + '"]').addClass('on');
+
+	// 인당 금액 = 구장비용 ÷ 참석 인원
+	if (FEE > 0 && att > 0) {
+		const per = Math.ceil(FEE / att);
+		$('#homeSettle').show().html(
+			'<div class="settle-amt">인당 ' + won(per) + '</div>' +
+			'<div class="settle-sub">구장비용 ' + won(FEE) + ' ÷ 참석 ' + att + '명</div>');
+	} else {
+		$('#homeSettle').hide();
+	}
 }
 function fmtDate(iso) {
 	const d = new Date(iso + 'T00:00:00');

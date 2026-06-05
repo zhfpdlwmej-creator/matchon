@@ -46,8 +46,9 @@
 			</div>
 			<label>장소</label>
 			<input type="text" id="schPlace" maxlength="120" placeholder="예: 잠실 풋살장 A구장">
-			<label>참가비 (원)</label>
-			<input type="number" id="schFee" min="0" step="1000" value="0">
+			<label>구장비용 총액 (원)</label>
+			<input type="number" id="schFee" min="0" step="1000" value="0" placeholder="예: 60000 (참석 인원으로 자동 분배)">
+			<div class="muted small" style="margin-top:4px;">구장 대여비 총액을 입력하면, 참석 인원으로 나눠 <b>인당 금액</b>이 자동 계산됩니다.</div>
 			<label>메모</label>
 			<textarea id="schMemo" maxlength="500" placeholder="준비물, 주차 안내 등"></textarea>
 			<div class="row-2" style="margin-top:14px;">
