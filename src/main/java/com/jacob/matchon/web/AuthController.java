@@ -112,7 +112,7 @@ public class AuthController {
 					.orElseGet(() -> userService.createFromKakao(kakaoId, nick));
 
 			issueToken(res, user.getId());
-			return user.isSetupDone() ? "redirect:/" : "redirect:/welcome";
+			return "redirect:/";
 
 		} catch (Exception e) {
 			log.error("Kakao OAuth callback failed", e);
@@ -139,7 +139,7 @@ public class AuthController {
 		User u = userService.findByKakaoId(kakaoId)
 				.orElseGet(() -> userService.createFromKakao(kakaoId, nick));
 		issueToken(res, u.getId());
-		return u.isSetupDone() ? "redirect:/" : "redirect:/welcome";
+		return "redirect:/";
 	}
 
 	private void issueToken(HttpServletResponse res, Long userId) {

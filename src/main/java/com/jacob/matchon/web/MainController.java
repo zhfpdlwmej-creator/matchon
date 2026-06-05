@@ -46,7 +46,7 @@ public class MainController {
 		Long uid = CurrentUser.id();
 		if (uid == null) return "redirect:/login";
 		User user = userService.get(uid);
-		if (!user.isSetupDone()) return "redirect:/welcome";
+		// 닉네임 설정 단계 없이 카카오 닉네임 그대로 사용 (welcome 생략)
 
 		// 초대 링크(/join?code=...)로 들어온 경우 자동 가입 처리
 		String invite = readCookie(req, "pending_invite");

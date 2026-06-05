@@ -30,10 +30,11 @@ public class UserService {
 
 	@Transactional
 	public User createFromKakao(String kakaoId, String nickname) {
+		// 별도 닉네임 설정 단계 없이 카카오 닉네임을 바로 사용 (setupDone=true)
 		User u = User.builder()
 				.kakaoId(kakaoId)
 				.nickname(nickname == null || nickname.isBlank() ? "축구인" : nickname)
-				.setupDone(false)
+				.setupDone(true)
 				.build();
 		return userRepo.save(u);
 	}
