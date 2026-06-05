@@ -11,6 +11,11 @@
 <%@ include file="layout/header.jsp" %>
 <div class="app-wrap">
 
+	<div style="padding:2px 4px 6px;">
+		<div class="muted small">반가워요 👋</div>
+		<div style="font-size:21px;font-weight:800;letter-spacing:-.3px;">${user.nickname}님</div>
+	</div>
+
 	<div class="section-title">가장 가까운 경기</div>
 
 	<c:choose>
