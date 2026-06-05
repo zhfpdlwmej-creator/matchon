@@ -39,6 +39,10 @@ public class MatchSchedule {
 	@Column(nullable = false)
 	private int fee;
 
+	/** 목표 인원 (0 = 미사용) */
+	@Column(name = "target_headcount", nullable = false)
+	private int targetHeadcount;
+
 	@Column(length = 500)
 	private String memo;
 

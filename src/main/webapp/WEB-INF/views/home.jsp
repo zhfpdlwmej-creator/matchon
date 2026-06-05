@@ -21,28 +21,46 @@
 	<c:choose>
 		<c:when test="${nearest != null}">
 			<div class="card" id="nearestCard" data-id="${nearest.id}" style="padding:20px;">
-				<div class="date" id="nearestDate" style="color:var(--green);font-weight:700;margin-bottom:7px;">${nearest.matchDate}</div>
-				<div class="title" style="font-size:21px;font-weight:800;margin:0 0 12px;line-height:1.3;">${nearest.title}</div>
-				<div class="meta muted small" style="line-height:1.8;">
-					⏰ ${nearest.startTime}
-					<c:if test="${nearest.endTime != null}"> ~ ${nearest.endTime}</c:if>
-					<c:if test="${nearest.place != null}"> · 📍 ${nearest.place}</c:if>
+				<div class="dday-row">
+					<span class="dday-badge" id="dday">⚽ -</span>
+					<span class="muted small" id="nearestDate"></span>
+				</div>
+				<div class="title" style="font-size:21px;font-weight:800;margin:12px 0;line-height:1.3;">${nearest.title}</div>
+
+				<div class="info-grid">
+					<div class="info-cell"><span class="ic">⏰</span><span>${nearest.startTime}<c:if test="${nearest.endTime != null}"> ~ ${nearest.endTime}</c:if></span></div>
+					<c:if test="${nearest.place != null}"><div class="info-cell"><span class="ic">📍</span><span>${nearest.place}</span></div></c:if>
+					<div class="info-cell"><span class="ic">👥</span><span id="iAttend">-</span></div>
+					<div class="info-cell" id="iShortCell" style="display:none;color:var(--red);font-weight:700;"><span class="ic">⚠️</span><span id="iShort"></span></div>
 				</div>
 				<c:if test="${nearest.fee > 0}">
-					<div class="meta muted small" style="line-height:1.8;">🏟️ 구장비용(총) <span id="nearestFee"></span>원</div>
+					<div class="meta muted small" style="margin-top:8px;">🏟️ 구장비용(총) <span id="nearestFee"></span>원</div>
 				</c:if>
 
-				<div class="att-summary" id="homeSummary" style="margin:20px 0;">
-					<div class="box attend"><div class="num" id="hsAttend">-</div><div class="lbl">참석</div></div>
-					<div class="box absent"><div class="num" id="hsAbsent">-</div><div class="lbl">불참</div></div>
-					<div class="box pending"><div class="num" id="hsPending">-</div><div class="lbl">미정</div></div>
+				<div id="progressWrap" style="display:none;margin-top:16px;">
+					<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+						<span class="small" style="font-weight:700;">참석 진행률</span>
+						<span class="small muted" id="progressText"></span>
+					</div>
+					<div class="stat-bar"><i id="progressBar" style="width:0;"></i></div>
+					<div id="shortMsg" class="prog-msg"></div>
 				</div>
+
+				<div class="att-summary" id="homeSummary" style="margin-top:18px;">
+					<div class="box attend" data-acc="attend"><div class="num" id="hsAttend">-</div><div class="lbl">참석 ▾</div></div>
+					<div class="box absent" data-acc="absent"><div class="num" id="hsAbsent">-</div><div class="lbl">불참 ▾</div></div>
+					<div class="box pending" data-acc="pending"><div class="num" id="hsPending">-</div><div class="lbl">미정 ▾</div></div>
+				</div>
+				<div class="acc-list" id="accList" style="display:none;"></div>
+
+				<div class="pos-by" id="homePosBy" style="margin-top:12px;"></div>
+
 				<div id="homeSettle" class="settle-box" style="display:none;"></div>
 
 				<div class="attend-buttons" id="homeAttendBtns" style="margin-top:16px;">
-					<button class="att-btn attend" data-s="ATTEND">참석</button>
-					<button class="att-btn absent" data-s="ABSENT">불참</button>
-					<button class="att-btn pending" data-s="PENDING">미정</button>
+					<button class="att-btn attend" data-s="ATTEND">✅ 참석</button>
+					<button class="att-btn absent" data-s="ABSENT">❌ 불참</button>
+					<button class="att-btn pending" data-s="PENDING">❓ 미정</button>
 				</div>
 
 				<a href="/team/${team.id}/schedule/${nearest.id}" class="btn-ghost btn-block" style="margin-top:16px;text-align:center;">자세히 보기 →</a>
@@ -74,35 +92,90 @@
 <script>
 const SCHEDULE_ID = ${nearest.id};
 const FEE = ${nearest.fee};
-async function loadHome() {
-	const r = await api.get('/api/attendance/list?scheduleId=' + SCHEDULE_ID);
-	if (!r.ok) return;
-	const att = r.summary.attend;
-	$('#hsAttend').text(att);
-	$('#hsAbsent').text(r.summary.absent);
-	$('#hsPending').text(r.summary.pending);
-	$('#homeAttendBtns .att-btn').removeClass('on');
-	$('#homeAttendBtns .att-btn[data-s="' + r.myStatus + '"]').addClass('on');
+const TARGET = ${nearest.targetHeadcount};
+const MATCH_DATE = '${nearest.matchDate}';
+let summaryData = null, accOpen = null;
 
-	// 인당 금액 = 구장비용 ÷ 참석 인원
-	if (FEE > 0 && att > 0) {
-		const per = Math.ceil(FEE / att);
-		$('#homeSettle').show().html(
-			'<div class="settle-amt">인당 ' + won(per) + '</div>' +
-			'<div class="settle-sub">구장비용 ' + won(FEE) + ' ÷ 참석 ' + att + '명</div>');
-	} else {
-		$('#homeSettle').hide();
-	}
-}
 function fmtDate(iso) {
 	const d = new Date(iso + 'T00:00:00');
 	const dow = ['일','월','화','수','목','금','토'][d.getDay()];
 	return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + dow + ')';
 }
+function ddayInfo(iso) {
+	const today = new Date(); today.setHours(0,0,0,0);
+	const d = new Date(iso + 'T00:00:00');
+	const diff = Math.round((d - today) / 86400000);
+	if (diff === 0) return { t: '오늘 경기', cls: 'dday-today' };
+	if (diff < 0) return { t: '경기 종료', cls: 'dday-past' };
+	return { t: 'D-' + diff, cls: diff <= 1 ? 'dday-soon' : '' };
+}
+
+async function loadHome() {
+	const r = await api.get('/api/attendance/list?scheduleId=' + SCHEDULE_ID);
+	if (!r.ok) return;
+	const sm = r.summary; summaryData = sm;
+	const att = sm.attend;
+	$('#hsAttend').text(sm.attend); $('#hsAbsent').text(sm.absent); $('#hsPending').text(sm.pending);
+	$('#iAttend').text('참석 ' + att + '명' + (TARGET > 0 ? ' / 목표 ' + TARGET : ''));
+	$('#homeAttendBtns .att-btn').removeClass('on');
+	$('#homeAttendBtns .att-btn[data-s="' + r.myStatus + '"]').addClass('on');
+
+	// 진행률 + 부족/충족
+	if (TARGET > 0) {
+		const pct = Math.min(100, Math.round(att / TARGET * 100));
+		$('#progressWrap').show();
+		$('#progressBar').css('width', pct + '%');
+		$('#progressText').text(att + ' / ' + TARGET + '명 (' + pct + '%)');
+		if (att < TARGET) {
+			const short = TARGET - att;
+			$('#shortMsg').text('⚠️ 현재 ' + short + '명 부족').removeClass('ok').addClass('short');
+			$('#progressBar').css('background', 'linear-gradient(90deg,#e08a16,#e0454f)');
+			$('#iShortCell').show(); $('#iShort').text(short + '명 부족');
+		} else {
+			$('#shortMsg').text('✅ 인원 충족').removeClass('short').addClass('ok');
+			$('#progressBar').css('background', '');
+			$('#iShortCell').hide();
+		}
+	} else { $('#progressWrap').hide(); $('#iShortCell').hide(); }
+
+	// 참석자 포지션 집계
+	const pb = $('#homePosBy').empty();
+	pb.append('<span class="chip" style="font-weight:700;background:#e9f7ef;">참석 포지션</span>');
+	['GK','DF','MF','FW'].forEach(p => pb.append('<span class="chip">' + posBadge(p) + ' ' + (sm.byPosition[p] || 0) + '명</span>'));
+
+	if (accOpen) renderAcc(accOpen);
+
+	// 인당 금액
+	if (FEE > 0 && att > 0) {
+		const per = Math.ceil(FEE / att);
+		$('#homeSettle').show().html('<div class="settle-amt">인당 ' + won(per) + '</div><div class="settle-sub">구장비용 ' + won(FEE) + ' ÷ 참석 ' + att + '명</div>');
+	} else $('#homeSettle').hide();
+}
+
+function renderAcc(type) {
+	const list = type === 'attend' ? summaryData.attendList : type === 'absent' ? summaryData.absentList : summaryData.pendingList;
+	const label = type === 'attend' ? '참석' : type === 'absent' ? '불참' : '미정';
+	const box = $('#accList');
+	if (!list || !list.length) { box.html('<div class="muted small" style="padding:10px;">' + label + ' 인원이 없습니다.</div>').show(); return; }
+	let html = '';
+	list.forEach(m => html += '<div class="acc-row">' + posBadge(m.position) + '<span class="name">' + esc(m.nickname) + '</span></div>');
+	box.html(html).show();
+}
+
 $(function () {
-	$('#nearestDate').text(fmtDate('${nearest.matchDate}'));
+	$('#nearestDate').text(fmtDate(MATCH_DATE));
+	const dd = ddayInfo(MATCH_DATE);
+	$('#dday').text('⚽ ' + dd.t).addClass(dd.cls);
 	if (FEE > 0) $('#nearestFee').text(commaNumber(FEE));
 	loadHome();
+
+	$('#homeSummary .box').on('click', function () {
+		const type = $(this).data('acc');
+		$('#homeSummary .box').removeClass('sel');
+		if (accOpen === type) { accOpen = null; $('#accList').hide(); return; }
+		accOpen = type; $(this).addClass('sel'); renderAcc(type);
+	});
+
 	$('#homeAttendBtns .att-btn').on('click', async function () {
 		const s = $(this).data('s');
 		const r = await api.post('/api/attendance', { scheduleId: SCHEDULE_ID, status: s });

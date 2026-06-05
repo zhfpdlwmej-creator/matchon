@@ -58,6 +58,7 @@ public class ScheduleService {
 				.endTime(form.getEndTime())
 				.place(form.getPlace())
 				.fee(form.getFee() == null ? 0 : form.getFee())
+				.targetHeadcount(form.getTargetHeadcount() == null ? 0 : form.getTargetHeadcount())
 				.memo(form.getMemo())
 				.createdBy(userId)
 				.build();
@@ -80,6 +81,7 @@ public class ScheduleService {
 		s.setEndTime(form.getEndTime());
 		s.setPlace(form.getPlace());
 		s.setFee(form.getFee() == null ? 0 : form.getFee());
+		s.setTargetHeadcount(form.getTargetHeadcount() == null ? 0 : form.getTargetHeadcount());
 		s.setMemo(form.getMemo());
 		return s;
 	}

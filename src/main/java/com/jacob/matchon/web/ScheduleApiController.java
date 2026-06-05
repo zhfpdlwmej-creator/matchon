@@ -90,6 +90,7 @@ public class ScheduleApiController {
 		m.put("endTime", s.getEndTime() == null ? null : s.getEndTime().toString());
 		m.put("place", s.getPlace());
 		m.put("fee", s.getFee());
+		m.put("targetHeadcount", s.getTargetHeadcount());
 		m.put("memo", s.getMemo());
 		m.put("isPast", s.getMatchDate().isBefore(LocalDate.now()));
 		return m;

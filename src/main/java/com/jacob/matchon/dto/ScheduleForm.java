@@ -23,5 +23,6 @@ public class ScheduleForm {
 
 	private String place;
 	private Integer fee;
+	private Integer targetHeadcount;
 	private String memo;
 }

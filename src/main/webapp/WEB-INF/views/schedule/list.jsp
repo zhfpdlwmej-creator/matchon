@@ -46,6 +46,8 @@
 			</div>
 			<label>장소</label>
 			<input type="text" id="schPlace" maxlength="120" placeholder="예: 잠실 풋살장 A구장">
+			<label>목표 인원 (선택)</label>
+			<input type="number" id="schTarget" min="0" value="0" placeholder="예: 12 (진행률·부족 인원 표시)">
 			<label>구장비용 총액 (원)</label>
 			<input type="text" id="schFee" value="0" placeholder="예: 60,000 (참석 인원으로 자동 분배)">
 			<div class="muted small" style="margin-top:4px;">구장 대여비 총액을 입력하면, 참석 인원으로 나눠 <b>인당 금액</b>이 자동 계산됩니다.</div>
@@ -135,6 +137,7 @@ function openModal(s) {
 	$('#schStart').val(s ? s.startTime.slice(0,5) : '');
 	$('#schEnd').val(s && s.endTime ? s.endTime.slice(0,5) : '');
 	$('#schPlace').val(s ? (s.place || '') : '');
+	$('#schTarget').val(s ? s.targetHeadcount : 0);
 	$('#schFee').val(commaNumber(s ? s.fee : 0));
 	$('#schMemo').val(s ? (s.memo || '') : '');
 	$('#schDelete').toggle(!!s);
@@ -163,6 +166,7 @@ $(function () {
 				endTime: $('#schEnd').val() || null,
 				place: $('#schPlace').val().trim(),
 				fee: unComma($('#schFee').val()),
+				targetHeadcount: parseInt($('#schTarget').val() || '0', 10),
 				memo: $('#schMemo').val().trim()
 			};
 			const r = id

@@ -24,9 +24,9 @@
 	<div class="card">
 		<h3>내 참석 여부</h3>
 		<div class="attend-buttons" id="attendBtns">
-			<button class="att-btn attend" data-s="ATTEND">참석</button>
-			<button class="att-btn absent" data-s="ABSENT">불참</button>
-			<button class="att-btn pending" data-s="PENDING">미정</button>
+			<button class="att-btn attend" data-s="ATTEND">✅ 참석</button>
+			<button class="att-btn absent" data-s="ABSENT">❌ 불참</button>
+			<button class="att-btn pending" data-s="PENDING">❓ 미정</button>
 		</div>
 	</div>
 
