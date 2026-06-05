@@ -12,6 +12,7 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/build/libs/*.war app.war
 ENV TZ=Asia/Seoul
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
+# 무료 플랜(512MB) OOM 방지를 위해 힙 비율 보수적으로
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=60.0"
 # Spring Boot 가 server.port 를 ${PORT} 로 읽으므로 Railway 가 동적 할당
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.war"]
