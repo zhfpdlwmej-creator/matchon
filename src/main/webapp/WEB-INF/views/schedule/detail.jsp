@@ -18,6 +18,7 @@
 		<div class="meta muted small" id="dMeta"></div>
 		<div class="meta muted small" id="dFee"></div>
 		<div class="meta small" id="dMemo" style="margin-top:8px;white-space:pre-wrap;"></div>
+		<button class="btn-primary btn-block" id="shareBtn" style="margin-top:14px;">📢 카카오톡으로 일정 공유</button>
 	</div>
 
 	<div class="card">
@@ -62,8 +63,10 @@ const TEAM_ID = ${team.id};
 const SCHEDULE_ID = ${scheduleId};
 const CAN_MANAGE = ${canManage};
 const MY_ID = ${user.id};
+const TEAM_NAME = "${team.name}";
 let totalFee = 0;   // 구장비용 총액
 let isPast = false; // 경기 종료 여부
+let sched = null;   // 현재 일정 (공유용)
 
 function fmtDate(iso) {
 	const d = new Date(iso + 'T00:00:00');
@@ -75,6 +78,7 @@ async function loadInfo() {
 	const r = await api.get('/api/schedule/' + SCHEDULE_ID);
 	if (!r.ok) { alert('일정을 불러올 수 없습니다.'); return; }
 	const s = r.schedule;
+	sched = s;
 	$('#dDate').text(fmtDate(s.matchDate));
 	$('#dTitle').text(s.title);
 	let meta = '⏰ ' + s.startTime.slice(0,5) + (s.endTime ? ' ~ ' + s.endTime.slice(0,5) : '');
@@ -167,6 +171,15 @@ $(function () {
 		const s = $(this).data('s');
 		const r = await api.post('/api/attendance', { scheduleId: SCHEDULE_ID, status: s });
 		if (r.ok) loadAttendance(); else alert(r.message || '실패');
+	});
+
+	$('#shareBtn').on('click', function () {
+		if (!sched) return;
+		const url = location.origin + '/team/' + TEAM_ID + '/schedule/' + sched.id;
+		const d = new Date(sched.matchDate + 'T00:00:00');
+		const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+		const when = (d.getMonth() + 1) + '월 ' + d.getDate() + '일(' + dow + ') ' + sched.startTime.slice(0, 5);
+		kakaoShareSchedule({ teamName: TEAM_NAME, title: sched.title, when: when, place: sched.place, url: url });
 	});
 
 	async function sendComment() {

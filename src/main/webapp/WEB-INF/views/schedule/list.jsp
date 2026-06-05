@@ -62,9 +62,22 @@
 
 <script>
 const TEAM_ID = ${team.id};
+const TEAM_NAME = "${team.name}";
 const CAN_MANAGE = ${canManage};
 let cur = new Date();
 cur.setDate(1);
+
+function fmtWhen(s) {
+	const d = new Date(s.matchDate + 'T00:00:00');
+	const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+	return (d.getMonth() + 1) + '월 ' + d.getDate() + '일(' + dow + ') ' + s.startTime.slice(0, 5);
+}
+function offerShare(s) {
+	const url = location.origin + '/team/' + TEAM_ID + '/schedule/' + s.id;
+	if (confirm('✅ 일정이 등록되었습니다.\n\n카카오톡 단톡방에 공유해서 팀원들이 참석 투표하게 할까요?')) {
+		kakaoShareSchedule({ teamName: TEAM_NAME, title: s.title, when: fmtWhen(s), place: s.place, url: url });
+	}
+}
 
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
 function fmtMonthLabel(d) { return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월'; }
@@ -152,7 +165,11 @@ $(function () {
 			const r = id
 				? await api.put('/api/schedule/' + id, body)
 				: await api.post('/api/schedule?teamId=' + TEAM_ID, body);
-			if (r.ok) { closeModal(); loadMonth(); } else alert(r.message || '저장 실패');
+			if (r.ok) {
+				closeModal();
+				loadMonth();
+				if (!id && r.schedule) offerShare(r.schedule);  // 새 등록만 공유 제안
+			} else alert(r.message || '저장 실패');
 		});
 		$('#schDelete').on('click', async function () {
 			const id = $('#schId').val();
