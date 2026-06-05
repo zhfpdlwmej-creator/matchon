@@ -11,8 +11,16 @@ public class GlobalModelAttributes {
 	@Value("${app.kakao.javascript-key:}")
 	private String kakaoJsKey;
 
+	@Value("${app.naver.maps-client-id:}")
+	private String naverMapsClientId;
+
 	@ModelAttribute("kakaoJsKey")
 	public String kakaoJsKey() {
 		return kakaoJsKey == null ? "" : kakaoJsKey;
+	}
+
+	@ModelAttribute("naverMapsClientId")
+	public String naverMapsClientId() {
+		return naverMapsClientId == null ? "" : naverMapsClientId;
 	}
 }

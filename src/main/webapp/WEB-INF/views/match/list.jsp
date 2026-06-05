@@ -6,8 +6,8 @@
 	<title>matchon · 팀 매칭</title>
 	<%@ include file="../layout/head.jsp" %>
 	<script src="/js/regions.js" defer></script>
-	<c:if test="${not empty kakaoJsKey}">
-		<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJsKey}&libraries=services&autoload=false"></script>
+	<c:if test="${not empty naverMapsClientId}">
+		<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${naverMapsClientId}&submodules=geocoder"></script>
 	</c:if>
 </head>
 <body>
@@ -83,7 +83,7 @@
 
 <script>
 const LEVEL_CLASS = { HIGH: 'lv-high', MID: 'lv-mid', LOW: 'lv-low' };
-let map, marker, geocoder, places, mapReady = false;
+let map, marker, mapReady = false;
 let currentRegion = '';
 
 function lvBadge(lv, label) { return '<span class="lvl-badge ' + (LEVEL_CLASS[lv]||'') + '">' + label + '</span>'; }
@@ -108,28 +108,27 @@ async function loadList() {
 }
 
 function ensureMap() {
-	if (!window.kakao || !kakao.maps) { $('#mapHint').text('지도 키 미설정 — 장소명/지역만 입력해도 됩니다.'); $('#map').hide(); return; }
-	kakao.maps.load(function () {
-		if (mapReady) { map.relayout(); return; }
-		const center = new kakao.maps.LatLng(37.5145, 127.1066);
-		map = new kakao.maps.Map(document.getElementById('map'), { center: center, level: 5 });
-		marker = new kakao.maps.Marker({ position: center });
-		geocoder = new kakao.maps.services.Geocoder();
-		places = new kakao.maps.services.Places();
-		mapReady = true;
-		kakao.maps.event.addListener(map, 'click', e => setPoint(e.latLng));
-		setTimeout(() => map.relayout(), 100);
-	});
+	if (!window.naver || !naver.maps) { $('#mapHint').text('네이버 지도 키 미설정 — 장소명/지역만 입력해도 됩니다.'); $('#map').hide(); return; }
+	if (mapReady) { naver.maps.Event.trigger(map, 'resize'); return; }
+	const center = new naver.maps.LatLng(37.5145, 127.1066);
+	map = new naver.maps.Map('map', { center: center, zoom: 13 });
+	marker = new naver.maps.Marker({ position: center, map: map });
+	mapReady = true;
+	naver.maps.Event.addListener(map, 'click', e => setPoint(e.coord));
 }
 function setPoint(latlng) {
-	marker.setPosition(latlng); marker.setMap(map);
-	$('#lat').val(latlng.getLat()); $('#lng').val(latlng.getLng());
-	if (geocoder) geocoder.coord2Address(latlng.getLng(), latlng.getLat(), function (res, st) {
-		if (st === kakao.maps.services.Status.OK && res[0] && !$('#placeName').val()) $('#placeName').val(res[0].address.address_name);
+	marker.setPosition(latlng);
+	$('#lat').val(latlng.lat()); $('#lng').val(latlng.lng());
+	if (naver.maps.Service) naver.maps.Service.reverseGeocode({ coords: latlng, orders: 'roadaddr,addr' }, function (status, res) {
+		if (status === naver.maps.Service.Status.OK) {
+			const a = res.v2 && res.v2.address;
+			const addr = a ? (a.roadAddress || a.jibunAddress) : '';
+			if (addr && !$('#placeName').val()) $('#placeName').val(addr);
+		}
 	});
 }
 
-function openModal() { $('#matchModal').addClass('open'); ensureMap(); setTimeout(() => { if (mapReady) map.relayout(); }, 250); }
+function openModal() { $('#matchModal').addClass('open'); ensureMap(); setTimeout(() => { if (mapReady) naver.maps.Event.trigger(map, 'resize'); }, 250); }
 function closeModal() { $('#matchModal').removeClass('open'); }
 
 $(function () {
@@ -155,12 +154,13 @@ $(function () {
 
 	$('#placeSearch').on('click', function () {
 		const kw = $('#placeName').val().trim();
-		if (!kw || !mapReady || !places) return;
-		places.keywordSearch(kw, function (data, status) {
-			if (status === kakao.maps.services.Status.OK && data[0]) {
-				const ll = new kakao.maps.LatLng(data[0].y, data[0].x);
-				map.setCenter(ll); setPoint(ll); $('#placeName').val(data[0].place_name);
-			} else alert('검색 결과가 없습니다.');
+		if (!kw || !mapReady || !naver.maps.Service) return;
+		naver.maps.Service.geocode({ query: kw }, function (status, res) {
+			if (status === naver.maps.Service.Status.OK && res.v2.addresses.length) {
+				const a = res.v2.addresses[0];
+				const ll = new naver.maps.LatLng(parseFloat(a.y), parseFloat(a.x));
+				map.setCenter(ll); setPoint(ll); $('#placeName').val(a.roadAddress || a.jibunAddress || kw);
+			} else alert('검색 결과가 없습니다. 도로명/지번 주소로 검색해보세요.');
 		});
 	});
 

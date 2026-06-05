@@ -5,8 +5,8 @@
 <head>
 	<title>matchon · 매칭 상세</title>
 	<%@ include file="../layout/head.jsp" %>
-	<c:if test="${not empty kakaoJsKey}">
-		<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJsKey}&libraries=services&autoload=false"></script>
+	<c:if test="${not empty naverMapsClientId}">
+		<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${naverMapsClientId}&submodules=geocoder"></script>
 	</c:if>
 </head>
 <body>
@@ -107,14 +107,12 @@ function renderApps(apps) {
 
 function showMap() {
 	if (mp.lat == null || mp.lng == null) return;
-	if (!window.kakao || !kakao.maps) return;
+	if (!window.naver || !naver.maps) return;
 	$('#map').show();
-	kakao.maps.load(function () {
-		const ll = new kakao.maps.LatLng(mp.lat, mp.lng);
-		const map = new kakao.maps.Map(document.getElementById('map'), { center: ll, level: 4 });
-		new kakao.maps.Marker({ position: ll, map: map });
-		setTimeout(() => map.relayout(), 150);
-	});
+	const ll = new naver.maps.LatLng(mp.lat, mp.lng);
+	const map = new naver.maps.Map('map', { center: ll, zoom: 15 });
+	new naver.maps.Marker({ position: ll, map: map });
+	setTimeout(() => naver.maps.Event.trigger(map, 'resize'), 150);
 }
 
 $(function () {

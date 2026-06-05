@@ -141,16 +141,23 @@ public class AuthController {
 	private String extractNickname(Map body) {
 		Object account = body.get("kakao_account");
 		if (account instanceof Map<?, ?> acc) {
+			// 1) 실명(이름) 동의항목이 있으면 우선 사용
+			Object name = acc.get("name");
+			if (name != null && !String.valueOf(name).isBlank()) return clip(String.valueOf(name));
+			// 2) 없으면 카카오 프로필 닉네임
 			Object profile = acc.get("profile");
 			if (profile instanceof Map<?, ?> p) {
 				Object n = p.get("nickname");
-				if (n != null) {
-					String s = String.valueOf(n).trim();
-					return s.length() > 20 ? s.substring(0, 20) : s;
-				}
+				if (n != null && !String.valueOf(n).isBlank()) return clip(String.valueOf(n));
 			}
 		}
+		log.warn("Kakao 응답에 이름/닉네임 없음 — 동의항목(닉네임) 설정 확인 필요");
 		return "축구인";
+	}
+
+	private String clip(String s) {
+		s = s.trim();
+		return s.length() > 20 ? s.substring(0, 20) : s;
 	}
 
 	private static String enc(String s) {

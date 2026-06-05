@@ -20,32 +20,32 @@
 
 	<c:choose>
 		<c:when test="${nearest != null}">
-			<div class="card" id="nearestCard" data-id="${nearest.id}">
-				<div class="date" id="nearestDate" style="color:var(--green);font-weight:700;">${nearest.matchDate}</div>
-				<div class="title" style="font-size:20px;font-weight:800;margin:4px 0;">${nearest.title}</div>
-				<div class="meta muted small">
+			<div class="card" id="nearestCard" data-id="${nearest.id}" style="padding:20px;">
+				<div class="date" id="nearestDate" style="color:var(--green);font-weight:700;margin-bottom:7px;">${nearest.matchDate}</div>
+				<div class="title" style="font-size:21px;font-weight:800;margin:0 0 12px;line-height:1.3;">${nearest.title}</div>
+				<div class="meta muted small" style="line-height:1.8;">
 					⏰ ${nearest.startTime}
 					<c:if test="${nearest.endTime != null}"> ~ ${nearest.endTime}</c:if>
 					<c:if test="${nearest.place != null}"> · 📍 ${nearest.place}</c:if>
 				</div>
 				<c:if test="${nearest.fee > 0}">
-					<div class="meta muted small">🏟️ 구장비용(총) ${nearest.fee}원</div>
+					<div class="meta muted small" style="line-height:1.8;">🏟️ 구장비용(총) ${nearest.fee}원</div>
 				</c:if>
 
-				<div class="att-summary" id="homeSummary" style="margin:14px 0;">
+				<div class="att-summary" id="homeSummary" style="margin:20px 0;">
 					<div class="box attend"><div class="num" id="hsAttend">-</div><div class="lbl">참석</div></div>
 					<div class="box absent"><div class="num" id="hsAbsent">-</div><div class="lbl">불참</div></div>
 					<div class="box pending"><div class="num" id="hsPending">-</div><div class="lbl">미정</div></div>
 				</div>
 				<div id="homeSettle" class="settle-box" style="display:none;"></div>
 
-				<div class="attend-buttons" id="homeAttendBtns">
+				<div class="attend-buttons" id="homeAttendBtns" style="margin-top:16px;">
 					<button class="att-btn attend" data-s="ATTEND">참석</button>
 					<button class="att-btn absent" data-s="ABSENT">불참</button>
 					<button class="att-btn pending" data-s="PENDING">미정</button>
 				</div>
 
-				<a href="/team/${team.id}/schedule/${nearest.id}" class="btn-ghost btn-block" style="margin-top:12px;text-align:center;">자세히 보기 →</a>
+				<a href="/team/${team.id}/schedule/${nearest.id}" class="btn-ghost btn-block" style="margin-top:16px;text-align:center;">자세히 보기 →</a>
 			</div>
 		</c:when>
 		<c:otherwise>

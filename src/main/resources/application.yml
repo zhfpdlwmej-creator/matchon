@@ -67,3 +67,6 @@ app:
   notify:
     # 카카오 알림톡 발송 모드: log(개발-콘솔출력) | kakao(실발송)
     mode: ${NOTIFY_MODE:log}
+  naver:
+    # 네이버 클라우드 플랫폼 Maps Client ID (지도용)
+    maps-client-id: ${NAVER_MAPS_CLIENT_ID:}
