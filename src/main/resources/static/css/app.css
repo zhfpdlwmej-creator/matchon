@@ -141,7 +141,7 @@ a { color: inherit; text-decoration: none; }
 .card-form label { display: block; font-size: 13px; color: var(--muted); margin: 22px 0 9px; font-weight: 600; }
 .card-form > label:first-child { margin-top: 2px; }
 .card-form input, .card-form textarea, .card-form select {
-	width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 11px; font-size: 15px; font-family: inherit; background: #fafbfb; transition: border .15s, background .15s;
+	width: 100%; min-height: 50px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 11px; font-size: 15px; line-height: 1.3; font-family: inherit; background: #fafbfb; transition: border .15s, background .15s;
 }
 .card-form input:focus, .card-form textarea:focus, .card-form select:focus { outline: none; border-color: var(--green); background: #fff; }
 .card-form textarea { min-height: 72px; resize: vertical; }
