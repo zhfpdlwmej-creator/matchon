@@ -1,0 +1,26 @@
+# Render.com Blueprint — 무료 Docker 웹서비스
+# Render 대시보드: New → Blueprint → 이 저장소 선택하면 자동 인식
+services:
+  - type: web
+    name: matchon
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    region: singapore        # Supabase(ap-southeast-1)와 가까운 리전
+    healthCheckPath: /login
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require
+      - key: SPRING_DATASOURCE_USERNAME
+        value: postgres.uctqayuitxfbszdggqeu
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false          # 대시보드에서 직접 입력(비밀)
+      - key: JWT_SECRET
+        sync: false          # 대시보드에서 직접 입력(32자 이상)
+      # (선택) 실제 카카오 로그인 시 추가
+      # - key: KAKAO_REST_API_KEY
+      #   sync: false
+      # - key: KAKAO_REDIRECT_URI
+      #   value: https://matchon.onrender.com/auth/kakao/callback
