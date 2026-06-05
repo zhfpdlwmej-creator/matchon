@@ -51,8 +51,8 @@ public class AuthController {
 	@GetMapping("/auth/kakao")
 	public String start() {
 		if (restKey == null || restKey.isEmpty()) {
-			// dev 폴백: 키 미설정 시 mock 로그인 페이지(콜백)로 바로 보냄
-			return "redirect:/auth/kakao/callback?mock=1";
+			// 카카오 키 미설정 — mock 로그인 없이 명확히 에러 표시
+			return "redirect:/login?err=no_kakao_key";
 		}
 		String url = AUTHORIZE_URL
 				+ "?response_type=code"
@@ -65,13 +65,8 @@ public class AuthController {
 	public String callback(
 			@RequestParam(required = false) String code,
 			@RequestParam(required = false) String error,
-			@RequestParam(required = false) String mock,
 			HttpServletResponse res) {
 
-		// dev mock 로그인
-		if ((restKey == null || restKey.isEmpty()) && mock != null) {
-			return mockLogin(res);
-		}
 		if (error != null) {
 			return "redirect:/login?err=" + enc(error);
 		}
@@ -132,16 +127,6 @@ public class AuthController {
 	}
 
 	// --- helpers ---
-
-	private String mockLogin(HttpServletResponse res) {
-		String[] names = {"손흥민", "이강인", "김민재", "황희찬", "조규성", "박지성"};
-		String kakaoId = "mock_" + Math.abs(names.hashCode() % 100000 + (int) (System.nanoTime() % 100000));
-		String nick = names[(int) (System.nanoTime() % names.length)];
-		User u = userService.findByKakaoId(kakaoId)
-				.orElseGet(() -> userService.createFromKakao(kakaoId, nick));
-		issueToken(res, u.getId());
-		return "redirect:/";
-	}
 
 	private void issueToken(HttpServletResponse res, Long userId) {
 		String token = jwt.createToken(userId);
