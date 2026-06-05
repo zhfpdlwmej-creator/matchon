@@ -1,5 +1,6 @@
 package com.jacob.matchon.security;
 
+import com.jacob.matchon.repo.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -21,9 +22,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 	public static final String COOKIE_NAME = "ACCESS_TOKEN";
 
 	private final JwtTokenProvider jwt;
+	private final UserRepository userRepo;
 
-	public JwtAuthFilter(JwtTokenProvider jwt) {
+	public JwtAuthFilter(JwtTokenProvider jwt, UserRepository userRepo) {
 		this.jwt = jwt;
+		this.userRepo = userRepo;
 	}
 
 	@Override
@@ -33,13 +36,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 		if (token != null) {
 			Long userId = jwt.parseUserId(token);
 			if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-				var auth = new UsernamePasswordAuthenticationToken(
-						userId, null, AuthorityUtils.createAuthorityList("ROLE_USER"));
-				SecurityContextHolder.getContext().setAuthentication(auth);
-				req.setAttribute("uid", userId);
+				if (userRepo.existsById(userId)) {
+					var auth = new UsernamePasswordAuthenticationToken(
+							userId, null, AuthorityUtils.createAuthorityList("ROLE_USER"));
+					SecurityContextHolder.getContext().setAuthentication(auth);
+					req.setAttribute("uid", userId);
+				} else {
+					// 토큰은 유효하지만 유저가 없음(DB 초기화 등) → 쿠키 제거하고 비로그인 처리
+					expireCookie(res);
+				}
 			}
 		}
 		chain.doFilter(req, res);
+	}
+
+	private void expireCookie(HttpServletResponse res) {
+		Cookie c = new Cookie(COOKIE_NAME, "");
+		c.setPath("/");
+		c.setMaxAge(0);
+		c.setHttpOnly(true);
+		res.addCookie(c);
 	}
 
 	private String resolveToken(HttpServletRequest req) {

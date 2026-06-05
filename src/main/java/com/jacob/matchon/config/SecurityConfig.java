@@ -1,5 +1,6 @@
 package com.jacob.matchon.config;
 
+import com.jacob.matchon.repo.UserRepository;
 import com.jacob.matchon.security.JwtAuthFilter;
 import com.jacob.matchon.security.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
@@ -21,9 +22,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
 	private final JwtTokenProvider jwt;
+	private final UserRepository userRepo;
 
-	public SecurityConfig(JwtTokenProvider jwt) {
+	public SecurityConfig(JwtTokenProvider jwt, UserRepository userRepo) {
 		this.jwt = jwt;
+		this.userRepo = userRepo;
 	}
 
 	@Bean
@@ -43,7 +46,7 @@ public class SecurityConfig {
 								"/api/me")
 						.permitAll()
 						.anyRequest().permitAll())  // 세부 인가는 컨트롤러에서 CurrentUser 로 처리
-				.addFilterBefore(new JwtAuthFilter(jwt), UsernamePasswordAuthenticationFilter.class)
+				.addFilterBefore(new JwtAuthFilter(jwt, userRepo), UsernamePasswordAuthenticationFilter.class)
 				.headers(h -> h.frameOptions(f -> f.sameOrigin()));
 		return http.build();
 	}
