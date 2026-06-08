@@ -31,7 +31,8 @@
 		<button class="btn-ghost btn-block" id="leaveBtn" style="margin-top:6px;color:var(--red);">이 팀 나가기</button>
 	</c:if>
 	<c:if test="${myRole == 'LEADER'}">
-		<div class="muted small" style="text-align:center;padding:8px;">팀장은 탈퇴할 수 없습니다.</div>
+		<button class="btn-ghost btn-block" id="disbandBtn" style="margin-top:6px;color:var(--red);">팀 해체하기</button>
+		<div class="muted small" style="text-align:center;padding:8px;">해체하면 팀원·일정·매칭이 모두 삭제됩니다.</div>
 	</c:if>
 </div>
 
@@ -108,6 +109,13 @@ $(function () {
 		if (!confirm('이 팀에서 나가시겠어요?\n다시 들어오려면 초대코드가 필요합니다.')) return;
 		const r = await api.post('/api/team/' + TEAM_ID + '/leave', {});
 		if (r.ok) { alert('팀에서 나갔습니다.'); location.href = '/'; } else alert(r.message || '실패');
+	});
+
+	$('#disbandBtn').on('click', async function () {
+		if (!confirm('정말 팀을 해체할까요?\n팀원·일정·매칭·기록이 모두 삭제되며 되돌릴 수 없습니다.')) return;
+		if (!confirm('한 번 더 확인합니다. 해체하시겠어요?')) return;
+		const r = await api.post('/api/team/' + TEAM_ID + '/disband', {});
+		if (r.ok) { alert('팀이 해체되었습니다.'); location.href = '/'; } else alert(r.message || '실패');
 	});
 });
 </script>

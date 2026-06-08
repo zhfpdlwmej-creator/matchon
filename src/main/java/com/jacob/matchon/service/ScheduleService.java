@@ -86,6 +86,14 @@ public class ScheduleService {
 		return s;
 	}
 
+	/** 포메이션 저장 (팀장/운영진) */
+	@Transactional
+	public void saveFormation(Long scheduleId, Long userId, String json) {
+		MatchSchedule s = get(scheduleId);
+		teamService.requireManager(s.getTeamId(), userId);
+		s.setFormation(json);
+	}
+
 	@Transactional
 	public void delete(Long scheduleId, Long userId) {
 		MatchSchedule s = get(scheduleId);

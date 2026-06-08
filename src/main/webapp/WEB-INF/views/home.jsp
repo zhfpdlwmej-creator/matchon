@@ -11,11 +11,17 @@
 <%@ include file="layout/header.jsp" %>
 <div class="app-wrap">
 
-	<div style="padding:2px 4px 6px;">
+	<div style="padding:2px 4px 10px;">
 		<div class="muted small">반가워요 👋</div>
 		<div style="font-size:21px;font-weight:800;letter-spacing:-.3px;">${user.nickname}님</div>
 	</div>
 
+	<div class="tabs" id="homeTabs">
+		<button class="tab on" data-tab="team">팀</button>
+		<button class="tab" data-tab="personal">개인</button>
+	</div>
+
+	<div id="tabTeam">
 	<div class="section-title">가장 가까운 경기</div>
 
 	<c:choose>
@@ -77,9 +83,59 @@
 		<span style="flex:1;"><strong>팀 매칭 찾기</strong><div class="small" style="opacity:.9;">지역별 친선경기 모집 · 신청</div></span>
 		<span style="font-size:20px;opacity:.8;">›</span>
 	</a>
+	</div><!-- /tabTeam -->
+
+	<div id="tabPersonal" style="display:none;">
+		<div class="section-title">내 다가오는 경기</div>
+		<div id="myUpcoming"><div class="muted small" style="padding:6px 4px;">불러오는 중...</div></div>
+	</div>
 </div>
 
 <%@ include file="layout/bottomnav.jsp" %>
+
+<script>
+const HOME_TEAM_ID = ${team.id};
+const ME_ID = ${user.id};
+const ST_LABEL = { ATTEND: '✅ 참석', ABSENT: '❌ 불참', PENDING: '❓ 미정' };
+async function loadMyUpcoming() {
+	const r = await api.get('/api/schedule/my-upcoming?teamId=' + HOME_TEAM_ID);
+	const box = $('#myUpcoming').empty();
+	if (!r.ok) return;
+	if (!r.schedules.length) { box.html('<div class="empty">다가오는 경기가 없습니다.</div>'); return; }
+	r.schedules.forEach(function (s) {
+		const d = s.matchDate.split('-');
+		const dow = ['일','월','화','수','목','금','토'][new Date(s.matchDate + 'T00:00:00').getDay()];
+		box.append(
+			'<div class="card">' +
+			'<a href="/team/' + HOME_TEAM_ID + '/schedule/' + s.id + '" style="display:block;">' +
+			'<div class="date" style="color:var(--green);font-weight:700;">' + parseInt(d[1]) + '월 ' + parseInt(d[2]) + '일 (' + dow + ')</div>' +
+			'<div class="title" style="font-weight:800;margin:2px 0;">' + esc(s.title) + '</div>' +
+			'<div class="meta muted small">⏰ ' + s.startTime.slice(0,5) + (s.place ? ' · 📍 ' + esc(s.place) : '') + '</div>' +
+			'</a>' +
+			'<div class="attend-buttons myUp" data-id="' + s.id + '" style="margin-top:12px;">' +
+			'<button class="att-btn attend ' + (s.myStatus==='ATTEND'?'on':'') + '" data-s="ATTEND">✅ 참석</button>' +
+			'<button class="att-btn absent ' + (s.myStatus==='ABSENT'?'on':'') + '" data-s="ABSENT">❌ 불참</button>' +
+			'<button class="att-btn pending ' + (s.myStatus==='PENDING'?'on':'') + '" data-s="PENDING">❓ 미정</button>' +
+			'</div></div>');
+	});
+}
+$(function () {
+	$('#homeTabs .tab').on('click', function () {
+		$('#homeTabs .tab').removeClass('on'); $(this).addClass('on');
+		const t = $(this).data('tab');
+		$('#tabTeam').toggle(t === 'team');
+		$('#tabPersonal').toggle(t === 'personal');
+		if (t === 'personal') loadMyUpcoming();
+	});
+	$('#myUpcoming').on('click', '.myUp .att-btn', async function () {
+		const wrap = $(this).closest('.myUp');
+		const sid = wrap.data('id');
+		const st = $(this).data('s');
+		const r = await api.post('/api/attendance', { scheduleId: sid, status: st });
+		if (r.ok) { wrap.find('.att-btn').removeClass('on'); $(this).addClass('on'); } else alert(r.message || '실패');
+	});
+});
+</script>
 
 <c:if test="${nearest != null}">
 <script>

@@ -46,6 +46,10 @@ public class MatchSchedule {
 	@Column(length = 500)
 	private String memo;
 
+	/** 포메이션 배치 JSON ({preset, tokens:[{label,x,y}]}) */
+	@Column(columnDefinition = "text")
+	private String formation;
+
 	@Column(name = "created_by", nullable = false)
 	private Long createdBy;
 

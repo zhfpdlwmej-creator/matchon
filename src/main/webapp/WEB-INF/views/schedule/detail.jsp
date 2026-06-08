@@ -18,6 +18,7 @@
 		<div class="meta muted small" id="dMeta"></div>
 		<div class="meta small" id="dMemo" style="margin-top:8px;white-space:pre-wrap;"></div>
 		<button class="btn-primary btn-block" id="shareBtn" style="margin-top:14px;">📢 카카오톡으로 일정 공유</button>
+		<a href="/team/${team.id}/schedule/${scheduleId}/formation" class="btn-ghost btn-block" style="margin-top:8px;text-align:center;">📋 포메이션 짜기</a>
 	</div>
 
 	<div class="card">

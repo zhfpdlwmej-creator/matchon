@@ -104,9 +104,16 @@ public class TeamService {
 	public void leaveTeam(Long teamId, Long userId) {
 		TeamMember m = membership(teamId, userId);
 		if (m.getRole() == Role.LEADER) {
-			throw new ApiException(400, "팀장은 탈퇴할 수 없습니다. 운영진/회원만 탈퇴 가능합니다.");
+			throw new ApiException(400, "팀장은 탈퇴할 수 없습니다. 팀을 해체하거나 운영진/회원만 탈퇴 가능합니다.");
 		}
 		memberRepo.delete(m);
+	}
+
+	/** 팀 해체 (팀장만) — 팀원·일정·매칭 등 관련 데이터 전부 삭제(FK CASCADE) */
+	@Transactional
+	public void disband(Long teamId, Long userId) {
+		requireLeader(teamId, userId);
+		teamRepo.deleteById(teamId);
 	}
 
 	// --- 생성/가입 ---

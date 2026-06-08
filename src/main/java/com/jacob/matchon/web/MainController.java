@@ -164,6 +164,16 @@ public class MainController {
 		return "schedule/detail";
 	}
 
+	@GetMapping("/team/{teamId}/schedule/{scheduleId}/formation")
+	public String formation(@PathVariable Long teamId, @PathVariable Long scheduleId, HttpServletResponse res, Model model) {
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		setCurrentTeam(res, teamId);
+		model.addAttribute("scheduleId", scheduleId);
+		return "schedule/formation";
+	}
+
 	@GetMapping("/team/{teamId}/members")
 	public String members(@PathVariable Long teamId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();

@@ -3,6 +3,7 @@ package com.jacob.matchon.web;
 import com.jacob.matchon.dto.ScheduleForm;
 import com.jacob.matchon.model.MatchSchedule;
 import com.jacob.matchon.security.CurrentUser;
+import com.jacob.matchon.service.AttendanceService;
 import com.jacob.matchon.service.ScheduleService;
 import com.jacob.matchon.service.TeamService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,22 @@ public class ScheduleApiController {
 
 	private final ScheduleService scheduleService;
 	private final TeamService teamService;
+	private final AttendanceService attendanceService;
+
+	/** 내 다가오는 경기 + 내 참석 상태 (홈 개인 탭) */
+	@GetMapping("/my-upcoming")
+	public Map<String, Object> myUpcoming(@RequestParam Long teamId) {
+		Long uid = CurrentUser.required();
+		teamService.membership(teamId, uid);
+		List<Map<String, Object>> rows = scheduleService.list(teamId).stream()
+				.filter(s -> !s.getMatchDate().isBefore(LocalDate.now()))
+				.map(s -> {
+					Map<String, Object> m = view(s);
+					m.put("myStatus", attendanceService.myStatus(s.getId(), uid).name());
+					return m;
+				}).toList();
+		return Map.of("ok", true, "schedules", rows);
+	}
 
 	/** 일정 목록 (월별 옵션) */
 	@GetMapping("/list")
@@ -66,6 +83,28 @@ public class ScheduleApiController {
 	public Map<String, Object> delete(@PathVariable Long id) {
 		Long uid = CurrentUser.required();
 		scheduleService.delete(id, uid);
+		return Map.of("ok", true);
+	}
+
+	/** 포메이션 조회 */
+	@GetMapping("/{id}/formation")
+	public Map<String, Object> getFormation(@PathVariable Long id) {
+		Long uid = CurrentUser.required();
+		MatchSchedule s = scheduleService.get(id);
+		teamService.membership(s.getTeamId(), uid);
+		Map<String, Object> m = new HashMap<>();
+		m.put("ok", true);
+		m.put("formation", s.getFormation());
+		m.put("title", s.getTitle());
+		m.put("sport", teamService.get(s.getTeamId()).getSport().name());
+		return m;
+	}
+
+	/** 포메이션 저장 (팀장/운영진) */
+	@PostMapping("/{id}/formation")
+	public Map<String, Object> saveFormation(@PathVariable Long id, @RequestBody Map<String, String> body) {
+		Long uid = CurrentUser.required();
+		scheduleService.saveFormation(id, uid, body.get("data"));
 		return Map.of("ok", true);
 	}
 

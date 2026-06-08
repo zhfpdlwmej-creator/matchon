@@ -85,6 +85,14 @@ public class TeamApiController {
 		return Map.of("ok", true);
 	}
 
+	/** 팀 해체 (팀장만) */
+	@PostMapping("/team/{teamId}/disband")
+	public Map<String, Object> disband(@PathVariable Long teamId) {
+		Long uid = CurrentUser.required();
+		teamService.disband(teamId, uid);
+		return Map.of("ok", true);
+	}
+
 	/** 초대코드 재발급 */
 	@PostMapping("/team/{teamId}/invite-code")
 	public Map<String, Object> regenCode(@PathVariable Long teamId) {
