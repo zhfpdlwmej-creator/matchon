@@ -31,15 +31,18 @@ public class MatchApiController {
 		return Map.of("ok", true, "teams", teams);
 	}
 
-	/** 모집중 매칭 목록 (지역 필터). teamId = 현재 팀(내 팀 배지 기준) */
+	/** 모집중 목록 (지역 필터). guest=true 면 용병모집글, 아니면 팀 매칭만. teamId = 현재 팀 */
 	@GetMapping("/list")
 	public Map<String, Object> list(@RequestParam(required = false) String region,
 									@RequestParam(required = false) Long teamId,
-									@RequestParam(required = false) String sport) {
+									@RequestParam(required = false) String sport,
+									@RequestParam(required = false) Boolean guest) {
 		CurrentUser.required();
+		boolean wantGuest = guest != null && guest;
 		Set<Long> mine = teamId == null ? Set.of() : Set.of(teamId);
 		com.jacob.matchon.model.Sport sp = (sport == null || sport.isBlank()) ? null : com.jacob.matchon.model.Sport.parse(sport);
 		List<Map<String, Object>> rows = matchService.listOpen(region, sp).stream()
+				.filter(p -> p.isRecruitGuest() == wantGuest)
 				.map(p -> postView(p, mine)).toList();
 		return Map.of("ok", true, "matches", rows);
 	}
@@ -52,7 +55,9 @@ public class MatchApiController {
 		teamService.membership(teamId, uid); // 현재 팀 멤버 확인
 		Set<Long> mineSet = Set.of(teamId);
 
-		List<Map<String, Object>> hosting = matchService.hostingByTeam(teamId).stream().map(p -> {
+		List<Map<String, Object>> hosting = matchService.hostingByTeam(teamId).stream()
+				.filter(p -> !p.isRecruitGuest())   // 용병모집글은 용병모집 탭에서 관리
+				.map(p -> {
 			Map<String, Object> m = postView(p, mineSet);
 			m.put("pending", matchService.pendingCount(p.getId()));
 			return m;
