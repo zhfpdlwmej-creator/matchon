@@ -108,6 +108,8 @@ let currentRegion = '';
 let currentSport = '${empty team ? "" : team.sport}';   // 기본 = 현재 팀 종목
 
 function lvBadge(lv, label) { return '<span class="lvl-badge ' + (LEVEL_CLASS[lv]||'') + '">' + label + '</span>'; }
+const SPORT_EMOJI = { SOCCER: '⚽', BASEBALL: '⚾', BASKETBALL: '🏀' };
+function sportEmoji(s) { return SPORT_EMOJI[s] || '🏟️'; }
 
 const POST_STATUS = { OPEN: '모집중', MATCHED: '성사', CLOSED: '마감' };
 const MY_STATUS = { PENDING: '⏳ 대기중', ACCEPTED: '✅ 수락됨(성사)', REJECTED: '거절됨' };
@@ -153,7 +155,7 @@ async function loadList() {
 	const r = await api.get('/api/match/list' + (q.length ? '?' + q.join('&') : ''));
 	const box = $('#matchList').empty();
 	if (!r.ok) return;
-	if (!r.matches.length) { box.html('<div class="empty"><span class="big">⚽</span>' + (currentRegion ? esc(currentRegion) + ' 지역에 ' : '') + '모집중인 매칭이 없습니다.<br>우하단 ＋ 로 매칭을 올려보세요.</div>'); return; }
+	if (!r.matches.length) { box.html('<div class="empty"><span class="big">' + sportEmoji(currentSport) + '</span>' + (currentRegion ? esc(currentRegion) + ' 지역에 ' : '') + '모집중인 매칭이 없습니다.<br>우하단 ＋ 로 매칭을 올려보세요.</div>'); return; }
 	r.matches.forEach(m => {
 		const when = m.matchDate ? (m.matchDate.replaceAll('-', '.') + (m.startTime ? ' ' + m.startTime.slice(0,5) : '')) : '일정 협의';
 		box.append(
@@ -219,9 +221,15 @@ $(function () {
 		$('#tabApplied').toggle(t === 'applied');
 	});
 
-	// 호스트 = 현재 팀 (고정). 등록 버튼은 현재 팀의 팀장에게만
+	// 호스트 = 현재 팀 (고정). 등록 버튼은 현재 팀의 팀장에게만 (API로 재확인)
 	$('#hostTeamName').val(TEAM_NAME || '');
-	$('#addBtn').toggle(!!TEAM_ID && IS_LEADER);
+	$('#addBtn').hide();
+	if (TEAM_ID) {
+		api.get('/api/match/my-teams').then(function (r) {
+			const leaderOfCurrent = r.ok && (r.teams || []).some(t => String(t.id) === String(TEAM_ID));
+			$('#addBtn').toggle(leaderOfCurrent || IS_LEADER);
+		});
+	}
 
 	$('#addBtn').on('click', openModal);
 	$('#cancelBtn').on('click', closeModal);
