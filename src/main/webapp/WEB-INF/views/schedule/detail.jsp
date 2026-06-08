@@ -53,7 +53,6 @@
 				<div><label class="small">우리 득점</label><input type="number" id="ourScore" min="0" value="0" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;"></div>
 				<div><label class="small">상대 득점</label><input type="number" id="oppScore" min="0" value="0" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;"></div>
 			</div>
-			<input type="text" id="opponentName" maxlength="60" placeholder="상대팀 이름 (선택)" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:8px;">
 			<button class="btn-primary btn-sm btn-block" id="saveResult" style="margin-top:8px;">결과 저장</button>
 		</c:if>
 
@@ -113,9 +112,9 @@ async function loadResult() {
 	const r = await api.get('/api/schedule/' + SCHEDULE_ID + '/result');
 	if (!r.ok) return;
 	const res = r.result;
-	if (res) $('#resultBox').html('<div style="font-size:24px;font-weight:800;text-align:center;color:var(--green);">우리 ' + res.ourScore + ' : ' + res.oppScore + ' <span style="color:var(--text);font-size:16px;">' + esc(res.opponentName || '상대') + '</span></div>');
+	if (res) $('#resultBox').html('<div style="font-size:24px;font-weight:800;text-align:center;color:var(--green);">우리 ' + res.ourScore + ' : ' + res.oppScore + ' <span style="color:var(--text);font-size:16px;">상대</span></div>');
 	else $('#resultBox').html('<div class="muted small">아직 결과가 입력되지 않았습니다.</div>');
-	if (CAN_MANAGE && res) { $('#ourScore').val(res.ourScore); $('#oppScore').val(res.oppScore); $('#opponentName').val(res.opponentName || ''); }
+	if (CAN_MANAGE && res) { $('#ourScore').val(res.ourScore); $('#oppScore').val(res.oppScore); }
 
 	const el = $('#eventList').empty();
 	if (!r.events.length) el.html('<div class="muted small" style="padding:6px 0;">기록 없음</div>');
@@ -227,7 +226,7 @@ $(function () {
 	loadComments();
 
 	$('#saveResult').on('click', async function () {
-		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/result', { our: parseInt($('#ourScore').val() || '0', 10), opp: parseInt($('#oppScore').val() || '0', 10), opponentName: $('#opponentName').val().trim() });
+		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/result', { our: parseInt($('#ourScore').val() || '0', 10), opp: parseInt($('#oppScore').val() || '0', 10) });
 		if (r.ok) loadResult(); else alert(r.message || '실패');
 	});
 	$('#addEvent').on('click', async function () {
