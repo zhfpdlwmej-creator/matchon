@@ -125,7 +125,9 @@ $(function () {
 		const t = $(this).data('tab');
 		$('#tabTeam').toggle(t === 'team');
 		$('#tabPersonal').toggle(t === 'personal');
+		// 탭 전환할 때마다 현재 인원/내 상태를 다시 조회
 		if (t === 'personal') loadMyUpcoming();
+		else if (typeof loadHome === 'function') loadHome();
 	});
 	$('#myUpcoming').on('click', '.myUp .att-btn', async function () {
 		const wrap = $(this).closest('.myUp');
