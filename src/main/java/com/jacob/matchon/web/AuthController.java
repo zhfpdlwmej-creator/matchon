@@ -108,7 +108,7 @@ public class AuthController {
 					.orElseGet(() -> userService.createFromKakao(kakaoId, nick));
 			userService.syncName(user.getId(), nick);
 
-			issueToken(res, user.getId());
+			issueToken(res, user);
 			return "redirect:/";
 
 		} catch (Exception e) {
@@ -129,8 +129,8 @@ public class AuthController {
 
 	// --- helpers ---
 
-	private void issueToken(HttpServletResponse res, Long userId) {
-		String token = jwt.createToken(userId);
+	private void issueToken(HttpServletResponse res, User user) {
+		String token = jwt.createToken(user.getId(), user.getKakaoId());
 		Cookie c = new Cookie(JwtAuthFilter.COOKIE_NAME, token);
 		c.setPath("/");
 		c.setHttpOnly(true);

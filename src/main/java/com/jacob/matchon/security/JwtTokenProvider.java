@@ -24,26 +24,39 @@ public class JwtTokenProvider {
 		this.accessExpMs = accessExpMin * 60_000L;
 	}
 
-	/** userId 로 액세스 토큰 발급 */
-	public String createToken(Long userId) {
+	/** userId + kakaoId 로 액세스 토큰 발급. kakaoId 를 함께 담아 id 재사용(DB 초기화) 시 토큰 무효화 */
+	public String createToken(Long userId, String kakaoId) {
 		Date now = new Date();
 		return Jwts.builder()
 				.subject(String.valueOf(userId))
+				.claim("kid", kakaoId)
 				.issuedAt(now)
 				.expiration(new Date(now.getTime() + accessExpMs))
 				.signWith(key)
 				.compact();
 	}
 
+	private Claims parse(String token) {
+		return Jwts.parser()
+				.verifyWith(key)
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
+	}
+
 	/** 토큰 → userId. 유효하지 않으면 null */
 	public Long parseUserId(String token) {
 		try {
-			Claims claims = Jwts.parser()
-					.verifyWith(key)
-					.build()
-					.parseSignedClaims(token)
-					.getPayload();
-			return Long.valueOf(claims.getSubject());
+			return Long.valueOf(parse(token).getSubject());
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	/** 토큰에 담긴 kakaoId(kid). 없거나 유효하지 않으면 null */
+	public String parseKakaoId(String token) {
+		try {
+			return parse(token).get("kid", String.class);
 		} catch (Exception e) {
 			return null;
 		}

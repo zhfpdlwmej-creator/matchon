@@ -35,14 +35,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 		String token = resolveToken(req);
 		if (token != null) {
 			Long userId = jwt.parseUserId(token);
+			String tokenKakaoId = jwt.parseKakaoId(token);
 			if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-				if (userRepo.existsById(userId)) {
+				var user = userRepo.findById(userId).orElse(null);
+				// 토큰의 kakaoId 와 현재 그 id 의 유저가 일치할 때만 인증.
+				// (DB 초기화로 id 가 재사용되면 kakaoId 가 달라져 → 남의 계정으로 로그인되는 사고 방지)
+				if (user != null && tokenKakaoId != null && tokenKakaoId.equals(user.getKakaoId())) {
 					var auth = new UsernamePasswordAuthenticationToken(
 							userId, null, AuthorityUtils.createAuthorityList("ROLE_USER"));
 					SecurityContextHolder.getContext().setAuthentication(auth);
 					req.setAttribute("uid", userId);
 				} else {
-					// 토큰은 유효하지만 유저가 없음(DB 초기화 등) → 쿠키 제거하고 비로그인 처리
+					// 유저 없음 / kakaoId 불일치 / 구버전 토큰 → 쿠키 제거하고 비로그인 처리
 					expireCookie(res);
 				}
 			}
