@@ -61,28 +61,13 @@
 
 	<!-- 상대팀 평가 (성사된 경기) -->
 	<div class="card" id="rateCard" style="display:none;">
-		<h3>상대팀 평가 · <span id="rateTarget"></span></h3>
-		<div class="card-form" style="padding:0;box-shadow:none;">
-			<label>매너 점수 (1~5)</label>
-			<div class="region-row" id="mannerPick">
-				<button type="button" class="region-chip" data-v="1">1</button>
-				<button type="button" class="region-chip" data-v="2">2</button>
-				<button type="button" class="region-chip" data-v="3">3</button>
-				<button type="button" class="region-chip" data-v="4">4</button>
-				<button type="button" class="region-chip" data-v="5">5</button>
-			</div>
-			<input type="hidden" id="mannerVal">
-			<label>실력</label>
-			<div class="lvl-picker" id="skillPick">
-				<button type="button" class="lvl" data-v="HIGH">상</button>
-				<button type="button" class="lvl" data-v="MID">중</button>
-				<button type="button" class="lvl" data-v="LOW">하</button>
-			</div>
-			<input type="hidden" id="skillVal">
-			<label>한마디 (선택)</label>
-			<input type="text" id="rateComment" maxlength="300" placeholder="예: 매너 좋고 즐겁게 했어요!">
-			<button class="btn-primary btn-block" id="rateBtn" style="margin-top:14px;">평가 제출</button>
+		<h3>상대팀 매너 평가 · <span id="rateTarget"></span></h3>
+		<div class="muted small">경기 종료 후 상대팀의 매너를 별점으로 남겨주세요.</div>
+		<div id="starPick" style="font-size:42px;text-align:center;margin:12px 0;letter-spacing:8px;color:#f5b301;cursor:pointer;user-select:none;">
+			<span data-v="1">☆</span><span data-v="2">☆</span><span data-v="3">☆</span><span data-v="4">☆</span><span data-v="5">☆</span>
 		</div>
+		<input type="hidden" id="mannerVal">
+		<button class="btn-primary btn-block" id="rateBtn">평가 저장</button>
 	</div>
 	<div class="card muted small" id="ratedNote" style="display:none;text-align:center;">상대팀 평가를 완료했습니다. 감사합니다! 🙏</div>
 </div>
@@ -106,7 +91,7 @@ async function load() {
 
 	if (isGuestRecruit) $('#dLevel').html('<span class="lvl-badge" style="background:#e0454f;">🆘 용병 ' + mp.headcount + '명 모집</span>');
 	else $('#dLevel').html(lvBadge(mp.level, '수준 ' + mp.levelLabel) +
-		(mp.mannerAvg != null ? ' <span class="lvl-badge" style="background:#1a9d52;">🤝 매너 ' + mp.mannerAvg + ' (' + mp.mannerCount + ')</span>' : ''));
+		(mp.mannerAvg != null ? ' <span class="lvl-badge" style="background:#f5b301;color:#3a2e00;">' + mp.mannerAvg + '★ <span style="opacity:.7;">(' + mp.mannerCount + ')</span></span>' : ''));
 	$('#dRegion').text(mp.region || mp.placeName || '지역 미정');
 	$('#dStatus').text(STATUS_LABEL[mp.status] || mp.status);
 	$('#dTeam').text(mp.hostTeamName);
@@ -202,13 +187,13 @@ $(function () {
 		else alert(r.message || '지원 실패');
 	});
 
-	// 상대팀 평가
-	$('#mannerPick .region-chip').on('click', function () { $('#mannerPick .region-chip').removeClass('on'); $(this).addClass('on'); $('#mannerVal').val($(this).data('v')); });
-	$('#skillPick .lvl').on('click', function () { $('#skillPick .lvl').removeClass('on'); $(this).addClass('on'); $('#skillVal').val($(this).data('v')); });
+	// 상대팀 매너 평가 (별점만)
+	function renderStars(n) { $('#starPick span').each(function () { $(this).text($(this).data('v') <= n ? '★' : '☆'); }); }
+	$('#starPick span').on('click', function () { const n = $(this).data('v'); $('#mannerVal').val(n); renderStars(n); });
 	$('#rateBtn').on('click', async function () {
 		const manner = $('#mannerVal').val();
-		if (!manner) { alert('매너 점수를 선택해주세요.'); return; }
-		const r = await api.post('/api/match/' + MATCH_ID + '/rate', { manner: parseInt(manner, 10), skill: $('#skillVal').val() || null, comment: $('#rateComment').val().trim() });
+		if (!manner) { alert('별점을 선택해주세요.'); return; }
+		const r = await api.post('/api/match/' + MATCH_ID + '/rate', { manner: parseInt(manner, 10) });
 		if (r.ok) { alert('평가 완료! 감사합니다.'); load(); } else alert(r.message || '평가 실패');
 	});
 

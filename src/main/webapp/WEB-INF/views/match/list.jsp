@@ -209,7 +209,7 @@ function renderList() {
 		const when = m.matchDate ? (m.matchDate.replaceAll('-', '.') + (m.startTime ? ' ' + m.startTime.slice(0, 5) : '')) : '일정 협의';
 		const tags = lvBadge(m.level, '수준 ' + m.levelLabel) +
 			(m.matchType ? '<span class="lvl-badge" style="background:#2f6df0;">' + (TYPE_LABEL[m.matchType] || m.matchType) + '</span>' : '') +
-			(m.mannerAvg != null ? '<span class="lvl-badge" style="background:#1a9d52;">🤝 ' + m.mannerAvg + '</span>' : '');
+			(m.mannerAvg != null ? '<span class="lvl-badge" style="background:#f5b301;color:#3a2e00;">' + m.mannerAvg + '★</span>' : '');
 		box.append(
 			'<a class="schedule-item" href="/matches/' + m.id + '">' +
 			'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + tags +

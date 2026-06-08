@@ -9,9 +9,8 @@
 <body class="page-login">
 <div class="login-wrap">
 	<div class="login-logo">
-		<div class="logo-emblem">⚽</div>
-		<h1>matchon</h1>
-		<p class="tagline">⚽ 축구·풋살 팀<br>매칭 · 출석 · 포메이션 올인원</p>
+		<img src="/img/logo.png" alt="matchon" style="width:230px;max-width:82%;border-radius:20px;display:block;margin:0 auto;box-shadow:0 6px 20px rgba(0,0,0,.18);">
+		<p class="tagline" style="margin-top:16px;">⚽ 축구·풋살 팀<br>매칭 · 출석 · 포메이션 올인원</p>
 	</div>
 
 	<c:if test="${param.err != null}">
