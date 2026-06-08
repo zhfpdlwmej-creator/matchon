@@ -139,7 +139,7 @@ function renderAcc(type) {
 	const box = $('#accList');
 	if (!list || !list.length) { box.html('<div class="muted small" style="padding:10px;">' + label + ' 인원이 없습니다.</div>').show(); return; }
 	let html = '';
-	list.forEach(m => html += '<div class="acc-row">' + posBadge(m.position) + '<span class="name">' + esc(m.nickname) + '</span></div>');
+	list.forEach(m => html += '<div class="acc-row"><span class="name">' + esc(m.nickname) + '</span></div>');
 	box.html(html).show();
 }
 

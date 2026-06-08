@@ -57,7 +57,7 @@ async function load() {
 				['LEADER','MANAGER','MEMBER'].map(r => '<option value="' + r + '"' + (r === m.role ? ' selected' : '') + '>' + roleLabel(r) + '</option>').join('') +
 				'</select>';
 		}
-		box.append('<div class="member-row"><span>' + posBadge(m.position) + '</span>' +
+		box.append('<div class="member-row">' +
 			'<span class="name">' + esc(m.nickname) + '</span>' +
 			'<span class="right">' + right + '</span></div>');
 	});

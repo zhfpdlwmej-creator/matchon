@@ -36,7 +36,6 @@
 			<div class="box absent"><div class="num" id="sAbsent">-</div><div class="lbl">불참</div></div>
 			<div class="box pending"><div class="num" id="sPending">-</div><div class="lbl">미정</div></div>
 		</div>
-		<div class="pos-by" id="posBy"></div>
 
 		<div class="section-title" style="margin-left:0;">참석자</div>
 		<div id="attendList"></div>
@@ -95,12 +94,6 @@ async function loadAttendance() {
 	$('#attendBtns .att-btn').removeClass('on');
 	$('#attendBtns .att-btn[data-s="' + r.myStatus + '"]').addClass('on');
 
-	// 포지션별
-	const pb = $('#posBy').empty();
-	['GK','DF','MF','FW'].forEach(p => {
-		pb.append('<span class="chip">' + posBadge(p) + ' ' + (sm.byPosition[p] || 0) + '명</span>');
-	});
-
 	// 참석자
 	const al = $('#attendList').empty();
 	if (!sm.attendList.length) al.html('<div class="muted small" style="padding:8px 0;">아직 참석자가 없습니다.</div>');
@@ -111,14 +104,13 @@ async function loadAttendance() {
 	const others = sm.absentList.map(m => ({...m, _t:'불참'})).concat(sm.pendingList.map(m => ({...m, _t:'미정'})));
 	if (!others.length) ol.html('<div class="muted small" style="padding:8px 0;">없음</div>');
 	others.forEach(m => {
-		ol.append('<div class="member-row"><span>' + posBadge(m.position) + '</span><span class="name">' + esc(m.nickname) +
+		ol.append('<div class="member-row"><span class="name">' + esc(m.nickname) +
 			'</span><span class="right small muted">' + m._t + '</span></div>');
 	});
 }
 
 function memberRow(m) {
-	return '<div class="member-row"><span>' + posBadge(m.position) + '</span><span class="name">' + esc(m.nickname) +
-		'</span></div>';
+	return '<div class="member-row"><span class="name">' + esc(m.nickname) + '</span></div>';
 }
 
 async function loadComments() {

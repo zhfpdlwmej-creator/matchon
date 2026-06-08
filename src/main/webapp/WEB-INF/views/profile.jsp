@@ -19,22 +19,20 @@
 		<label>이름 (카카오 계정)</label>
 		<div style="padding:13px 14px;border:1px solid var(--line);border-radius:11px;background:#f4f6f5;font-weight:700;">${user.nickname}</div>
 		<div class="muted small" style="margin-top:6px;">이름은 카카오 계정 이름으로 자동 설정됩니다.</div>
-		<label>선호 포지션</label>
-		<div class="pos-picker" id="posPicker">
-			<button type="button" class="pos" data-pos="GK">GK</button>
-			<button type="button" class="pos" data-pos="DF">DF</button>
-			<button type="button" class="pos" data-pos="MF">MF</button>
-			<button type="button" class="pos" data-pos="FW">FW</button>
-		</div>
-		<input type="hidden" id="position" value="${user.position}">
-		<button class="btn-primary btn-block" id="saveBtn" style="margin-top:16px;">저장</button>
+	</div>
+
+	<!-- 알림 설정 -->
+	<div class="card">
+		<h3>🔔 알림</h3>
+		<div class="muted small" id="pushDesc" style="margin-bottom:10px;">경기 등록·리마인드 알림을 폰으로 받습니다.</div>
+		<button class="btn-primary btn-block" id="pushBtn">알림 켜기</button>
 	</div>
 
 	<div class="section-title">내 팀</div>
 	<div class="card">
 		<c:forEach var="t" items="${teams}">
 			<a class="member-row" href="/team/${t.id}">
-				<span class="emblem">⚽</span>
+				<span class="emblem">${t.sportEmoji}</span>
 				<span class="name">${t.name}</span>
 				<span class="right muted small">이동 ›</span>
 			</a>
@@ -49,21 +47,6 @@
 </div>
 
 <%@ include file="layout/bottomnav.jsp" %>
-
-<script>
-$(function () {
-	const cur = '${user.position}';
-	if (cur) $('#posPicker .pos[data-pos="' + cur + '"]').addClass('on');
-	$('#posPicker .pos').on('click', function () {
-		$('#posPicker .pos').removeClass('on');
-		$(this).addClass('on');
-		$('#position').val($(this).data('pos'));
-	});
-	$('#saveBtn').on('click', async function () {
-		const r = await api.post('/api/user/profile', { position: $('#position').val() });
-		alert(r.ok ? '저장했습니다.' : (r.message || '실패'));
-	});
-});
-</script>
+<script src="/js/push.js" defer></script>
 </body>
 </html>

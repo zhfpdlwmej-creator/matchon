@@ -72,3 +72,9 @@ app:
   naver:
     # 네이버 클라우드 플랫폼 Maps Client ID (지도용)
     maps-client-id: ${NAVER_MAPS_CLIENT_ID:}
+  push:
+    # 웹 푸시 VAPID 키 (운영에서는 환경변수로 교체 권장)
+    vapid:
+      public-key: ${VAPID_PUBLIC_KEY:BIDdNQDrkCs4YtA54dVYoGwtTty8EJlrJavBb5MNm_iBgOjEEpoO-giYb30-ZuPxurfeAgGVltI0h5pbjkxQlRI}
+      private-key: ${VAPID_PRIVATE_KEY:1JjSwB3HZuBn5t8op0VWzjZBiYoxmS9pVO1vvDsc-T0}
+      subject: ${VAPID_SUBJECT:mailto:admin@matchon.app}

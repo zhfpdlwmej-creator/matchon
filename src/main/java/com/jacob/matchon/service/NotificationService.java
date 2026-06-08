@@ -2,6 +2,7 @@ package com.jacob.matchon.service;
 
 import com.jacob.matchon.model.*;
 import com.jacob.matchon.notification.NotificationSender;
+import com.jacob.matchon.notification.WebPushService;
 import com.jacob.matchon.repo.NotificationRepository;
 import com.jacob.matchon.repo.TeamRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +20,13 @@ public class NotificationService {
 	private final NotificationRepository notiRepo;
 	private final TeamRepository teamRepo;
 	private final NotificationSender sender;
+	private final WebPushService webPush;
 
 	private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("M월 d일 a h시 m분");
+
+	private String scheduleUrl(Long teamId, Long scheduleId) {
+		return "/team/" + teamId + "/schedule/" + scheduleId;
+	}
 
 	/** 알림 생성 + 즉시 발송 (중복 타입은 1회만) */
 	@Transactional
@@ -46,6 +52,9 @@ public class NotificationService {
 		String msg = String.format("[%s]%n새 경기 일정이 등록되었습니다.%n%s (%s)%n참석 여부를 확인해주세요.",
 				team.getName(), s.getTitle(), s.startsAt().format(TIME_FMT));
 		notifyOnce(team.getId(), s.getId(), NotificationType.SCHEDULE_CREATED, msg);
+		webPush.sendToTeam(team.getId(), "[" + team.getName() + "] 새 경기 일정",
+				s.getTitle() + " · " + s.startsAt().format(TIME_FMT) + " · 참석 투표해주세요",
+				scheduleUrl(team.getId(), s.getId()));
 	}
 
 	/** 리마인드 알림(하루전/3시간전/30분전) */
@@ -59,6 +68,9 @@ public class NotificationService {
 		String msg = String.format("[%s]%n%s 경기가 예정되어 있습니다.%n%s (%s)%n참석 여부를 확인해주세요.",
 				team.getName(), when, s.getTitle(), s.startsAt().format(TIME_FMT));
 		notifyOnce(team.getId(), s.getId(), type, msg);
+		webPush.sendToTeam(team.getId(), "[" + team.getName() + "] " + when + " 경기",
+				s.getTitle() + " · " + s.startsAt().format(TIME_FMT) + " · 참석 확인해주세요",
+				scheduleUrl(team.getId(), s.getId()));
 	}
 
 	/** 인원 부족 알림 */
@@ -66,6 +78,9 @@ public class NotificationService {
 		String msg = String.format("[%s]%n현재 참석 인원이 부족합니다. (%d명 / 기준 %d명)%n%s%n참석 부탁드립니다!",
 				team.getName(), attending, team.getMinAttendees(), s.getTitle());
 		notifyOnce(team.getId(), s.getId(), NotificationType.LOW_ATTENDANCE, msg);
+		webPush.sendToTeam(team.getId(), "[" + team.getName() + "] 인원 부족",
+				"현재 " + attending + "명 (기준 " + team.getMinAttendees() + "명) · 참석 부탁드려요",
+				scheduleUrl(team.getId(), s.getId()));
 	}
 
 	public List<Notification> history(Long teamId) {

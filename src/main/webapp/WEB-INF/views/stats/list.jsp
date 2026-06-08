@@ -31,7 +31,6 @@ async function load() {
 			'<div class="stat-row">' +
 			'<div class="top">' +
 			'<span class="muted small">' + (i + 1) + '</span> ' +
-			posBadge(s.position) +
 			'<span class="name">' + esc(s.nickname) + '</span>' +
 			'<span class="right muted small" style="margin-left:auto;">' + s.totalAttended + '/' + s.totalMatches + '경기</span>' +
 			'</div>' +

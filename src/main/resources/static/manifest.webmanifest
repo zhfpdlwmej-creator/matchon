@@ -1,0 +1,10 @@
+{
+  "name": "matchon — 운동 매치",
+  "short_name": "matchon",
+  "description": "축구·야구·농구 팀 매칭 · 출석 관리",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a9d52",
+  "theme_color": "#1a9d52",
+  "lang": "ko"
+}
