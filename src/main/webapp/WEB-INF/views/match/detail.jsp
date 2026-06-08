@@ -67,7 +67,7 @@ async function load() {
 	if (!r.ok) { alert('매칭을 불러올 수 없습니다.'); location.href = '/matches'; return; }
 	mp = r.match; isHost = r.isHost;
 
-	$('#dLevel').html('<span class="lvl-badge" style="background:#2f6df0;">' + (mp.sportEmoji || '') + ' ' + esc(mp.sportLabel) + '</span> ' + lvBadge(mp.level, '수준 ' + mp.levelLabel));
+	$('#dLevel').html(lvBadge(mp.level, '수준 ' + mp.levelLabel));
 	$('#dRegion').text(mp.region || '지역 미정');
 	$('#dStatus').text(STATUS_LABEL[mp.status] || mp.status);
 	$('#dTeam').text(mp.hostTeamName);

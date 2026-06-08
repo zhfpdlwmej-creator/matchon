@@ -32,14 +32,7 @@
 	<div id="tabApplied" style="display:none;"></div>
 
 	<div class="card">
-		<div class="small" style="font-weight:700;margin-bottom:8px;">종목</div>
-		<div class="region-row" id="sportFilter">
-			<button type="button" class="region-chip" data-sport="">전체</button>
-			<button type="button" class="region-chip" data-sport="SOCCER">⚽ 축구</button>
-			<button type="button" class="region-chip" data-sport="BASEBALL">⚾ 야구</button>
-			<button type="button" class="region-chip" data-sport="BASKETBALL">🏀 농구</button>
-		</div>
-		<div class="small" style="font-weight:700;margin:14px 0 8px;">지역으로 보기</div>
+		<div class="small" style="font-weight:700;margin-bottom:8px;">지역으로 보기</div>
 		<div id="filterRegion"></div>
 	</div>
 
@@ -105,7 +98,7 @@ const TEAM_NAME = "${team.name}";
 const IS_LEADER = ${isLeader};                       // 현재 팀의 팀장인가
 let map, marker, mapReady = false;
 let currentRegion = '';
-let currentSport = '${empty team ? "" : team.sport}';   // 기본 = 현재 팀 종목
+let currentSport = '';   // 축구 전용 — 종목 필터 미사용
 
 function lvBadge(lv, label) { return '<span class="lvl-badge ' + (LEVEL_CLASS[lv]||'') + '">' + label + '</span>'; }
 const SPORT_EMOJI = { SOCCER: '⚽', BASEBALL: '⚾', BASKETBALL: '🏀' };
@@ -155,17 +148,16 @@ async function loadList() {
 	const r = await api.get('/api/match/list' + (q.length ? '?' + q.join('&') : ''));
 	const box = $('#matchList').empty();
 	if (!r.ok) return;
-	if (!r.matches.length) { box.html('<div class="empty"><span class="big">' + sportEmoji(currentSport) + '</span>' + (currentRegion ? esc(currentRegion) + ' 지역에 ' : '') + '모집중인 매칭이 없습니다.<br>우하단 ＋ 로 매칭을 올려보세요.</div>'); return; }
+	if (!r.matches.length) { box.html('<div class="empty"><span class="big">⚽</span>' + (currentRegion ? esc(currentRegion) + ' 지역에 ' : '') + '모집중인 매칭이 없습니다.<br>우하단 ＋ 로 매칭을 올려보세요.</div>'); return; }
 	r.matches.forEach(m => {
 		const when = m.matchDate ? (m.matchDate.replaceAll('-', '.') + (m.startTime ? ' ' + m.startTime.slice(0,5) : '')) : '일정 협의';
 		box.append(
 			'<a class="schedule-item" href="/matches/' + m.id + '">' +
 			'<div style="display:flex;align-items:center;gap:8px;">' +
-			'<span class="lvl-badge" style="background:#2f6df0;">' + (m.sportEmoji || '') + ' ' + esc(m.sportLabel) + '</span>' +
 			lvBadge(m.level, '수준 ' + m.levelLabel) +
+			'<span class="date">' + esc(m.region || '지역 미정') + '</span>' +
 			(m.mine ? '<span class="muted small" style="margin-left:auto;">내 팀</span>' : '') + '</div>' +
 			'<div class="title">' + esc(m.hostTeamName) + '</div>' +
-			'<div class="meta muted small">📍 ' + esc(m.region || '지역 미정') + '</div>' +
 			'<div class="meta">👥 ' + m.headcount + '명 · 📅 ' + when + (m.placeName ? ' · 📍 ' + esc(m.placeName) : '') + '</div>' +
 			'<div class="meta muted small">👤 등록자 ' + esc(m.hostName) + ' · 신청 ' + m.applications + '팀</div>' +
 			'</a>');
@@ -197,15 +189,6 @@ function openModal() { $('#matchModal').addClass('open'); ensureMap(); setTimeou
 function closeModal() { $('#matchModal').removeClass('open'); }
 
 $(function () {
-	// 종목 필터 (기본 = 현재 팀 종목)
-	$('#sportFilter .region-chip').each(function () {
-		if (($(this).data('sport') || '') === currentSport) $(this).addClass('on');
-	});
-	$('#sportFilter .region-chip').on('click', function () {
-		$('#sportFilter .region-chip').removeClass('on'); $(this).addClass('on');
-		currentSport = $(this).data('sport') || '';
-		loadList();
-	});
 	// 지역 필터
 	buildRegionPicker('#filterRegion', { includeAll: true, onChange: function (region) { currentRegion = region; loadList(); } });
 	// 등록용 지역

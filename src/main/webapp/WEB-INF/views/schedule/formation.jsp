@@ -8,7 +8,7 @@
 	<%@ include file="../layout/head.jsp" %>
 	<style>
 		.pitch { position: relative; width: 100%; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden;
-			background: linear-gradient(180deg,#1f9d55,#15823f); box-shadow: var(--shadow); touch-action: none; }
+			background: linear-gradient(180deg,#1f9d55,#15823f); box-shadow: var(--shadow); touch-action: pan-y; }
 		.pitch .line { position: absolute; border: 2px solid rgba(255,255,255,.55); }
 		.pitch .halfway { top: 50%; left: 0; right: 0; border: none; border-top: 2px solid rgba(255,255,255,.55); }
 		.pitch .circle { top: 50%; left: 50%; width: 26%; aspect-ratio: 1; transform: translate(-50%,-50%); border-radius: 50%; }
@@ -16,7 +16,7 @@
 		.pitch .boxBot { bottom: 0; left: 22%; right: 22%; height: 16%; border-bottom: none; }
 		.tok { position: absolute; transform: translate(-50%,-50%); min-width: 44px; max-width: 70px; padding: 6px 4px;
 			background: #fff; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.3); text-align: center;
-			font-size: 11px; font-weight: 700; cursor: grab; user-select: none; line-height: 1.15; }
+			font-size: 11px; font-weight: 700; cursor: grab; user-select: none; line-height: 1.15; touch-action: none; }
 		.tok.dragging { cursor: grabbing; z-index: 10; box-shadow: 0 6px 14px rgba(0,0,0,.4); }
 		.tok .dot { display: block; width: 18px; height: 18px; margin: 0 auto 3px; border-radius: 50%; background: var(--green); color: #fff; font-size: 11px; line-height: 18px; }
 		.bench { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
@@ -59,6 +59,7 @@
 		<button class="btn-ghost btn-sm" id="addCustom">＋ 추가</button>
 		<button class="btn-ghost btn-sm" id="reloadRoster">참석자 불러오기</button>
 	</div>
+	<button class="btn-ghost btn-block" id="clearAll" style="margin-top:8px;color:var(--red);">포메이션 전체 비우기</button>
 
 	<c:if test="${canManage}">
 		<button class="btn-primary btn-block" id="saveFm" style="margin-top:14px;">저장</button>
@@ -215,6 +216,12 @@ $(function () {
 	$('#addCustom').on('click', function () { addToken($('#customName').val()); $('#customName').val(''); render(); });
 	$('#customName').on('keypress', e => { if (e.which === 13) { addToken($('#customName').val()); $('#customName').val(''); render(); } });
 	$('#reloadRoster').on('click', function () { if (confirm('현재 참석자/용병을 벤치로 다시 불러올까요?')) loadRoster(true); });
+	$('#clearAll').on('click', function () {
+		if (!confirm('필드의 선수를 모두 벤치로 내릴까요? (전체 비우기)')) return;
+		tokens.forEach(t => { t.x = null; t.y = null; });
+		$('#presets .region-chip').removeClass('on');
+		render();
+	});
 	$('#saveFm').on('click', async function () {
 		const data = { tokens: tokens.map(t => ({ label: t.label, x: t.x, y: t.y })) };
 		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/formation', { data: JSON.stringify(data) });

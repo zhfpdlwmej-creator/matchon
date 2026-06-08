@@ -22,27 +22,24 @@
 		<div class="card" id="myRequests"></div>
 	</div>
 
-	<div class="section-title">새 팀 만들기</div>
+	<div class="section-title">팀 추가</div>
+	<div class="tabs" id="teamModeTabs">
+		<button class="tab on" data-mode="create">새 팀 만들기</button>
+		<button class="tab" data-mode="join">초대코드 가입</button>
+	</div>
+
 	<form id="createForm" class="card-form">
-		<label>종목</label>
-		<div class="lvl-picker" id="sportPicker">
-			<button type="button" class="lvl on" data-sport="SOCCER">⚽ 축구</button>
-			<button type="button" class="lvl" data-sport="BASEBALL">⚾ 야구</button>
-			<button type="button" class="lvl" data-sport="BASKETBALL">🏀 농구</button>
-		</div>
-		<input type="hidden" id="teamSport" value="SOCCER">
 		<label>팀명</label>
 		<input type="text" id="teamName" maxlength="40" placeholder="예: FC 챔피언스" required>
 		<label>팀 소개 (선택)</label>
-		<input type="text" id="teamDesc" maxlength="255" placeholder="예: 매주 일요일 아침 운동">
+		<input type="text" id="teamDesc" maxlength="255" placeholder="예: 매주 일요일 아침 풋살">
 		<button type="submit" class="btn-primary btn-block" style="margin-top:14px;">팀 생성</button>
 	</form>
 
-	<div class="section-title">초대코드로 가입</div>
-	<form id="joinForm" class="card-form">
+	<form id="joinForm" class="card-form" style="display:none;">
 		<label>초대코드 (6자리)</label>
 		<input type="text" id="inviteCode" maxlength="12" placeholder="예: AB3K9X" style="text-transform:uppercase;" required>
-		<button type="submit" class="btn-ghost btn-block" style="margin-top:14px;">가입하기</button>
+		<button type="submit" class="btn-primary btn-block" style="margin-top:14px;">가입 신청</button>
 	</form>
 </div>
 
@@ -60,8 +57,8 @@ async function loadTeams() {
 		const role = t.myRole === 'LEADER' ? '팀장' : (t.myRole === 'MANAGER' ? '운영진' : '회원');
 		box.append(
 			'<a class="schedule-item" href="/team/' + t.id + '">' +
-			'<div class="title">' + (t.sportEmoji || '') + ' ' + esc(t.name) + '</div>' +
-			'<div class="meta">' + (t.sportLabel ? '[' + t.sportLabel + '] ' : '') + esc(t.description || '') + '</div>' +
+			'<div class="title">⚽ ' + esc(t.name) + '</div>' +
+			'<div class="meta">' + esc(t.description || '') + '</div>' +
 			'<div class="meta">멤버 ' + t.memberCount + '명 · 내 권한 ' + role + '</div>' +
 			'</a>');
 	});
@@ -83,17 +80,17 @@ $(function () {
 	if (location.search.indexOf('req=sent') >= 0) {
 		setTimeout(function () { alert('가입 신청이 접수되었습니다.\n팀장이 승인하면 가입됩니다.'); }, 200);
 	}
-	$('#sportPicker .lvl').on('click', function () {
-		$('#sportPicker .lvl').removeClass('on');
-		$(this).addClass('on');
-		$('#teamSport').val($(this).data('sport'));
+	$('#teamModeTabs .tab').on('click', function () {
+		$('#teamModeTabs .tab').removeClass('on'); $(this).addClass('on');
+		const m = $(this).data('mode');
+		$('#createForm').toggle(m === 'create');
+		$('#joinForm').toggle(m === 'join');
 	});
 	$('#createForm').on('submit', async function (e) {
 		e.preventDefault();
 		const r = await api.post('/api/team', {
 			name: $('#teamName').val().trim(),
-			description: $('#teamDesc').val().trim(),
-			sport: $('#teamSport').val()
+			description: $('#teamDesc').val().trim()
 		});
 		if (r.ok) location.href = '/team/' + r.team.id;
 		else alert(r.message || '생성 실패');
