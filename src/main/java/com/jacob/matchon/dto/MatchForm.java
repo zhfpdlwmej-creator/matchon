@@ -11,6 +11,8 @@ import java.time.LocalTime;
 @Getter @Setter
 public class MatchForm {
 	private String level;      // HIGH/MID/LOW
+	private String matchType;  // FUTSAL_5 / SOCCER_8 / SOCCER_11
+	private String ageGroup;   // AGE_20 / AGE_30 / AGE_40 / ANY
 	private Integer headcount;
 	private String region;
 	private String placeName;

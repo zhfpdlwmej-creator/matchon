@@ -20,7 +20,8 @@ public class MatchApplication {
 	@Column(name = "match_post_id", nullable = false)
 	private Long matchPostId;
 
-	@Column(name = "applicant_team_id", nullable = false)
+	/** 팀 매칭이면 신청 팀 id, 용병(개인) 지원이면 null */
+	@Column(name = "applicant_team_id")
 	private Long applicantTeamId;
 
 	@Column(name = "applicant_user_id", nullable = false)

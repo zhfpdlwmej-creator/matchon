@@ -42,6 +42,16 @@
 		</div>
 	</div>
 
+	<!-- 용병(개인) 지원 영역 -->
+	<div class="card" id="guestApplyCard" style="display:none;">
+		<h3>이 경기에 용병으로 지원</h3>
+		<div class="card-form" style="padding:0;box-shadow:none;">
+			<label>팀장에게 한마디 (선택)</label>
+			<input type="text" id="guestMsg" maxlength="300" placeholder="예: 윙어 가능 / 8시까지 도착합니다">
+			<button class="btn-primary btn-block" id="guestApplyBtn" style="margin-top:14px;">🙋 용병 지원하기</button>
+		</div>
+	</div>
+
 	<!-- 호스트 영역: 신청 목록 -->
 	<div id="hostArea" style="display:none;">
 		<div class="section-title">신청한 팀</div>
@@ -58,17 +68,18 @@ const TEAM_ID = ${empty team ? 'null' : team.id};   // 현재(활동) 팀
 const LEVEL_CLASS = { HIGH: 'lv-high', MID: 'lv-mid', LOW: 'lv-low' };
 const STATUS_LABEL = { OPEN: '모집중', MATCHED: '성사', CLOSED: '마감' };
 const APP_STATUS = { PENDING: '대기', ACCEPTED: '수락됨', REJECTED: '거절됨' };
-let mp = null, isHost = false;
+let mp = null, isHost = false, isGuestRecruit = false;
 
 function lvBadge(lv, label) { return '<span class="lvl-badge ' + (LEVEL_CLASS[lv]||'') + '">' + label + '</span>'; }
 
 async function load() {
 	const r = await api.get('/api/match/' + MATCH_ID + (TEAM_ID ? '?teamId=' + TEAM_ID : ''));
 	if (!r.ok) { alert('매칭을 불러올 수 없습니다.'); location.href = '/matches'; return; }
-	mp = r.match; isHost = r.isHost;
+	mp = r.match; isHost = r.isHost; isGuestRecruit = !!r.isGuestRecruit;
 
-	$('#dLevel').html(lvBadge(mp.level, '수준 ' + mp.levelLabel));
-	$('#dRegion').text(mp.region || '지역 미정');
+	if (isGuestRecruit) $('#dLevel').html('<span class="lvl-badge" style="background:#e0454f;">🆘 용병 ' + mp.headcount + '명 모집</span>');
+	else $('#dLevel').html(lvBadge(mp.level, '수준 ' + mp.levelLabel));
+	$('#dRegion').text(mp.region || mp.placeName || '지역 미정');
 	$('#dStatus').text(STATUS_LABEL[mp.status] || mp.status);
 	$('#dTeam').text(mp.hostTeamName);
 	let when = mp.matchDate ? (mp.matchDate.replaceAll('-', '.') + (mp.startTime ? ' ' + mp.startTime.slice(0,5) : '')) : '일정 협의';
@@ -77,32 +88,45 @@ async function load() {
 
 	showMap();
 
-	// 호스트면 신청 관리 영역
+	// 호스트면 신청/지원 관리 영역
 	if (isHost) {
 		$('#hostArea').show();
+		$('#closeBtn').text(isGuestRecruit ? '용병 모집 마감하기' : '매칭 마감하기');
 		renderApps(r.applications || []);
 	}
-	// 신청 가능한 내 팀이 있으면(호스트라도 다른 팀으로) 신청 폼 노출
-	const applicable = r.applicableTeams || [];
-	if (mp.status === 'OPEN' && applicable.length) {
-		$('#applyCard').show();
-		const sel = $('#applyTeam').empty();
-		applicable.forEach(t => sel.append('<option value="' + t.id + '">' + esc(t.name) + '</option>'));
+
+	if (isGuestRecruit) {
+		// 용병 모집글: 개인 지원
+		if (r.canApplyGuest) $('#guestApplyCard').show();
+	} else {
+		// 팀 매칭: 내 팀으로 신청
+		const applicable = r.applicableTeams || [];
+		if (mp.status === 'OPEN' && applicable.length) {
+			$('#applyCard').show();
+			const sel = $('#applyTeam').empty();
+			applicable.forEach(t => sel.append('<option value="' + t.id + '">' + esc(t.name) + '</option>'));
+		}
 	}
 }
 
 function renderApps(apps) {
 	const box = $('#appList').empty();
-	if (!apps.length) { box.html('<div class="muted small" style="padding:8px 0;">아직 신청한 팀이 없습니다.</div>'); return; }
+	const emptyMsg = isGuestRecruit ? '아직 지원한 용병이 없습니다.' : '아직 신청한 팀이 없습니다.';
+	if (!apps.length) { box.html('<div class="muted small" style="padding:8px 0;">' + emptyMsg + '</div>'); return; }
 	apps.forEach(a => {
 		const accepted = a.status === 'ACCEPTED';
-		const btn = (mp.status === 'OPEN' && a.status === 'PENDING')
-			? '<button class="btn-primary btn-sm acceptBtn" data-id="' + a.id + '">수락</button>'
+		// 용병 지원은 여러 명 수락 가능(모집글 OPEN 유지), 팀 매칭은 1팀 수락 시 성사
+		const canAccept = a.status === 'PENDING' && (isGuestRecruit ? mp.status === 'OPEN' : mp.status === 'OPEN');
+		const cls = isGuestRecruit ? 'acceptGuestBtn' : 'acceptBtn';
+		const btn = canAccept
+			? '<button class="btn-primary btn-sm ' + cls + '" data-id="' + a.id + '">수락</button>'
 			: '<span class="muted small">' + (APP_STATUS[a.status] || a.status) + '</span>';
+		const title = isGuestRecruit ? ('🧤 ' + esc(a.applicant)) : esc(a.teamName);
+		const sub = isGuestRecruit ? (a.message ? esc(a.message) : '한마디 없음') : (esc(a.applicant) + (a.message ? ' · ' + esc(a.message) : ''));
 		box.append(
 			'<div class="member-row"><div style="flex:1;min-width:0;">' +
-			'<div class="name">' + esc(a.teamName) + (accepted ? ' ✅' : '') + '</div>' +
-			'<div class="muted small">' + esc(a.applicant) + (a.message ? ' · ' + esc(a.message) : '') + '</div>' +
+			'<div class="name">' + title + (accepted ? ' ✅' : '') + '</div>' +
+			'<div class="muted small">' + sub + '</div>' +
 			'</div><span class="right">' + btn + '</span></div>');
 	});
 }
@@ -132,6 +156,18 @@ $(function () {
 		if (!confirm('이 팀의 신청을 수락할까요? (매칭이 성사되고 나머지 신청은 거절됩니다)')) return;
 		const r = await api.post('/api/match/application/' + $(this).data('id') + '/accept', {});
 		if (r.ok) load(); else alert(r.message || '실패');
+	});
+
+	$('#appList').on('click', '.acceptGuestBtn', async function () {
+		if (!confirm('이 용병을 수락할까요? 우리 일정에 용병으로 자동 추가됩니다.')) return;
+		const r = await api.post('/api/match/application/' + $(this).data('id') + '/accept-guest', {});
+		if (r.ok) load(); else alert(r.message || '실패');
+	});
+
+	$('#guestApplyBtn').on('click', async function () {
+		const r = await api.post('/api/match/' + MATCH_ID + '/apply-guest', { message: $('#guestMsg').val().trim() });
+		if (r.ok) { alert('지원 완료! 상대 팀장이 수락하면 확정됩니다.'); load(); }
+		else alert(r.message || '지원 실패');
 	});
 
 	$('#closeBtn').on('click', async function () {

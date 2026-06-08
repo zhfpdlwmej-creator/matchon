@@ -18,7 +18,8 @@
 		<div class="meta muted small" id="dMeta"></div>
 		<div class="meta small" id="dMemo" style="margin-top:8px;white-space:pre-wrap;"></div>
 		<button class="btn-primary btn-block" id="shareBtn" style="margin-top:14px;">📢 카카오톡으로 일정 공유</button>
-		<a href="/team/${team.id}/schedule/${scheduleId}/formation" class="btn-ghost btn-block" style="margin-top:8px;text-align:center;">📋 포메이션 짜기</a>
+		<a href="/team/${team.id}/schedule/${scheduleId}/formation" class="btn-ghost btn-block" style="margin-top:8px;text-align:center;"><c:choose><c:when test="${canManage}">📋 포메이션 짜기</c:when><c:otherwise>📋 포메이션 보기</c:otherwise></c:choose></a>
+		<button class="btn-ghost btn-block" id="recruitBtn" style="margin-top:8px;display:none;color:var(--red);"></button>
 	</div>
 
 	<div class="card">
@@ -106,6 +107,12 @@ async function loadAttendance() {
 	$('#attendBtns .att-btn').removeClass('on');
 	$('#attendBtns .att-btn[data-s="' + r.myStatus + '"]').addClass('on');
 
+	// 인원 부족 → 용병 모집글 버튼 (팀장/운영진)
+	const target = sched ? sched.targetHeadcount : 0;
+	const shortage = target - (sm.attend + (sm.guestCount || 0));
+	if (CAN_MANAGE && shortage > 0) $('#recruitBtn').show().text('🆘 용병 ' + shortage + '명 모집글 올리기');
+	else $('#recruitBtn').hide();
+
 	// 참석자
 	const al = $('#attendList').empty();
 	if (!sm.attendList.length) al.html('<div class="muted small" style="padding:8px 0;">아직 참석자가 없습니다.</div>');
@@ -151,9 +158,15 @@ async function loadComments() {
 }
 
 $(function () {
-	loadInfo();
-	loadAttendance();
+	loadInfo().then(loadAttendance);
 	loadComments();
+
+	$('#recruitBtn').on('click', async function () {
+		if (!confirm('인원이 부족한 만큼 매칭 탭에 용병 모집글을 올릴까요?')) return;
+		const r = await api.post('/api/match/recruit-guest?scheduleId=' + SCHEDULE_ID, {});
+		if (r.ok) { alert('용병 모집글을 등록했어요! 매칭 탭에서 확인하세요.'); location.href = '/matches/' + r.id; }
+		else alert(r.message || '실패');
+	});
 
 	$('#attendBtns .att-btn').on('click', async function () {
 		const s = $(this).data('s');

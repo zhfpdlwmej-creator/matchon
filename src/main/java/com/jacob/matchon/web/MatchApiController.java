@@ -88,9 +88,34 @@ public class MatchApiController {
 		Map<String, Object> res = new HashMap<>();
 		res.put("ok", true);
 		res.put("match", postView(p, mine));
-		res.put("isHost", isHost);
 
 		List<MatchApplication> apps = matchService.applications(id);
+
+		// 용병(개인) 모집글: 팀이 아닌 개인 지원 흐름
+		if (p.isRecruitGuest()) {
+			boolean isHostManager = teamService.isLeader(p.getHostTeamId(), uid);
+			res.put("isGuestRecruit", true);
+			res.put("isHost", isHostManager);
+			if (isHostManager) {
+				Map<Long, User> users = userService.mapByIds(apps.stream().map(MatchApplication::getApplicantUserId).toList());
+				res.put("applications", apps.stream().map(a -> {
+					User u = users.get(a.getApplicantUserId());
+					Map<String, Object> m = new HashMap<>();
+					m.put("id", a.getId());
+					m.put("applicant", u == null ? "?" : u.getNickname());
+					m.put("message", a.getMessage());
+					m.put("status", a.getStatus().name());
+					return m;
+				}).toList());
+			}
+			boolean alreadyApplied = apps.stream().anyMatch(a -> uid.equals(a.getApplicantUserId()));
+			res.put("canApplyGuest", p.getStatus() == MatchStatus.OPEN && !isHostManager && !alreadyApplied);
+			res.put("applicableTeams", List.of());
+			return res;
+		}
+
+		res.put("isGuestRecruit", false);
+		res.put("isHost", isHost);
 		Set<Long> appliedTeams = apps.stream().map(MatchApplication::getApplicantTeamId).collect(Collectors.toSet());
 
 		// 현재 팀이 호스트면 신청 목록(수락 관리) 노출
@@ -137,6 +162,30 @@ public class MatchApiController {
 		return Map.of("ok", true);
 	}
 
+	/** 일정 인원부족 → 용병 모집글 원터치 등록 (팀장/운영진) */
+	@PostMapping("/recruit-guest")
+	public Map<String, Object> recruitGuest(@RequestParam Long scheduleId) {
+		Long uid = CurrentUser.required();
+		MatchPost p = matchService.createGuestRecruit(uid, scheduleId);
+		return Map.of("ok", true, "id", p.getId());
+	}
+
+	/** 용병(개인) 지원 */
+	@PostMapping("/{id}/apply-guest")
+	public Map<String, Object> applyGuest(@PathVariable Long id, @RequestBody Map<String, String> body) {
+		Long uid = CurrentUser.required();
+		matchService.applyGuest(uid, id, body.get("message"));
+		return Map.of("ok", true);
+	}
+
+	/** 용병 지원 수락 (호스트) → 일정에 용병 자동 추가 */
+	@PostMapping("/application/{appId}/accept-guest")
+	public Map<String, Object> acceptGuest(@PathVariable Long appId) {
+		Long uid = CurrentUser.required();
+		matchService.acceptGuest(appId, uid);
+		return Map.of("ok", true);
+	}
+
 	/** 신청 수락 (호스트) */
 	@PostMapping("/application/{appId}/accept")
 	public Map<String, Object> accept(@PathVariable Long appId) {
@@ -167,6 +216,10 @@ public class MatchApiController {
 		m.put("sportEmoji", p.getSport() == null ? "" : p.getSport().emoji());
 		m.put("level", p.getLevel().name());
 		m.put("levelLabel", p.getLevel().label());
+		m.put("matchType", p.getMatchType());
+		m.put("ageGroup", p.getAgeGroup());
+		m.put("recruitGuest", p.isRecruitGuest());
+		m.put("sourceScheduleId", p.getSourceScheduleId());
 		m.put("headcount", p.getHeadcount());
 		m.put("region", p.getRegion());
 		m.put("placeName", p.getPlaceName());

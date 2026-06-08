@@ -32,7 +32,28 @@
 	<div id="tabApplied" style="display:none;"></div>
 
 	<div class="card">
-		<div class="small" style="font-weight:700;margin-bottom:8px;">지역으로 보기</div>
+		<div class="small" style="font-weight:700;margin-bottom:8px;">매치 타입</div>
+		<div class="region-row" id="fType">
+			<button class="region-chip on" data-v="">전체</button>
+			<button class="region-chip" data-v="FUTSAL_5">⚽ 5인제 풋살</button>
+			<button class="region-chip" data-v="SOCCER_8">8인제</button>
+			<button class="region-chip" data-v="SOCCER_11">11인제 축구</button>
+		</div>
+		<div class="small" style="font-weight:700;margin:12px 0 8px;">실력대</div>
+		<div class="region-row" id="fLevel">
+			<button class="region-chip on" data-v="">전체</button>
+			<button class="region-chip" data-v="HIGH">상</button>
+			<button class="region-chip" data-v="MID">중</button>
+			<button class="region-chip" data-v="LOW">하</button>
+		</div>
+		<div class="small" style="font-weight:700;margin:12px 0 8px;">연령대</div>
+		<div class="region-row" id="fAge">
+			<button class="region-chip on" data-v="">전체</button>
+			<button class="region-chip" data-v="AGE_20">20대</button>
+			<button class="region-chip" data-v="AGE_30">30대</button>
+			<button class="region-chip" data-v="AGE_40">40대+</button>
+		</div>
+		<div class="small" style="font-weight:700;margin:12px 0 8px;">지역으로 보기</div>
 		<div id="filterRegion"></div>
 	</div>
 
@@ -57,6 +78,23 @@
 				<button type="button" class="lvl" data-lv="LOW">하</button>
 			</div>
 			<input type="hidden" id="level">
+
+				<label>매치 타입</label>
+				<div class="lvl-picker" id="typePicker">
+					<button type="button" class="lvl" data-v="FUTSAL_5">5인제 풋살</button>
+					<button type="button" class="lvl" data-v="SOCCER_8">8인제</button>
+					<button type="button" class="lvl on" data-v="SOCCER_11">11인제</button>
+				</div>
+				<input type="hidden" id="matchType" value="SOCCER_11">
+
+				<label>연령대</label>
+				<div class="lvl-picker" id="agePicker">
+					<button type="button" class="lvl on" data-v="ANY">무관</button>
+					<button type="button" class="lvl" data-v="AGE_20">20대</button>
+					<button type="button" class="lvl" data-v="AGE_30">30대</button>
+					<button type="button" class="lvl" data-v="AGE_40">40대+</button>
+				</div>
+				<input type="hidden" id="ageGroup" value="ANY">
 
 			<div class="row-2">
 				<div><label>인원</label><input type="number" id="headcount" min="1" value="6"></div>
@@ -99,6 +137,11 @@ const IS_LEADER = ${isLeader};                       // 현재 팀의 팀장인�
 let map, marker, mapReady = false;
 let currentRegion = '';
 let currentSport = '';   // 축구 전용 — 종목 필터 미사용
+let currentType = '', currentLevel = '', currentAge = '';
+let allMatches = [];     // 지역 필터로 받아온 원본(타입/실력/연령은 클라이언트 필터)
+
+const TYPE_LABEL = { FUTSAL_5: '5인제 풋살', SOCCER_8: '8인제', SOCCER_11: '11인제 축구' };
+const AGE_LABEL = { AGE_20: '20대', AGE_30: '30대', AGE_40: '40대+' };
 
 function lvBadge(lv, label) { return '<span class="lvl-badge ' + (LEVEL_CLASS[lv]||'') + '">' + label + '</span>'; }
 const SPORT_EMOJI = { SOCCER: '⚽', BASEBALL: '⚾', BASKETBALL: '🏀' };
@@ -146,19 +189,45 @@ async function loadList() {
 	if (TEAM_ID) q.push('teamId=' + TEAM_ID);
 	if (currentSport) q.push('sport=' + currentSport);
 	const r = await api.get('/api/match/list' + (q.length ? '?' + q.join('&') : ''));
+	allMatches = r.ok ? r.matches : [];
+	renderList();
+}
+
+function passFilter(m) {
+	if (m.recruitGuest) return !currentType && !currentLevel && !currentAge ? true : false; // 용병모집은 무관 → 전체에서만
+	if (currentType && m.matchType !== currentType) return false;
+	if (currentLevel && m.level !== currentLevel) return false;
+	if (currentAge && m.ageGroup !== currentAge) return false;
+	return true;
+}
+
+function renderList() {
 	const box = $('#matchList').empty();
-	if (!r.ok) return;
-	if (!r.matches.length) { box.html('<div class="empty"><span class="big">⚽</span>' + (currentRegion ? esc(currentRegion) + ' 지역에 ' : '') + '모집중인 매칭이 없습니다.<br>우하단 ＋ 로 매칭을 올려보세요.</div>'); return; }
-	r.matches.forEach(m => {
+	const list = allMatches.filter(passFilter);
+	if (!list.length) { box.html('<div class="empty"><span class="big">⚽</span>' + (currentRegion ? esc(currentRegion) + ' 지역에 ' : '') + '조건에 맞는 매칭이 없습니다.<br>우하단 ＋ 로 매칭을 올려보세요.</div>'); return; }
+	list.forEach(m => {
 		const when = m.matchDate ? (m.matchDate.replaceAll('-', '.') + (m.startTime ? ' ' + m.startTime.slice(0,5) : '')) : '일정 협의';
+		if (m.recruitGuest) {
+			box.append(
+				'<a class="schedule-item" href="/matches/' + m.id + '">' +
+				'<div style="display:flex;align-items:center;gap:8px;">' +
+				'<span class="lvl-badge" style="background:#e0454f;">🆘 용병 ' + m.headcount + '명 모집</span>' +
+				(m.placeName ? '<span class="date">' + esc(m.placeName) + '</span>' : '') + '</div>' +
+				'<div class="title">' + esc(m.hostTeamName) + '</div>' +
+				'<div class="meta">📅 ' + when + '</div>' +
+				'<div class="meta muted small">' + esc(m.memo || '') + ' · 지원 ' + m.applications + '명</div>' +
+				'</a>');
+			return;
+		}
+		const tags = lvBadge(m.level, '수준 ' + m.levelLabel) +
+			(m.matchType ? '<span class="lvl-badge" style="background:#2f6df0;">' + (TYPE_LABEL[m.matchType] || m.matchType) + '</span>' : '') +
+			(m.ageGroup ? '<span class="lvl-badge" style="background:#7b8794;">' + (AGE_LABEL[m.ageGroup] || m.ageGroup) + '</span>' : '');
 		box.append(
 			'<a class="schedule-item" href="/matches/' + m.id + '">' +
-			'<div style="display:flex;align-items:center;gap:8px;">' +
-			lvBadge(m.level, '수준 ' + m.levelLabel) +
-			'<span class="date">' + esc(m.region || '지역 미정') + '</span>' +
+			'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + tags +
 			(m.mine ? '<span class="muted small" style="margin-left:auto;">내 팀</span>' : '') + '</div>' +
 			'<div class="title">' + esc(m.hostTeamName) + '</div>' +
-			'<div class="meta">👥 ' + m.headcount + '명 · 📅 ' + when + (m.placeName ? ' · 📍 ' + esc(m.placeName) : '') + '</div>' +
+			'<div class="meta">📍 ' + esc(m.region || '지역 미정') + ' · 👥 ' + m.headcount + '명 · 📅 ' + when + (m.placeName ? ' · ' + esc(m.placeName) : '') + '</div>' +
 			'<div class="meta muted small">👤 등록자 ' + esc(m.hostName) + ' · 신청 ' + m.applications + '팀</div>' +
 			'</a>');
 	});
@@ -220,7 +289,17 @@ $(function () {
 
 	$('#lvlPicker .lvl').on('click', function () {
 		$('#lvlPicker .lvl').removeClass('on'); $(this).addClass('on'); $('#level').val($(this).data('lv'));
-	});
+			void 0;
+		});
+		$('#typePicker .lvl').on('click', function () {
+			$('#typePicker .lvl').removeClass('on'); $(this).addClass('on'); $('#matchType').val($(this).data('v'));
+		});
+		$('#agePicker .lvl').on('click', function () {
+			$('#agePicker .lvl').removeClass('on'); $(this).addClass('on'); $('#ageGroup').val($(this).data('v'));
+		});
+		$('#fType .region-chip').on('click', function () { $('#fType .region-chip').removeClass('on'); $(this).addClass('on'); currentType = $(this).data('v') || ''; renderList(); });
+		$('#fLevel .region-chip').on('click', function () { $('#fLevel .region-chip').removeClass('on'); $(this).addClass('on'); currentLevel = $(this).data('v') || ''; renderList(); });
+		$('#fAge .region-chip').on('click', function () { $('#fAge .region-chip').removeClass('on'); $(this).addClass('on'); currentAge = $(this).data('v') || ''; renderList(); });
 
 	$('#placeSearch').on('click', function () {
 		const kw = $('#placeName').val().trim();
@@ -242,6 +321,8 @@ $(function () {
 		if ($('#startTime').val() && !validTime($('#startTime').val())) { alert('시작시간을 HH:MM 형식으로 입력해주세요. 예: 14:00'); return; }
 		const body = {
 			level: $('#level').val(),
+			matchType: $('#matchType').val(),
+			ageGroup: $('#ageGroup').val(),
 			headcount: parseInt($('#headcount').val() || '0', 10),
 			region: $('#region').val().trim(),
 			placeName: $('#placeName').val().trim(),

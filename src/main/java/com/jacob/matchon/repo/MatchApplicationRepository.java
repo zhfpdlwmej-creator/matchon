@@ -9,6 +9,7 @@ import java.util.List;
 public interface MatchApplicationRepository extends JpaRepository<MatchApplication, Long> {
 	List<MatchApplication> findByMatchPostIdOrderByCreatedAtAsc(Long matchPostId);
 	boolean existsByMatchPostIdAndApplicantTeamId(Long matchPostId, Long applicantTeamId);
+	boolean existsByMatchPostIdAndApplicantUserId(Long matchPostId, Long applicantUserId);
 	long countByMatchPostId(Long matchPostId);
 	long countByMatchPostIdAndStatus(Long matchPostId, ApplicationStatus status);
 	List<MatchApplication> findByApplicantTeamIdInOrderByCreatedAtDesc(List<Long> teamIds);

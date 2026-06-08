@@ -32,6 +32,22 @@ public class MatchPost {
 	@Column(nullable = false, length = 8)
 	private MatchLevel level;
 
+	/** 매치 타입: FUTSAL_5 / SOCCER_8 / SOCCER_11 (null=무관) */
+	@Column(name = "match_type", length = 12)
+	private String matchType;
+
+	/** 연령대: AGE_20 / AGE_30 / AGE_40 / ANY(null=무관) */
+	@Column(name = "age_group", length = 8)
+	private String ageGroup;
+
+	/** 용병(개인) 모집글 여부 */
+	@Column(name = "recruit_guest", nullable = false)
+	private boolean recruitGuest;
+
+	/** 용병 모집글이 연동된 우리 팀 일정 id */
+	@Column(name = "source_schedule_id")
+	private Long sourceScheduleId;
+
 	@Column(nullable = false)
 	private int headcount;
 

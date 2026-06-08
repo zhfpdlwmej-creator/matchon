@@ -35,7 +35,7 @@
 	<div class="section-title" style="margin-top:6px;">포메이션 <span class="muted small" id="fmTitle"></span></div>
 
 	<div id="qTabs"></div>
-	<div style="display:flex;gap:8px;margin-bottom:10px;">
+	<div style="display:flex;gap:8px;margin-bottom:10px;" id="qControls">
 		<button class="btn-ghost btn-sm" id="addQ">＋ 쿼터 추가</button>
 		<button class="btn-ghost btn-sm" id="copyPrev">이전 쿼터 복사</button>
 		<button class="btn-ghost btn-sm" id="delQ" style="color:var(--red);">쿼터 삭제</button>
@@ -48,7 +48,7 @@
 		<div class="line boxBot"></div>
 	</div>
 
-	<div class="muted small" style="margin-top:8px;">벤치 선수를 탭하면 필드에 올라가고, 드래그로 위치 조정 · 탭하면 벤치로. (빈 공간은 스크롤)</div>
+	<div class="muted small" style="margin-top:8px;" id="pitchHint">벤치 선수를 탭하면 필드에 올라가고, 드래그로 위치 조정 · 탭하면 벤치로. (빈 공간은 스크롤)</div>
 
 	<div id="presetWrap" style="display:none;margin-top:12px;">
 		<div class="small" style="font-weight:700;margin-bottom:6px;">인원</div>
@@ -65,7 +65,7 @@
 	<div class="section-title" style="margin-left:0;">벤치</div>
 	<div class="bench" id="bench"></div>
 
-	<div style="display:flex;gap:8px;margin-top:10px;">
+	<div style="display:flex;gap:8px;margin-top:10px;" id="rosterControls">
 		<input type="text" id="customName" placeholder="선수 직접 추가" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;">
 		<button class="btn-ghost btn-sm" id="addCustom">＋ 추가</button>
 		<button class="btn-ghost btn-sm" id="reloadRoster">참석자 불러오기</button>
@@ -90,6 +90,7 @@
 const TEAM_ID = ${team.id};
 const SCHEDULE_ID = ${scheduleId};
 const CAN_MANAGE = ${canManage};
+const VIEW_ONLY = !CAN_MANAGE;   // 일반 회원 = 조회 전용 뷰어
 const TEAM_NAME = "${team.name}";
 let SPORT = 'SOCCER';
 let fm = { quarters: { '1': [] } };   // 쿼터별 토큰
@@ -141,8 +142,9 @@ function render() {
 	});
 	const bench = $('#bench').empty();
 	const benched = tokens.filter(t => t.x == null);
-	if (!benched.length) bench.html('<div class="muted small">벤치가 비었어요.</div>');
+	if (!benched.length) bench.html('<div class="muted small">' + (VIEW_ONLY ? '벤치 인원이 없습니다.' : '벤치가 비었어요.') + '</div>');
 	benched.forEach(t => {
+		if (VIEW_ONLY) { bench.append('<div class="btok">' + esc(t.label) + '</div>'); return; }
 		const b = $('<div class="btok">' + esc(t.label) + ' <span class="x" data-del="' + t.id + '">✕</span></div>');
 		b.on('click', function (e) {
 			if ($(e.target).attr('data-del')) { const i = tokens.indexOf(t); if (i >= 0) tokens.splice(i, 1); render(); return; }
@@ -153,6 +155,7 @@ function render() {
 }
 
 function makeDraggable(el, t) {
+	if (VIEW_ONLY) { el.style.cursor = 'default'; return; }   // 뷰어는 드래그 불가
 	let moved = false, sx, sy;
 	el.addEventListener('pointerdown', function (e) { e.preventDefault(); moved = false; sx = e.clientX; sy = e.clientY; el.setPointerCapture(e.pointerId); el.classList.add('dragging'); });
 	el.addEventListener('pointermove', function (e) {
@@ -227,6 +230,11 @@ async function saveImage() {
 }
 
 $(function () {
+	if (VIEW_ONLY) {
+		// 조회 전용: 편집 컨트롤 숨김 (이미지 저장/공유는 가능)
+		$('#qControls, #presetWrap, #rosterControls, #clearAll').hide();
+		$('#pitchHint').text('팀장이 짠 라인업입니다. 쿼터 탭으로 확인하고 📷 저장 · 🔗 공유만 가능해요. (보기 전용)');
+	}
 	load();
 	renderPresets('11');
 
