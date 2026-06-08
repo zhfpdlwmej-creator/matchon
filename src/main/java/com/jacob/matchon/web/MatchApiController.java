@@ -34,10 +34,12 @@ public class MatchApiController {
 	/** 모집중 매칭 목록 (지역 필터). teamId = 현재 팀(내 팀 배지 기준) */
 	@GetMapping("/list")
 	public Map<String, Object> list(@RequestParam(required = false) String region,
-									@RequestParam(required = false) Long teamId) {
+									@RequestParam(required = false) Long teamId,
+									@RequestParam(required = false) String sport) {
 		CurrentUser.required();
 		Set<Long> mine = teamId == null ? Set.of() : Set.of(teamId);
-		List<Map<String, Object>> rows = matchService.listOpen(region).stream()
+		com.jacob.matchon.model.Sport sp = (sport == null || sport.isBlank()) ? null : com.jacob.matchon.model.Sport.parse(sport);
+		List<Map<String, Object>> rows = matchService.listOpen(region, sp).stream()
 				.map(p -> postView(p, mine)).toList();
 		return Map.of("ok", true, "matches", rows);
 	}
@@ -160,6 +162,9 @@ public class MatchApiController {
 		m.put("hostTeamId", p.getHostTeamId());
 		m.put("hostTeamName", host.getName());
 		m.put("hostName", userService.findById(p.getHostUserId()).map(User::getNickname).orElse("?"));
+		m.put("sport", p.getSport() == null ? "SOCCER" : p.getSport().name());
+		m.put("sportLabel", p.getSport() == null ? "" : p.getSport().label());
+		m.put("sportEmoji", p.getSport() == null ? "" : p.getSport().emoji());
 		m.put("level", p.getLevel().name());
 		m.put("levelLabel", p.getLevel().label());
 		m.put("headcount", p.getHeadcount());

@@ -5,7 +5,7 @@
 	<c:when test="${not empty team}">
 		<nav class="bottom-nav">
 			<a href="/team/${team.id}" class="nav-item ${navActive == 'home' ? 'active' : ''}">
-				<span class="ic">⚽</span><span>홈</span>
+				<span class="ic">🏠</span><span>홈</span>
 			</a>
 			<a href="/team/${team.id}/schedules" class="nav-item ${navActive == 'schedule' ? 'active' : ''}">
 				<span class="ic">📅</span><span>일정</span>
@@ -24,7 +24,7 @@
 	<%-- 팀이 아직 없을 때: 팀 선택/생성으로 유도 --%>
 	<c:otherwise>
 		<nav class="bottom-nav">
-			<a href="/" class="nav-item"><span class="ic">⚽</span><span>홈</span></a>
+			<a href="/" class="nav-item"><span class="ic">🏠</span><span>홈</span></a>
 			<a href="/teams" class="nav-item"><span class="ic">📅</span><span>일정</span></a>
 			<a href="/teams" class="nav-item"><span class="ic">👥</span><span>팀원</span></a>
 			<a href="/teams" class="nav-item"><span class="ic">📊</span><span>통계</span></a>

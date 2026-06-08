@@ -11,7 +11,7 @@
 	<div class="login-logo">
 		<div class="logo-emblem">⚽</div>
 		<h1>matchon</h1>
-		<p class="tagline">축구·풋살 동호회 출석 관리<br>카카오톡과 함께 쓰는 출석 보조 서비스</p>
+		<p class="tagline">⚽ 축구 · ⚾ 야구 · 🏀 농구<br>팀 매칭 · 출석 관리 올인원</p>
 	</div>
 
 	<c:if test="${param.err != null}">

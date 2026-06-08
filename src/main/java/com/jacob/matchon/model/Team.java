@@ -19,6 +19,10 @@ public class Team {
 	@Column(nullable = false, length = 40)
 	private String name;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 12)
+	private Sport sport;
+
 	@Column(length = 255)
 	private String description;
 
@@ -37,4 +41,10 @@ public class Team {
 
 	@Column(name = "created_at", insertable = false, updatable = false)
 	private LocalDateTime createdAt;
+
+	@Transient
+	public String getSportEmoji() { return sport == null ? "" : sport.emoji(); }
+
+	@Transient
+	public String getSportLabel() { return sport == null ? "" : sport.label(); }
 }

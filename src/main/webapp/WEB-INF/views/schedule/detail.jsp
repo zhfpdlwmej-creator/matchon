@@ -16,7 +16,6 @@
 		<div class="date" id="dDate" style="color:var(--green);font-weight:700;"></div>
 		<div class="title" id="dTitle" style="font-size:20px;font-weight:800;margin:4px 0;"></div>
 		<div class="meta muted small" id="dMeta"></div>
-		<div class="meta muted small" id="dFee"></div>
 		<div class="meta small" id="dMemo" style="margin-top:8px;white-space:pre-wrap;"></div>
 		<button class="btn-primary btn-block" id="shareBtn" style="margin-top:14px;">📢 카카오톡으로 일정 공유</button>
 	</div>
@@ -38,7 +37,6 @@
 			<div class="box pending"><div class="num" id="sPending">-</div><div class="lbl">미정</div></div>
 		</div>
 		<div class="pos-by" id="posBy"></div>
-		<div id="settle" class="settle-box"></div>
 
 		<div class="section-title" style="margin-left:0;">참석자</div>
 		<div id="attendList"></div>
@@ -64,7 +62,6 @@ const SCHEDULE_ID = ${scheduleId};
 const CAN_MANAGE = ${canManage};
 const MY_ID = ${user.id};
 const TEAM_NAME = "${team.name}";
-let totalFee = 0;   // 구장비용 총액
 let isPast = false; // 경기 종료 여부
 let sched = null;   // 현재 일정 (공유용)
 
@@ -84,28 +81,8 @@ async function loadInfo() {
 	let meta = '⏰ ' + s.startTime.slice(0,5) + (s.endTime ? ' ~ ' + s.endTime.slice(0,5) : '');
 	if (s.place) meta += ' · 📍 ' + s.place;
 	$('#dMeta').text(meta);
-	totalFee = s.fee || 0;
 	isPast = !!s.isPast;
-	$('#dFee').text(totalFee > 0 ? '🏟️ 구장비용(총) ' + won(totalFee) : '');
 	$('#dMemo').text(s.memo || '');
-	renderSettle();
-}
-
-/** 인당 금액 = 총 구장비용 ÷ 참석 인원 (올림) */
-function renderSettle(attendCount) {
-	const box = $('#settle');
-	if (totalFee <= 0) { box.hide(); return; }
-	const n = (attendCount != null) ? attendCount : (parseInt($('#sAttend').text(), 10) || 0);
-	box.show();
-	if (n > 0) {
-		const per = Math.ceil(totalFee / n);
-		box.html(
-			'<div class="settle-title">' + (isPast ? '최종 정산' : '예상 정산') + '</div>' +
-			'<div class="settle-amt">인당 ' + won(per) + '</div>' +
-			'<div class="settle-sub">구장비용 ' + won(totalFee) + ' ÷ 참석 ' + n + '명</div>');
-	} else {
-		box.html('<div class="settle-sub">구장비용 ' + won(totalFee) + ' · 참석 인원이 정해지면 인당 금액이 표시됩니다.</div>');
-	}
 }
 
 async function loadAttendance() {
@@ -117,9 +94,6 @@ async function loadAttendance() {
 	$('#sPending').text(sm.pending);
 	$('#attendBtns .att-btn').removeClass('on');
 	$('#attendBtns .att-btn[data-s="' + r.myStatus + '"]').addClass('on');
-
-	// 인당 금액 정산
-	renderSettle(sm.attend);
 
 	// 포지션별
 	const pb = $('#posBy').empty();

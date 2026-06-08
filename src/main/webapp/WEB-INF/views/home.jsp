@@ -33,9 +33,6 @@
 					<div class="info-cell"><span class="ic">👥</span><span id="iAttend">-</span></div>
 					<div class="info-cell" id="iShortCell" style="display:none;color:var(--red);font-weight:700;"><span class="ic">⚠️</span><span id="iShort"></span></div>
 				</div>
-				<c:if test="${nearest.fee > 0}">
-					<div class="meta muted small" style="margin-top:8px;">🏟️ 구장비용(총) <span id="nearestFee"></span>원</div>
-				</c:if>
 
 				<div id="progressWrap" style="display:none;margin-top:16px;">
 					<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -52,8 +49,6 @@
 					<div class="box pending" data-acc="pending"><div class="num" id="hsPending">-</div><div class="lbl">미정 ▾</div></div>
 				</div>
 				<div class="acc-list" id="accList" style="display:none;"></div>
-
-				<div id="homeSettle" class="settle-box" style="display:none;"></div>
 
 				<div class="attend-buttons" id="homeAttendBtns" style="margin-top:16px;">
 					<button class="att-btn attend" data-s="ATTEND">✅ 참석</button>
@@ -89,7 +84,6 @@
 <c:if test="${nearest != null}">
 <script>
 const SCHEDULE_ID = ${nearest.id};
-const FEE = ${nearest.fee};
 const TARGET = ${nearest.targetHeadcount};
 const MATCH_DATE = '${nearest.matchDate}';
 let summaryData = null, accOpen = null;
@@ -137,12 +131,6 @@ async function loadHome() {
 	} else { $('#progressWrap').hide(); $('#iShortCell').hide(); }
 
 	if (accOpen) renderAcc(accOpen);
-
-	// 인당 금액
-	if (FEE > 0 && att > 0) {
-		const per = Math.ceil(FEE / att);
-		$('#homeSettle').show().html('<div class="settle-amt">인당 ' + won(per) + '</div><div class="settle-sub">구장비용 ' + won(FEE) + ' ÷ 참석 ' + att + '명</div>');
-	} else $('#homeSettle').hide();
 }
 
 function renderAcc(type) {
@@ -159,7 +147,6 @@ $(function () {
 	$('#nearestDate').text(fmtDate(MATCH_DATE));
 	const dd = ddayInfo(MATCH_DATE);
 	$('#dday').text('⚽ ' + dd.t).addClass(dd.cls);
-	if (FEE > 0) $('#nearestFee').text(commaNumber(FEE));
 	loadHome();
 
 	$('#homeSummary .box').on('click', function () {

@@ -3,7 +3,7 @@
 <header class="app-header">
 	<div class="app-header-inner">
 		<a href="/teams" class="team-switch">
-			<span class="emblem">⚽</span>
+			<span class="emblem">${empty team.sportEmoji ? '🏟️' : team.sportEmoji}</span>
 			<strong>${team.name}</strong>
 			<span class="caret">▾</span>
 		</a>

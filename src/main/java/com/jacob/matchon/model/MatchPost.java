@@ -25,6 +25,10 @@ public class MatchPost {
 	private Long hostUserId;
 
 	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 12)
+	private Sport sport;
+
+	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 8)
 	private MatchLevel level;
 

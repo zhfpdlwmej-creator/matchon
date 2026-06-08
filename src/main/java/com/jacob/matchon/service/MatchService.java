@@ -26,12 +26,15 @@ public class MatchService {
 				.orElseThrow(() -> new ApiException(404, "매칭을 찾을 수 없습니다."));
 	}
 
-	/** 모집중 매칭 목록 (지역 필터 옵션) */
-	public List<MatchPost> listOpen(String region) {
-		if (region != null && !region.isBlank()) {
-			return postRepo.findByStatusAndRegionContainingOrderByCreatedAtDesc(MatchStatus.OPEN, region.trim());
+	/** 모집중 매칭 목록 (지역·종목 필터 옵션) */
+	public List<MatchPost> listOpen(String region, Sport sport) {
+		List<MatchPost> base = (region != null && !region.isBlank())
+				? postRepo.findByStatusAndRegionContainingOrderByCreatedAtDesc(MatchStatus.OPEN, region.trim())
+				: postRepo.findByStatusOrderByCreatedAtDesc(MatchStatus.OPEN);
+		if (sport != null) {
+			return base.stream().filter(p -> p.getSport() == sport).toList();
 		}
-		return postRepo.findByStatusOrderByCreatedAtDesc(MatchStatus.OPEN);
+		return base;
 	}
 
 	public List<MatchApplication> applications(Long postId) {
@@ -67,6 +70,7 @@ public class MatchService {
 		MatchPost p = MatchPost.builder()
 				.hostTeamId(hostTeamId)
 				.hostUserId(userId)
+				.sport(teamService.get(hostTeamId).getSport())
 				.level(level)
 				.headcount(form.getHeadcount() == null ? 0 : form.getHeadcount())
 				.region(form.getRegion())

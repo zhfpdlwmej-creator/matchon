@@ -2,6 +2,7 @@ package com.jacob.matchon.web;
 
 import com.jacob.matchon.model.Position;
 import com.jacob.matchon.model.Role;
+import com.jacob.matchon.model.Sport;
 import com.jacob.matchon.model.Team;
 import com.jacob.matchon.model.TeamMember;
 import com.jacob.matchon.model.User;
@@ -64,7 +65,7 @@ public class TeamApiController {
 	@PostMapping("/team")
 	public Map<String, Object> createTeam(@RequestBody Map<String, String> body) {
 		Long uid = CurrentUser.required();
-		Team t = teamService.create(uid, body.get("name"), body.get("description"));
+		Team t = teamService.create(uid, body.get("name"), body.get("description"), Sport.parse(body.get("sport")));
 		return Map.of("ok", true, "team", teamView(t, uid));
 	}
 
@@ -146,6 +147,9 @@ public class TeamApiController {
 		Map<String, Object> m = new HashMap<>();
 		m.put("id", t.getId());
 		m.put("name", t.getName());
+		m.put("sport", t.getSport() == null ? "SOCCER" : t.getSport().name());
+		m.put("sportLabel", t.getSportLabel());
+		m.put("sportEmoji", t.getSportEmoji());
 		m.put("description", t.getDescription());
 		m.put("inviteCode", t.getInviteCode());
 		m.put("minAttendees", t.getMinAttendees());

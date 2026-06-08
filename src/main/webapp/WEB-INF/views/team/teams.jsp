@@ -9,7 +9,7 @@
 <body>
 <header class="app-header">
 	<div class="app-header-inner">
-		<span class="team-switch"><span class="emblem">⚽</span><strong>내 팀</strong></span>
+		<span class="team-switch"><span class="emblem">🏟️</span><strong>내 팀</strong></span>
 		<a href="/profile" class="role-badge">내정보</a>
 	</div>
 </header>
@@ -19,10 +19,17 @@
 
 	<div class="section-title">새 팀 만들기</div>
 	<form id="createForm" class="card-form">
+		<label>종목</label>
+		<div class="lvl-picker" id="sportPicker">
+			<button type="button" class="lvl on" data-sport="SOCCER">⚽ 축구</button>
+			<button type="button" class="lvl" data-sport="BASEBALL">⚾ 야구</button>
+			<button type="button" class="lvl" data-sport="BASKETBALL">🏀 농구</button>
+		</div>
+		<input type="hidden" id="teamSport" value="SOCCER">
 		<label>팀명</label>
 		<input type="text" id="teamName" maxlength="40" placeholder="예: FC 챔피언스" required>
 		<label>팀 소개 (선택)</label>
-		<input type="text" id="teamDesc" maxlength="255" placeholder="예: 매주 일요일 아침 풋살">
+		<input type="text" id="teamDesc" maxlength="255" placeholder="예: 매주 일요일 아침 운동">
 		<button type="submit" class="btn-primary btn-block" style="margin-top:14px;">팀 생성</button>
 	</form>
 
@@ -41,24 +48,33 @@ async function loadTeams() {
 	const r = await api.get('/api/team/list');
 	const box = $('#teamList').empty();
 	if (!r.ok || !r.teams.length) {
-		box.html('<div class="empty"><div class="big">⚽</div>아직 가입한 팀이 없어요.<br>팀을 만들거나 초대코드로 가입하세요.</div>');
+		box.html('<div class="empty"><div class="big">🏟️</div>아직 가입한 팀이 없어요.<br>팀을 만들거나 초대코드로 가입하세요.</div>');
 		return;
 	}
 	r.teams.forEach(function (t) {
 		const role = t.myRole === 'LEADER' ? '팀장' : (t.myRole === 'MANAGER' ? '운영진' : '회원');
 		box.append(
 			'<a class="schedule-item" href="/team/' + t.id + '">' +
-			'<div class="title">' + esc(t.name) + '</div>' +
-			'<div class="meta">' + esc(t.description || '') + '</div>' +
+			'<div class="title">' + (t.sportEmoji || '') + ' ' + esc(t.name) + '</div>' +
+			'<div class="meta">' + (t.sportLabel ? '[' + t.sportLabel + '] ' : '') + esc(t.description || '') + '</div>' +
 			'<div class="meta">멤버 ' + t.memberCount + '명 · 내 권한 ' + role + '</div>' +
 			'</a>');
 	});
 }
 $(function () {
 	loadTeams();
+	$('#sportPicker .lvl').on('click', function () {
+		$('#sportPicker .lvl').removeClass('on');
+		$(this).addClass('on');
+		$('#teamSport').val($(this).data('sport'));
+	});
 	$('#createForm').on('submit', async function (e) {
 		e.preventDefault();
-		const r = await api.post('/api/team', { name: $('#teamName').val().trim(), description: $('#teamDesc').val().trim() });
+		const r = await api.post('/api/team', {
+			name: $('#teamName').val().trim(),
+			description: $('#teamDesc').val().trim(),
+			sport: $('#teamSport').val()
+		});
 		if (r.ok) location.href = '/team/' + r.team.id;
 		else alert(r.message || '생성 실패');
 	});

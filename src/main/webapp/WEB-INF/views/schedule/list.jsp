@@ -48,9 +48,6 @@
 			<input type="text" id="schPlace" maxlength="120" placeholder="예: 잠실 풋살장 A구장">
 			<label>목표 인원 (선택)</label>
 			<input type="number" id="schTarget" min="0" value="0" placeholder="예: 12 (진행률·부족 인원 표시)">
-			<label>구장비용 총액 (원)</label>
-			<input type="text" id="schFee" value="0" placeholder="예: 60,000 (참석 인원으로 자동 분배)">
-			<div class="muted small" style="margin-top:4px;">구장 대여비 총액을 입력하면, 참석 인원으로 나눠 <b>인당 금액</b>이 자동 계산됩니다.</div>
 			<label>메모</label>
 			<textarea id="schMemo" maxlength="500" placeholder="준비물, 주차 안내 등"></textarea>
 			<div class="row-2" style="margin-top:14px;">
@@ -144,7 +141,6 @@ function openModal(s) {
 	$('#schEnd').val(s && s.endTime ? s.endTime.slice(0,5) : '');
 	$('#schPlace').val(s ? (s.place || '') : '');
 	$('#schTarget').val(s ? s.targetHeadcount : 0);
-	$('#schFee').val(commaNumber(s ? s.fee : 0));
 	$('#schMemo').val(s ? (s.memo || '') : '');
 	$('#schDelete').toggle(!!s);
 	$('#schModal').addClass('open');
@@ -157,7 +153,7 @@ $(function () {
 	$('#prevMonth').on('click', () => { cur.setMonth(cur.getMonth() - 1); loadMonth(); });
 	$('#nextMonth').on('click', () => { cur.setMonth(cur.getMonth() + 1); loadMonth(); });
 	if (CAN_MANAGE) {
-		bindComma('#schFee'); bindTime('#schStart'); bindTime('#schEnd');
+		bindTime('#schStart'); bindTime('#schEnd');
 		$('#addBtn').on('click', () => openModal(null));
 		$('#schCancel').on('click', closeModal);
 		$('#schModal').on('click', e => { if (e.target.id === 'schModal') closeModal(); });
@@ -172,7 +168,6 @@ $(function () {
 				startTime: $('#schStart').val(),
 				endTime: $('#schEnd').val() || null,
 				place: $('#schPlace').val().trim(),
-				fee: unComma($('#schFee').val()),
 				targetHeadcount: parseInt($('#schTarget').val() || '0', 10),
 				memo: $('#schMemo').val().trim()
 			};

@@ -1,6 +1,7 @@
 package com.jacob.matchon.service;
 
 import com.jacob.matchon.model.Role;
+import com.jacob.matchon.model.Sport;
 import com.jacob.matchon.model.Team;
 import com.jacob.matchon.model.TeamMember;
 import com.jacob.matchon.repo.TeamMemberRepository;
@@ -111,12 +112,13 @@ public class TeamService {
 	// --- 생성/가입 ---
 
 	@Transactional
-	public Team create(Long ownerId, String name, String description) {
+	public Team create(Long ownerId, String name, String description, Sport sport) {
 		if (name == null || name.isBlank()) {
 			throw new ApiException(400, "팀명을 입력해주세요.");
 		}
 		Team team = Team.builder()
 				.name(name.trim())
+				.sport(sport == null ? Sport.SOCCER : sport)
 				.description(description)
 				.inviteCode(generateUniqueCode())
 				.ownerId(ownerId)
