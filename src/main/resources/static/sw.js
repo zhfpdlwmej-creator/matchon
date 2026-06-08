@@ -1,6 +1,9 @@
-/* matchon 서비스워커 — 웹 푸시 */
+/* matchon 서비스워커 — 웹 푸시 + 설치형 PWA */
 self.addEventListener('install', function (e) { self.skipWaiting(); });
 self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
+
+/* fetch 핸들러(네트워크 패스스루) — 설치형 PWA 자격 충족용 */
+self.addEventListener('fetch', function (e) { /* 기본 네트워크 처리 */ });
 
 self.addEventListener('push', function (e) {
 	let d = { title: 'matchon', body: '', url: '/' };

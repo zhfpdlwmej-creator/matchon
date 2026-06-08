@@ -6,6 +6,29 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="matchon">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<script>
+	// 설치형 PWA: 모든 페이지에서 서비스워커 등록
+	if ('serviceWorker' in navigator) {
+		window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+	}
+	// 안드로이드/크롬: '앱 설치' 버튼 노출
+	(function () {
+		var deferred = null;
+		window.addEventListener('beforeinstallprompt', function (e) {
+			e.preventDefault(); deferred = e;
+			if (document.getElementById('pwaInstall')) return;
+			var b = document.createElement('button');
+			b.id = 'pwaInstall'; b.textContent = '📲 앱 설치';
+			b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:74px;z-index:9999;background:#1a9d52;color:#fff;border:none;border-radius:999px;padding:10px 18px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;';
+			b.onclick = function () { b.remove(); if (deferred) { deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; }); } };
+			(document.body || document.documentElement).appendChild(b);
+		});
+		window.addEventListener('appinstalled', function () { var b = document.getElementById('pwaInstall'); if (b) b.remove(); });
+	})();
+</script>
 <link rel="stylesheet" href="/css/app.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <c:if test="${not empty kakaoJsKey}">
