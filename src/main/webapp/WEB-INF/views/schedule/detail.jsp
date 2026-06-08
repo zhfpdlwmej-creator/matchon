@@ -37,7 +37,6 @@
 			<div class="box absent"><div class="num" id="sAbsent">-</div><div class="lbl">불참</div></div>
 			<div class="box pending"><div class="num" id="sPending">-</div><div class="lbl">미정</div></div>
 		</div>
-		<div id="totalLine" class="muted small" style="margin-top:8px;text-align:center;"></div>
 
 		<div class="section-title" style="margin-left:0;">참석자</div>
 		<div id="attendList"></div>
@@ -121,11 +120,10 @@ async function loadAttendance() {
 			'</span><span class="right small muted">' + m._t + '</span></div>');
 	});
 
-	// 용병 + 총 인원
+	// 용병
 	const guests = sm.guests || [];
 	const gc = sm.guestCount || 0;
 	$('#guestSum').text(gc > 0 ? '(' + gc + '명)' : '');
-	$('#totalLine').text('실제 모인 인원: 참석 ' + sm.attend + (gc > 0 ? ' + 용병 ' + gc : '') + ' = ' + (sm.attend + gc) + '명');
 	const gl = $('#guestList').empty();
 	if (!guests.length) gl.html('<div class="muted small" style="padding:6px 0;">추가된 용병이 없습니다.</div>');
 	guests.forEach(g => gl.append(

@@ -1,9 +1,12 @@
 package com.jacob.matchon.service;
 
+import com.jacob.matchon.model.ApplicationStatus;
+import com.jacob.matchon.model.JoinRequest;
 import com.jacob.matchon.model.Role;
 import com.jacob.matchon.model.Sport;
 import com.jacob.matchon.model.Team;
 import com.jacob.matchon.model.TeamMember;
+import com.jacob.matchon.repo.JoinRequestRepository;
 import com.jacob.matchon.repo.TeamMemberRepository;
 import com.jacob.matchon.repo.TeamRepository;
 import com.jacob.matchon.web.ApiException;
@@ -20,6 +23,7 @@ public class TeamService {
 
 	private final TeamRepository teamRepo;
 	private final TeamMemberRepository memberRepo;
+	private final JoinRequestRepository joinRepo;
 
 	private static final String CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 헷갈리는 0/O/1/I 제외
 	private final SecureRandom random = new SecureRandom();
@@ -154,6 +158,61 @@ public class TeamService {
 				.role(Role.MEMBER)
 				.build());
 		return team;
+	}
+
+	/** 초대코드로 가입 신청 (팀장 승인 대기) */
+	@Transactional
+	public Team requestJoin(Long userId, String inviteCode) {
+		Team team = teamRepo.findByInviteCode(inviteCode == null ? "" : inviteCode.trim().toUpperCase())
+				.orElseThrow(() -> new ApiException(404, "초대코드가 올바르지 않습니다."));
+		if (memberRepo.existsByTeamIdAndUserId(team.getId(), userId)) {
+			throw new ApiException(409, "이미 가입한 팀입니다.");
+		}
+		JoinRequest existing = joinRepo.findByTeamIdAndUserId(team.getId(), userId).orElse(null);
+		if (existing != null) {
+			if (existing.getStatus() == ApplicationStatus.PENDING) {
+				throw new ApiException(409, "이미 가입 신청했습니다. 팀장 승인을 기다려주세요.");
+			}
+			existing.setStatus(ApplicationStatus.PENDING); // 거절 후 재신청
+		} else {
+			joinRepo.save(JoinRequest.builder()
+					.teamId(team.getId()).userId(userId).status(ApplicationStatus.PENDING).build());
+		}
+		return team;
+	}
+
+	/** 가입 신청 승인 (팀장/운영진) → 팀원 추가 */
+	@Transactional
+	public void approveRequest(Long requestId, Long approverId) {
+		JoinRequest jr = joinRepo.findById(requestId)
+				.orElseThrow(() -> new ApiException(404, "가입 신청을 찾을 수 없습니다."));
+		requireManager(jr.getTeamId(), approverId);
+		if (!memberRepo.existsByTeamIdAndUserId(jr.getTeamId(), jr.getUserId())) {
+			memberRepo.save(TeamMember.builder()
+					.teamId(jr.getTeamId()).userId(jr.getUserId()).role(Role.MEMBER).build());
+		}
+		joinRepo.delete(jr);
+	}
+
+	/** 가입 신청 거절 (팀장/운영진) */
+	@Transactional
+	public void rejectRequest(Long requestId, Long approverId) {
+		JoinRequest jr = joinRepo.findById(requestId)
+				.orElseThrow(() -> new ApiException(404, "가입 신청을 찾을 수 없습니다."));
+		requireManager(jr.getTeamId(), approverId);
+		joinRepo.delete(jr);
+	}
+
+	public List<JoinRequest> pendingRequests(Long teamId) {
+		return joinRepo.findByTeamIdAndStatusOrderByCreatedAtAsc(teamId, ApplicationStatus.PENDING);
+	}
+
+	public long pendingCount(Long teamId) {
+		return joinRepo.countByTeamIdAndStatus(teamId, ApplicationStatus.PENDING);
+	}
+
+	public List<JoinRequest> myPendingRequests(Long userId) {
+		return joinRepo.findByUserIdAndStatusOrderByCreatedAtDesc(userId, ApplicationStatus.PENDING);
 	}
 
 	/** 초대코드 재발급 (팀장/운영진) */

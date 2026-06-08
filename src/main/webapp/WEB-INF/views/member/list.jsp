@@ -19,10 +19,15 @@
 		</div>
 		<button class="btn-primary btn-block" id="shareLink" style="margin-top:12px;">🔗 초대 링크 복사 / 공유</button>
 		<div class="muted small" style="margin-top:8px;">
-			초대 링크를 <b>카카오톡 단톡방</b>에 붙여넣으세요. 받은 사람이 링크를 누르면
-			카카오 로그인 후 <b>자동으로 이 팀에 가입</b>됩니다.
+			초대 링크를 <b>카카오톡 단톡방</b>에 붙여넣으세요. 받은 사람이 누르면
+			<b>가입 신청</b>이 들어오고, 팀장/운영진이 승인하면 가입됩니다.
 		</div>
 	</div>
+
+	<c:if test="${canManage}">
+		<div class="section-title">가입 신청 <span class="muted small" id="reqCount"></span></div>
+		<div class="card" id="joinReqs"><div class="muted small">불러오는 중...</div></div>
+	</c:if>
 
 	<div class="section-title">팀원 <span id="memCount"></span></div>
 	<div class="card" id="memberList"><div class="empty">불러오는 중...</div></div>
@@ -45,6 +50,22 @@ const MY_ROLE = '${myRole}';
 
 function roleLabel(r) { return r === 'LEADER' ? '팀장' : (r === 'MANAGER' ? '운영진' : '회원'); }
 
+async function loadRequests() {
+	if (!CAN_MANAGE) return;
+	const r = await api.get('/api/team/' + TEAM_ID + '/requests');
+	const box = $('#joinReqs').empty();
+	if (!r.ok) return;
+	$('#reqCount').text(r.requests.length ? '(' + r.requests.length + ')' : '');
+	if (!r.requests.length) { box.html('<div class="muted small" style="padding:6px 0;">대기 중인 신청이 없습니다.</div>'); return; }
+	r.requests.forEach(q => {
+		box.append('<div class="member-row"><span class="name">' + esc(q.nickname) + '</span>' +
+			'<span class="right" style="gap:6px;">' +
+			'<button class="btn-primary btn-sm reqApprove" data-id="' + q.id + '">승인</button>' +
+			'<button class="btn-ghost btn-sm reqReject" data-id="' + q.id + '" style="color:var(--red);">거절</button>' +
+			'</span></div>');
+	});
+}
+
 async function load() {
 	const r = await api.get('/api/team/' + TEAM_ID + '/members');
 	const box = $('#memberList').empty();
@@ -66,6 +87,16 @@ async function load() {
 
 $(function () {
 	load();
+	loadRequests();
+	$('#joinReqs').on('click', '.reqApprove', async function () {
+		const r = await api.post('/api/team/request/' + $(this).data('id') + '/approve', {});
+		if (r.ok) { loadRequests(); load(); } else alert(r.message || '실패');
+	});
+	$('#joinReqs').on('click', '.reqReject', async function () {
+		if (!confirm('이 신청을 거절할까요?')) return;
+		const r = await api.post('/api/team/request/' + $(this).data('id') + '/reject', {});
+		if (r.ok) loadRequests(); else alert(r.message || '실패');
+	});
 	function inviteLink() {
 		return location.origin + '/join?code=' + $('#inviteCode').text().trim();
 	}

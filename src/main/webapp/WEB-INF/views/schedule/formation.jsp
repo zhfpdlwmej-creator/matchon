@@ -40,13 +40,15 @@
 	<div class="muted small" style="margin-top:8px;">벤치의 선수를 탭하면 필드에 올라가고, 필드에서 드래그로 위치 조정 · 탭하면 벤치로 내려갑니다.</div>
 
 	<div id="presetWrap" style="display:none;margin-top:12px;">
-		<div class="small" style="font-weight:700;margin-bottom:6px;">포메이션 프리셋</div>
-		<div class="region-row" id="presets">
-			<button class="region-chip" data-p="442">4-4-2</button>
-			<button class="region-chip" data-p="433">4-3-3</button>
-			<button class="region-chip" data-p="352">3-5-2</button>
-			<button class="region-chip" data-p="343">3-4-3</button>
+		<div class="small" style="font-weight:700;margin-bottom:6px;">인원</div>
+		<div class="region-row" id="countSel">
+			<button class="region-chip on" data-c="11">11명</button>
+			<button class="region-chip" data-c="8">8명</button>
+			<button class="region-chip" data-c="6">6명</button>
+			<button class="region-chip" data-c="5">5명</button>
 		</div>
+		<div class="small" style="font-weight:700;margin:12px 0 6px;">포메이션 프리셋</div>
+		<div class="region-row" id="presets"></div>
 	</div>
 
 	<div class="section-title" style="margin-left:0;">벤치</div>
@@ -76,12 +78,32 @@ let SPORT = 'SOCCER';
 let tokens = [];   // { id, label, x, y }  (x/y null = 벤치)
 let seq = 1;
 
+// 인원수별 프리셋 (GK 1명 포함 좌표, 위쪽이 공격 방향)
 const PRESETS = {
-	'442': [[50,88],[15,70],[38,70],[62,70],[85,70],[15,46],[38,46],[62,46],[85,46],[38,22],[62,22]],
-	'433': [[50,88],[15,70],[38,70],[62,70],[85,70],[30,50],[50,52],[70,50],[22,24],[50,18],[78,24]],
-	'352': [[50,88],[25,72],[50,72],[75,72],[12,50],[34,48],[50,50],[66,48],[88,50],[40,22],[60,22]],
-	'343': [[50,88],[25,72],[50,72],[75,72],[15,50],[38,50],[62,50],[85,50],[25,24],[50,20],[75,24]]
+	'11': {
+		'4-4-2': [[50,88],[15,70],[38,70],[62,70],[85,70],[15,46],[38,46],[62,46],[85,46],[38,22],[62,22]],
+		'4-3-3': [[50,88],[15,70],[38,70],[62,70],[85,70],[30,50],[50,52],[70,50],[22,24],[50,18],[78,24]],
+		'3-5-2': [[50,88],[25,72],[50,72],[75,72],[12,50],[34,48],[50,50],[66,48],[88,50],[40,22],[60,22]],
+		'3-4-3': [[50,88],[25,72],[50,72],[75,72],[15,50],[38,50],[62,50],[85,50],[25,24],[50,20],[75,24]]
+	},
+	'8': {
+		'3-3-1': [[50,90],[20,70],[50,70],[80,70],[20,46],[50,46],[80,46],[50,22]],
+		'2-3-2': [[50,90],[35,72],[65,72],[20,48],[50,48],[80,48],[35,24],[65,24]],
+		'3-1-3': [[50,90],[20,72],[50,72],[80,72],[50,50],[22,26],[50,22],[78,26]],
+		'2-4-1': [[50,90],[35,72],[65,72],[15,48],[38,48],[62,48],[85,48],[50,24]]
+	},
+	'6': {
+		'2-2-1': [[50,88],[35,68],[65,68],[35,46],[65,46],[50,24]],
+		'1-3-1': [[50,88],[50,70],[25,48],[50,48],[75,48],[50,24]],
+		'2-1-2': [[50,88],[35,70],[65,70],[50,48],[35,26],[65,26]]
+	},
+	'5': {
+		'1-2-1': [[50,88],[50,70],[30,48],[70,48],[50,26]],
+		'2-1-1': [[50,88],[35,70],[65,70],[50,48],[50,26]],
+		'2-0-2': [[50,88],[35,66],[65,66],[35,40],[65,40]]
+	}
 };
+let curCount = '11';
 
 function render() {
 	// 필드 토큰
@@ -135,8 +157,14 @@ function addToken(label) {
 	tokens.push({ id: seq++, label: label.trim().slice(0, 8), x: null, y: null });
 }
 
-function applyPreset(p) {
-	const pos = PRESETS[p]; if (!pos) return;
+function renderPresets(count) {
+	curCount = count;
+	const box = $('#presets').empty();
+	Object.keys(PRESETS[count]).forEach(name =>
+		box.append('<button type="button" class="region-chip" data-name="' + name + '">' + name + '</button>'));
+}
+function applyPreset(pos) {
+	if (!pos) return;
 	let i = 0;
 	// 이미 필드에 있는 선수 + 벤치 순으로 자리 채움
 	const ordered = tokens.slice().sort((a, b) => (a.x == null) - (b.x == null));
@@ -175,9 +203,14 @@ async function load() {
 
 $(function () {
 	load();
-	$('#presets .region-chip').on('click', function () {
+	renderPresets('11');
+	$('#countSel .region-chip').on('click', function () {
+		$('#countSel .region-chip').removeClass('on'); $(this).addClass('on');
+		renderPresets($(this).data('c'));
+	});
+	$('#presets').on('click', '.region-chip', function () {
 		$('#presets .region-chip').removeClass('on'); $(this).addClass('on');
-		applyPreset($(this).data('p'));
+		applyPreset(PRESETS[curCount][$(this).data('name')]);
 	});
 	$('#addCustom').on('click', function () { addToken($('#customName').val()); $('#customName').val(''); render(); });
 	$('#customName').on('keypress', e => { if (e.which === 13) { addToken($('#customName').val()); $('#customName').val(''); render(); } });

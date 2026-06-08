@@ -17,6 +17,11 @@
 	<div class="section-title">가입한 팀</div>
 	<div id="teamList"><div class="empty">불러오는 중...</div></div>
 
+	<div id="reqWrap" style="display:none;">
+		<div class="section-title">승인 대기 중</div>
+		<div class="card" id="myRequests"></div>
+	</div>
+
 	<div class="section-title">새 팀 만들기</div>
 	<form id="createForm" class="card-form">
 		<label>종목</label>
@@ -61,8 +66,23 @@ async function loadTeams() {
 			'</a>');
 	});
 }
+async function loadMyRequests() {
+	const r = await api.get('/api/team/my-requests');
+	if (!r.ok) return;
+	if (!r.requests.length) { $('#reqWrap').hide(); return; }
+	$('#reqWrap').show();
+	const box = $('#myRequests').empty();
+	r.requests.forEach(function (q) {
+		box.append('<div class="member-row"><span class="name">' + (q.sportEmoji || '') + ' ' + esc(q.teamName) + '</span>' +
+			'<span class="right muted small">⏳ 승인 대기</span></div>');
+	});
+}
 $(function () {
 	loadTeams();
+	loadMyRequests();
+	if (location.search.indexOf('req=sent') >= 0) {
+		setTimeout(function () { alert('가입 신청이 접수되었습니다.\n팀장이 승인하면 가입됩니다.'); }, 200);
+	}
 	$('#sportPicker .lvl').on('click', function () {
 		$('#sportPicker .lvl').removeClass('on');
 		$(this).addClass('on');
@@ -81,8 +101,8 @@ $(function () {
 	$('#joinForm').on('submit', async function (e) {
 		e.preventDefault();
 		const r = await api.post('/api/team/join', { inviteCode: $('#inviteCode').val().trim().toUpperCase() });
-		if (r.ok) location.href = '/team/' + r.team.id;
-		else alert(r.message || '가입 실패');
+		if (r.ok) { alert((r.teamName || '팀') + ' 가입 신청 완료!\n팀장이 승인하면 가입됩니다.'); $('#inviteCode').val(''); loadMyRequests(); }
+		else alert(r.message || '신청 실패');
 	});
 });
 </script>

@@ -48,19 +48,17 @@ public class MainController {
 		User user = userService.get(uid);
 		// 닉네임 설정 단계 없이 카카오 닉네임 그대로 사용 (welcome 생략)
 
-		// 초대 링크(/join?code=...)로 들어온 경우 자동 가입 처리
+		// 초대 링크(/join?code=...)로 들어온 경우 → 가입 신청 생성(팀장 승인 대기)
 		String invite = readCookie(req, "pending_invite");
 		if (invite != null && !invite.isBlank()) {
 			clearCookie(res, "pending_invite");
 			try {
-				Team t = teamService.joinByCode(uid, invite);
-				return "redirect:/team/" + t.getId();
+				teamService.requestJoin(uid, invite);
+				return "redirect:/teams?req=sent";
 			} catch (ApiException e) {
-				// 이미 가입했거나 잘못된 코드 → 해당 팀이면 그 팀으로, 아니면 정상 흐름
 				Team t = teamService.findByInviteCode(invite).orElse(null);
-				if (t != null && teamService.isMember(t.getId(), uid)) {
-					return "redirect:/team/" + t.getId();
-				}
+				if (t != null && teamService.isMember(t.getId(), uid)) return "redirect:/team/" + t.getId();
+				return "redirect:/teams";
 			}
 		}
 

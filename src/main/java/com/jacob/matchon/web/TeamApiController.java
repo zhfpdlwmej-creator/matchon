@@ -69,12 +69,59 @@ public class TeamApiController {
 		return Map.of("ok", true, "team", teamView(t, uid));
 	}
 
-	/** 초대코드로 가입 */
+	/** 초대코드로 가입 신청 (팀장 승인 대기) */
 	@PostMapping("/team/join")
 	public Map<String, Object> join(@RequestBody Map<String, String> body) {
 		Long uid = CurrentUser.required();
-		Team t = teamService.joinByCode(uid, body.get("inviteCode"));
-		return Map.of("ok", true, "team", teamView(t, uid));
+		Team t = teamService.requestJoin(uid, body.get("inviteCode"));
+		return Map.of("ok", true, "requested", true, "teamName", t.getName());
+	}
+
+	/** 내 가입 신청 목록 (승인 대기) */
+	@GetMapping("/team/my-requests")
+	public Map<String, Object> myRequests() {
+		Long uid = CurrentUser.required();
+		List<Map<String, Object>> rows = teamService.myPendingRequests(uid).stream().map(jr -> {
+			Team t = teamService.get(jr.getTeamId());
+			Map<String, Object> m = new HashMap<>();
+			m.put("teamName", t.getName());
+			m.put("sportEmoji", t.getSportEmoji());
+			return m;
+		}).toList();
+		return Map.of("ok", true, "requests", rows);
+	}
+
+	/** 팀 가입 신청 목록 (팀장/운영진) */
+	@GetMapping("/team/{teamId}/requests")
+	public Map<String, Object> requests(@PathVariable Long teamId) {
+		Long uid = CurrentUser.required();
+		teamService.requireManager(teamId, uid);
+		var reqs = teamService.pendingRequests(teamId);
+		Map<Long, User> users = userService.mapByIds(reqs.stream().map(r -> r.getUserId()).toList());
+		List<Map<String, Object>> rows = reqs.stream().map(r -> {
+			User u = users.get(r.getUserId());
+			Map<String, Object> m = new HashMap<>();
+			m.put("id", r.getId());
+			m.put("nickname", u == null ? "?" : u.getNickname());
+			return m;
+		}).toList();
+		return Map.of("ok", true, "requests", rows);
+	}
+
+	/** 가입 신청 승인 */
+	@PostMapping("/team/request/{id}/approve")
+	public Map<String, Object> approve(@PathVariable Long id) {
+		Long uid = CurrentUser.required();
+		teamService.approveRequest(id, uid);
+		return Map.of("ok", true);
+	}
+
+	/** 가입 신청 거절 */
+	@PostMapping("/team/request/{id}/reject")
+	public Map<String, Object> reject(@PathVariable Long id) {
+		Long uid = CurrentUser.required();
+		teamService.rejectRequest(id, uid);
+		return Map.of("ok", true);
 	}
 
 	/** 팀 탈퇴 (팀장 제외) */
