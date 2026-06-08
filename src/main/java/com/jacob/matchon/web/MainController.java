@@ -48,18 +48,11 @@ public class MainController {
 		User user = userService.get(uid);
 		// 닉네임 설정 단계 없이 카카오 닉네임 그대로 사용 (welcome 생략)
 
-		// 초대 링크(/join?code=...)로 들어온 경우 → 가입 신청 생성(팀장 승인 대기)
+		// 초대 링크(/join?code=...)로 들어온 경우 → "현재 계정 확인" 화면으로
+		// (단톡방 링크는 카카오톡 인앱 브라우저로 열려 이전 계정 쿠키가 남아있을 수 있어, 자동 가입 대신 본인 확인)
 		String invite = readCookie(req, "pending_invite");
 		if (invite != null && !invite.isBlank()) {
-			clearCookie(res, "pending_invite");
-			try {
-				teamService.requestJoin(uid, invite);
-				return "redirect:/teams?req=sent";
-			} catch (ApiException e) {
-				Team t = teamService.findByInviteCode(invite).orElse(null);
-				if (t != null && teamService.isMember(t.getId(), uid)) return "redirect:/team/" + t.getId();
-				return "redirect:/teams";
-			}
+			return "redirect:/join/confirm";
 		}
 
 		List<Team> teams = teamService.myTeams(uid);
@@ -82,6 +75,39 @@ public class MainController {
 			res.addCookie(c);
 		}
 		return "redirect:/";
+	}
+
+	/** 초대 링크 진입 시 현재 로그인 계정 확인 화면 (다른 사람 쿠키로 잘못 가입 방지) */
+	@GetMapping("/join/confirm")
+	public String joinConfirm(HttpServletRequest req, HttpServletResponse res, Model model) {
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		String invite = readCookie(req, "pending_invite");
+		if (invite == null || invite.isBlank()) return "redirect:/";
+		Team t = teamService.findByInviteCode(invite).orElse(null);
+		if (t == null) { clearCookie(res, "pending_invite"); return "redirect:/teams"; }
+		if (teamService.isMember(t.getId(), uid)) { clearCookie(res, "pending_invite"); return "redirect:/team/" + t.getId(); }
+		model.addAttribute("user", userService.get(uid));
+		model.addAttribute("teamName", t.getName());
+		return "join_confirm";
+	}
+
+	/** 확인 화면에서 "이 계정으로 가입" 선택 → 가입 신청 */
+	@GetMapping("/join/accept")
+	public String joinAccept(HttpServletRequest req, HttpServletResponse res) {
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		String invite = readCookie(req, "pending_invite");
+		clearCookie(res, "pending_invite");
+		if (invite == null || invite.isBlank()) return "redirect:/";
+		try {
+			teamService.requestJoin(uid, invite);
+			return "redirect:/teams?req=sent";
+		} catch (ApiException e) {
+			Team t = teamService.findByInviteCode(invite).orElse(null);
+			if (t != null && teamService.isMember(t.getId(), uid)) return "redirect:/team/" + t.getId();
+			return "redirect:/teams";
+		}
 	}
 
 	private String readCookie(HttpServletRequest req, String name) {
