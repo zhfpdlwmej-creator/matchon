@@ -43,6 +43,10 @@ public class MatchSchedule {
 	@Column(name = "target_headcount", nullable = false)
 	private int targetHeadcount;
 
+	/** 선착순 마감: true 면 참석 인원이 목표 인원에 차면 추가 참석 불가 */
+	@Column(name = "limit_attendance", nullable = false)
+	private boolean limitAttendance;
+
 	@Column(length = 500)
 	private String memo;
 

@@ -61,6 +61,18 @@ public class AttendanceService {
 						.status(AttendanceStatus.PENDING)
 						.paid(false)
 						.build());
+
+		// 선착순 마감: 새로 '참석'하려는데 이미 정원이 찼으면 차단
+		if (status == AttendanceStatus.ATTEND && s.isLimitAttendance() && s.getTargetHeadcount() > 0
+				&& att.getStatus() != AttendanceStatus.ATTEND) {
+			long attendMembers = attendanceRepo.countByScheduleIdAndStatus(scheduleId, AttendanceStatus.ATTEND);
+			long guests = guestRepo.findByScheduleIdOrderByCreatedAtAsc(scheduleId).stream()
+					.mapToInt(MatchGuest::getHeadcount).sum();
+			if (attendMembers + guests >= s.getTargetHeadcount()) {
+				throw new ApiException(409, "선착순 마감되었습니다. (정원 " + s.getTargetHeadcount() + "명)");
+			}
+		}
+
 		att.setStatus(status);
 		att = attendanceRepo.save(att);
 

@@ -46,8 +46,12 @@
 			</div>
 			<label>장소</label>
 			<input type="text" id="schPlace" maxlength="120" placeholder="예: 잠실 풋살장 A구장">
-			<label>최소 필요 인원 (예: 5vs5 → 5)</label>
-			<input type="number" id="schTarget" min="0" value="0" placeholder="예: 5 (성원 게이지 기준)">
+			<label>모집 인원 (성원 게이지 / 선착순 정원 기준)</label>
+			<input type="number" id="schTarget" min="0" value="0" placeholder="예: 16">
+			<label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:600;">
+				<input type="checkbox" id="schLimit" style="width:auto;transform:scale(1.3);"> 🔒 선착순 마감
+			</label>
+			<div class="muted small" style="margin:2px 0 4px;">체크하면 참석 투표가 <b>위 인원까지만</b> 받아지고, 다 차면 더 이상 참석할 수 없어요. (용병 포함 집계)</div>
 			<label>메모</label>
 			<textarea id="schMemo" maxlength="500" placeholder="준비물, 주차 안내 등"></textarea>
 			<div class="row-2" style="margin-top:14px;">
@@ -141,6 +145,7 @@ function openModal(s) {
 	$('#schEnd').val(s && s.endTime ? s.endTime.slice(0,5) : '');
 	$('#schPlace').val(s ? (s.place || '') : '');
 	$('#schTarget').val(s ? s.targetHeadcount : 0);
+	$('#schLimit').prop('checked', s ? !!s.limitAttendance : false);
 	$('#schMemo').val(s ? (s.memo || '') : '');
 	$('#schDelete').toggle(!!s);
 	$('#schModal').addClass('open');
@@ -169,6 +174,7 @@ $(function () {
 				endTime: $('#schEnd').val() || null,
 				place: $('#schPlace').val().trim(),
 				targetHeadcount: parseInt($('#schTarget').val() || '0', 10),
+				limitAttendance: $('#schLimit').is(':checked'),
 				memo: $('#schMemo').val().trim()
 			};
 			const r = id

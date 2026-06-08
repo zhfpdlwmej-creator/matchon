@@ -29,6 +29,7 @@
 			<button class="att-btn absent" data-s="ABSENT">❌ 불참</button>
 			<button class="att-btn pending" data-s="PENDING">❓ 미정</button>
 		</div>
+		<div id="limitStatus" class="small" style="margin-top:10px;text-align:center;"></div>
 	</div>
 
 	<div class="card">
@@ -109,9 +110,19 @@ async function loadAttendance() {
 
 	// 인원 부족 → 용병 모집글 버튼 (팀장/운영진)
 	const target = sched ? sched.targetHeadcount : 0;
-	const shortage = target - (sm.attend + (sm.guestCount || 0));
+	const filled = sm.attend + (sm.guestCount || 0);
+	const shortage = target - filled;
 	if (CAN_MANAGE && shortage > 0) $('#recruitBtn').show().text('🆘 용병 ' + shortage + '명 모집글 올리기');
 	else $('#recruitBtn').hide();
+
+	// 선착순 마감 상태 표시
+	if (sched && sched.limitAttendance && target > 0) {
+		const left = target - filled;
+		$('#limitStatus').html(left > 0
+			? '🔒 선착순 마감 · <b>' + filled + ' / ' + target + '</b>명 (남은 자리 ' + left + ')'
+			: '🔒 <b style="color:var(--red);">선착순 정원 마감</b> (' + filled + ' / ' + target + '명)');
+		$('#attendBtns .att-btn.attend').css('opacity', left > 0 ? '1' : '.5');
+	} else $('#limitStatus').empty();
 
 	// 참석자
 	const al = $('#attendList').empty();

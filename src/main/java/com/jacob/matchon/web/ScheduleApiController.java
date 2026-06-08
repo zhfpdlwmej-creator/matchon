@@ -206,6 +206,7 @@ public class ScheduleApiController {
 		m.put("place", s.getPlace());
 		m.put("fee", s.getFee());
 		m.put("targetHeadcount", s.getTargetHeadcount());
+		m.put("limitAttendance", s.isLimitAttendance());
 		m.put("memo", s.getMemo());
 		m.put("isPast", s.getMatchDate().isBefore(LocalDate.now()));
 		return m;
