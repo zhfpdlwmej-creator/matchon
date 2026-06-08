@@ -57,7 +57,8 @@ public class AuthController {
 		String url = AUTHORIZE_URL
 				+ "?response_type=code"
 				+ "&client_id=" + enc(restKey)
-				+ "&redirect_uri=" + enc(redirectUri);
+				+ "&redirect_uri=" + enc(redirectUri)
+				+ "&prompt=login";   // 항상 카카오 로그인 화면 → 자동 SSO 로 남의 계정 물고 가는 것 방지
 		return "redirect:" + url;
 	}
 
