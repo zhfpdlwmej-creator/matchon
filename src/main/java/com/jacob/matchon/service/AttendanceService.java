@@ -3,6 +3,7 @@ package com.jacob.matchon.service;
 import com.jacob.matchon.dto.AttendanceSummary;
 import com.jacob.matchon.model.*;
 import com.jacob.matchon.repo.AttendanceRepository;
+import com.jacob.matchon.repo.MatchGuestRepository;
 import com.jacob.matchon.web.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,36 @@ import java.util.stream.Collectors;
 public class AttendanceService {
 
 	private final AttendanceRepository attendanceRepo;
+	private final MatchGuestRepository guestRepo;
 	private final ScheduleService scheduleService;
 	private final TeamService teamService;
 	private final UserService userService;
 	private final NotificationService notificationService;
+
+	/** 용병 추가 (팀 멤버면 가능) */
+	@Transactional
+	public MatchGuest addGuest(Long scheduleId, Long userId, String name, int headcount) {
+		MatchSchedule s = scheduleService.get(scheduleId);
+		teamService.membership(s.getTeamId(), userId);
+		if (name == null || name.isBlank()) throw new ApiException(400, "용병 이름을 입력해주세요.");
+		int hc = Math.max(1, headcount);
+		return guestRepo.save(MatchGuest.builder()
+				.scheduleId(scheduleId).name(name.trim().length() > 40 ? name.trim().substring(0, 40) : name.trim())
+				.headcount(hc).addedBy(userId).build());
+	}
+
+	/** 용병 삭제 (추가자 또는 운영진) */
+	@Transactional
+	public void removeGuest(Long guestId, Long userId) {
+		MatchGuest g = guestRepo.findById(guestId)
+				.orElseThrow(() -> new ApiException(404, "용병을 찾을 수 없습니다."));
+		MatchSchedule s = scheduleService.get(g.getScheduleId());
+		boolean manager = teamService.membership(s.getTeamId(), userId).getRole().canManage();
+		if (!g.getAddedBy().equals(userId) && !manager) {
+			throw new ApiException(403, "삭제 권한이 없습니다.");
+		}
+		guestRepo.delete(g);
+	}
 
 	/** 참석 상태 변경(버튼 클릭). 멤버면 누구나 본인 상태 변경 가능. */
 	@Transactional
@@ -88,9 +115,18 @@ public class AttendanceService {
 				default -> pendingList.add(row);
 			}
 		}
+		// 용병 집계
+		List<MatchGuest> guestEntities = guestRepo.findByScheduleIdOrderByCreatedAtAsc(s.getId());
+		long guestCount = guestEntities.stream().mapToLong(MatchGuest::getHeadcount).sum();
+		List<AttendanceSummary.Guest> guests = guestEntities.stream()
+				.map(g -> new AttendanceSummary.Guest(g.getId(), g.getName(), g.getHeadcount()))
+				.toList();
+		long totalCount = attendList.size() + guestCount;
+
 		return new AttendanceSummary(
 				attendList.size(), absentList.size(), pendingList.size(),
-				byPosition, attendList, absentList, pendingList);
+				guestCount, totalCount,
+				byPosition, attendList, absentList, pendingList, guests);
 	}
 
 	/** 내 참석 상태 조회 */

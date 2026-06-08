@@ -36,11 +36,23 @@
 			<div class="box absent"><div class="num" id="sAbsent">-</div><div class="lbl">불참</div></div>
 			<div class="box pending"><div class="num" id="sPending">-</div><div class="lbl">미정</div></div>
 		</div>
+		<div id="totalLine" class="muted small" style="margin-top:8px;text-align:center;"></div>
 
 		<div class="section-title" style="margin-left:0;">참석자</div>
 		<div id="attendList"></div>
 		<div class="section-title" style="margin-left:0;">불참 / 미정</div>
 		<div id="otherList"></div>
+	</div>
+
+	<div class="card">
+		<h3>용병 <span class="muted small" id="guestSum"></span></h3>
+		<div class="muted small" style="margin-bottom:8px;">팀원이 아닌 외부 참석 인원을 추가해 정확히 집계해요.</div>
+		<div id="guestList"></div>
+		<div class="comment-input" style="margin-top:10px;">
+			<input type="text" id="guestName" maxlength="40" placeholder="용병 이름 (예: 철수 지인)" style="flex:2;">
+			<input type="number" id="guestCount" min="1" value="1" style="flex:1;min-width:0;" title="인원수">
+			<button class="btn-primary btn-sm" id="guestAdd">＋ 추가</button>
+		</div>
 	</div>
 
 	<div class="card">
@@ -107,6 +119,17 @@ async function loadAttendance() {
 		ol.append('<div class="member-row"><span class="name">' + esc(m.nickname) +
 			'</span><span class="right small muted">' + m._t + '</span></div>');
 	});
+
+	// 용병 + 총 인원
+	const guests = sm.guests || [];
+	const gc = sm.guestCount || 0;
+	$('#guestSum').text(gc > 0 ? '(' + gc + '명)' : '');
+	$('#totalLine').text('실제 모인 인원: 참석 ' + sm.attend + (gc > 0 ? ' + 용병 ' + gc : '') + ' = ' + (sm.attend + gc) + '명');
+	const gl = $('#guestList').empty();
+	if (!guests.length) gl.html('<div class="muted small" style="padding:6px 0;">추가된 용병이 없습니다.</div>');
+	guests.forEach(g => gl.append(
+		'<div class="member-row"><span class="name">🧤 ' + esc(g.name) + (g.headcount > 1 ? ' (' + g.headcount + '명)' : '') + '</span>' +
+		'<span class="right"><a href="javascript:void(0)" class="guestDel muted small" data-id="' + g.id + '">삭제</a></span></div>'));
 }
 
 function memberRow(m) {
@@ -161,6 +184,22 @@ $(function () {
 		if (!confirm('댓글을 삭제할까요?')) return;
 		const r = await api.del('/api/comment/' + $(this).data('id'));
 		if (r.ok) loadComments(); else alert(r.message || '실패');
+	});
+
+	// 용병 추가/삭제
+	async function addGuest() {
+		const name = $('#guestName').val().trim();
+		const cnt = parseInt($('#guestCount').val() || '1', 10);
+		if (!name) { alert('용병 이름을 입력하세요.'); return; }
+		const r = await api.post('/api/attendance/guest', { scheduleId: SCHEDULE_ID, name: name, headcount: cnt });
+		if (r.ok) { $('#guestName').val(''); $('#guestCount').val(1); loadAttendance(); } else alert(r.message || '실패');
+	}
+	$('#guestAdd').on('click', addGuest);
+	$('#guestName').on('keypress', e => { if (e.which === 13) addGuest(); });
+	$('#guestList').on('click', '.guestDel', async function () {
+		if (!confirm('이 용병을 삭제할까요?')) return;
+		const r = await api.del('/api/attendance/guest/' + $(this).data('id'));
+		if (r.ok) loadAttendance(); else alert(r.message || '실패');
 	});
 });
 </script>

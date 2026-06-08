@@ -46,8 +46,8 @@
 			</div>
 			<label>장소</label>
 			<input type="text" id="schPlace" maxlength="120" placeholder="예: 잠실 풋살장 A구장">
-			<label>목표 인원 (선택)</label>
-			<input type="number" id="schTarget" min="0" value="0" placeholder="예: 12 (진행률·부족 인원 표시)">
+			<label>최소 필요 인원 (예: 5vs5 → 5)</label>
+			<input type="number" id="schTarget" min="0" value="0" placeholder="예: 5 (성원 게이지 기준)">
 			<label>메모</label>
 			<textarea id="schMemo" maxlength="500" placeholder="준비물, 주차 안내 등"></textarea>
 			<div class="row-2" style="margin-top:14px;">

@@ -39,6 +39,25 @@ public class AttendanceApiController {
 				"myStatus", attendanceService.myStatus(scheduleId, uid).name());
 	}
 
+	/** 용병 추가 */
+	@PostMapping("/guest")
+	public Map<String, Object> addGuest(@RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		Long scheduleId = Long.valueOf(String.valueOf(body.get("scheduleId")));
+		String name = String.valueOf(body.get("name"));
+		int hc = body.get("headcount") == null ? 1 : Integer.parseInt(String.valueOf(body.get("headcount")));
+		attendanceService.addGuest(scheduleId, uid, name, hc);
+		return Map.of("ok", true);
+	}
+
+	/** 용병 삭제 */
+	@DeleteMapping("/guest/{id}")
+	public Map<String, Object> removeGuest(@PathVariable Long id) {
+		Long uid = CurrentUser.required();
+		attendanceService.removeGuest(id, uid);
+		return Map.of("ok", true);
+	}
+
 	/** 회비 납부 여부 토글 (팀장/운영진) */
 	@PostMapping("/paid")
 	public Map<String, Object> setPaid(@RequestBody Map<String, Object> body) {

@@ -107,24 +107,26 @@ async function loadHome() {
 	if (!r.ok) return;
 	const sm = r.summary; summaryData = sm;
 	const att = sm.attend;
+	const guests = sm.guestCount || 0;
+	const total = att + guests;       // 실제 모인 인원(참석 + 용병)
 	$('#hsAttend').text(sm.attend); $('#hsAbsent').text(sm.absent); $('#hsPending').text(sm.pending);
-	$('#iAttend').text('참석 ' + att + '명' + (TARGET > 0 ? ' / 목표 ' + TARGET : ''));
+	$('#iAttend').text('참석 ' + att + '명' + (guests > 0 ? ' + 용병 ' + guests : '') + (TARGET > 0 ? ' / 최소 ' + TARGET : ''));
 	$('#homeAttendBtns .att-btn').removeClass('on');
 	$('#homeAttendBtns .att-btn[data-s="' + r.myStatus + '"]').addClass('on');
 
-	// 진행률 + 부족/충족
+	// 진행률(참석+용병 vs 최소 필요 인원) + 부족/성원완료
 	if (TARGET > 0) {
-		const pct = Math.min(100, Math.round(att / TARGET * 100));
+		const pct = Math.min(100, Math.round(total / TARGET * 100));
 		$('#progressWrap').show();
 		$('#progressBar').css('width', pct + '%');
-		$('#progressText').text(att + ' / ' + TARGET + '명 (' + pct + '%)');
-		if (att < TARGET) {
-			const short = TARGET - att;
+		$('#progressText').text(total + ' / ' + TARGET + '명' + (guests > 0 ? ' (용병 ' + guests + ' 포함)' : '') + ' · ' + pct + '%');
+		if (total < TARGET) {
+			const short = TARGET - total;
 			$('#shortMsg').text('⚠️ 현재 ' + short + '명 부족').removeClass('ok').addClass('short');
 			$('#progressBar').css('background', 'linear-gradient(90deg,#e08a16,#e0454f)');
 			$('#iShortCell').show(); $('#iShort').text(short + '명 부족');
 		} else {
-			$('#shortMsg').text('✅ 인원 충족').removeClass('short').addClass('ok');
+			$('#shortMsg').text('✅ 성원 완료').removeClass('short').addClass('ok');
 			$('#progressBar').css('background', '');
 			$('#iShortCell').hide();
 		}
