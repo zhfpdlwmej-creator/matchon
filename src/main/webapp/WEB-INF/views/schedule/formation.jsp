@@ -50,6 +50,23 @@
 
 	<div class="muted small" style="margin-top:8px;" id="pitchHint">벤치 선수를 탭하면 필드에 올라가고, 드래그로 위치 조정 · 탭하면 벤치로. (빈 공간은 스크롤)</div>
 
+	<div class="section-title" style="margin-left:0;">선호 포지션 신청</div>
+	<div class="card">
+		<div class="muted small">원하는 포지션을 신청하면 팀장이 라인업 짤 때 참고해요.</div>
+		<div class="region-row" id="posPick" style="margin-top:8px;">
+			<button type="button" class="region-chip" data-v="GK">🧤 GK</button>
+			<button type="button" class="region-chip" data-v="DF">🛡 DF</button>
+			<button type="button" class="region-chip" data-v="MF">⚙️ MF</button>
+			<button type="button" class="region-chip" data-v="FW">⚔️ FW</button>
+		</div>
+		<div style="display:flex;gap:6px;margin-top:8px;">
+			<input type="text" id="posNote" maxlength="200" placeholder="한마디 (선택: 예-왼쪽 윙 선호)" style="flex:1;min-width:0;padding:10px;border:1px solid var(--line);border-radius:10px;">
+			<button class="btn-primary btn-sm" id="posApply">신청</button>
+			<button class="btn-ghost btn-sm" id="posCancel">취소</button>
+		</div>
+		<div id="posList" style="margin-top:10px;"></div>
+	</div>
+
 	<div id="presetWrap" style="display:none;margin-top:12px;">
 		<div class="small" style="font-weight:700;margin-bottom:6px;">인원</div>
 		<div class="region-row" id="countSel">
@@ -98,6 +115,19 @@ let curQ = '1';
 let tokens = fm.quarters['1'];        // 현재 쿼터 토큰(참조)
 let seq = 1;
 let roster = [];                      // 참석자+용병 이름 명단
+let selectedPos = '';                 // 신청할 선호 포지션
+const POS_LABEL = { GK: '🧤 GK', DF: '🛡 DF', MF: '⚙️ MF', FW: '⚔️ FW' };
+
+async function loadPositions() {
+	const r = await api.get('/api/schedule/' + SCHEDULE_ID + '/positions');
+	if (!r.ok) return;
+	$('#posPick .region-chip').removeClass('on');
+	if (r.myPosition) { $('#posPick .region-chip[data-v="' + r.myPosition + '"]').addClass('on'); selectedPos = r.myPosition; }
+	const box = $('#posList').empty();
+	if (!r.requests.length) { box.html('<div class="muted small">아직 신청한 사람이 없어요.</div>'); return; }
+	r.requests.forEach(p => box.append('<div class="member-row"><span class="name">' + esc(p.name) + '</span>' +
+		'<span class="right small">' + (POS_LABEL[p.position] || p.position) + (p.note ? ' <span class="muted">· ' + esc(p.note) + '</span>' : '') + '</span></div>'));
+}
 
 const PRESETS = {
 	'11': { '4-4-2': [[50,88],[15,70],[38,70],[62,70],[85,70],[15,46],[38,46],[62,46],[85,46],[38,22],[62,22]],
@@ -250,6 +280,18 @@ $(function () {
 	}
 	load();
 	renderPresets('11');
+	loadPositions();
+
+	$('#posPick .region-chip').on('click', function () { $('#posPick .region-chip').removeClass('on'); $(this).addClass('on'); selectedPos = $(this).data('v'); });
+	$('#posApply').on('click', async function () {
+		if (!selectedPos) { alert('포지션을 선택해주세요.'); return; }
+		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/position', { position: selectedPos, note: $('#posNote').val().trim() });
+		if (r.ok) { alert('신청 완료!'); loadPositions(); } else alert(r.message || '실패');
+	});
+	$('#posCancel').on('click', async function () {
+		const r = await api.del('/api/schedule/' + SCHEDULE_ID + '/position');
+		if (r.ok) { selectedPos = ''; $('#posPick .region-chip').removeClass('on'); $('#posNote').val(''); loadPositions(); } else alert(r.message || '실패');
+	});
 
 	$('#qTabs').on('click', '.qtab', function () { switchQ($(this).data('q') + ''); });
 	$('#addQ').on('click', function () {

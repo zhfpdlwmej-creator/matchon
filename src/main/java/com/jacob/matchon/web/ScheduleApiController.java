@@ -4,6 +4,7 @@ import com.jacob.matchon.dto.ScheduleForm;
 import com.jacob.matchon.model.MatchSchedule;
 import com.jacob.matchon.security.CurrentUser;
 import com.jacob.matchon.service.AttendanceService;
+import com.jacob.matchon.service.PositionRequestService;
 import com.jacob.matchon.service.ResultService;
 import com.jacob.matchon.service.ScheduleService;
 import com.jacob.matchon.service.TeamService;
@@ -25,6 +26,7 @@ public class ScheduleApiController {
 	private final TeamService teamService;
 	private final AttendanceService attendanceService;
 	private final ResultService resultService;
+	private final PositionRequestService positionRequestService;
 
 	/** 내 다가오는 경기 + 내 참석 상태 (홈 개인 탭) */
 	@GetMapping("/my-upcoming")
@@ -150,6 +152,31 @@ public class ScheduleApiController {
 	public Map<String, Object> voteMom(@PathVariable Long id, @RequestBody Map<String, Object> body) {
 		Long uid = CurrentUser.required();
 		resultService.voteMom(id, uid, lng(body.get("targetUserId")));
+		return Map.of("ok", true);
+	}
+
+	// ---------- 선호 포지션 신청 ----------
+
+	/** 선호 포지션 신청 현황 + 내 신청 */
+	@GetMapping("/{id}/positions")
+	public Map<String, Object> positions(@PathVariable Long id) {
+		Long uid = CurrentUser.required();
+		return positionRequestService.list(id, uid);
+	}
+
+	/** 내 선호 포지션 신청/변경 */
+	@PostMapping("/{id}/position")
+	public Map<String, Object> applyPosition(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		positionRequestService.apply(id, uid, str(body.get("position")), str(body.get("note")));
+		return Map.of("ok", true);
+	}
+
+	/** 내 선호 포지션 신청 취소 */
+	@DeleteMapping("/{id}/position")
+	public Map<String, Object> cancelPosition(@PathVariable Long id) {
+		Long uid = CurrentUser.required();
+		positionRequestService.cancel(id, uid);
 		return Map.of("ok", true);
 	}
 
