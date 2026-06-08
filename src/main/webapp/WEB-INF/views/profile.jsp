@@ -14,22 +14,22 @@
 		<a href="/auth/logout" class="role-badge">로그아웃</a>
 	</div>
 </header>
-<div class="app-wrap">
-	<div class="card-form">
+<div class="app-wrap" style="padding-top:20px;">
+	<div class="card-form" style="margin-bottom:22px;">
 		<label>이름 (카카오 계정)</label>
 		<div style="padding:13px 14px;border:1px solid var(--line);border-radius:11px;background:#f4f6f5;font-weight:700;">${user.nickname}</div>
 		<div class="muted small" style="margin-top:6px;">이름은 카카오 계정 이름으로 자동 설정됩니다.</div>
 	</div>
 
 	<!-- 알림 설정 -->
-	<div class="card">
+	<div class="card" style="margin-bottom:24px;">
 		<h3>🔔 알림</h3>
-		<div class="muted small" id="pushDesc" style="margin-bottom:10px;">경기 등록·리마인드 알림을 폰으로 받습니다.</div>
+		<div class="muted small" id="pushDesc" style="margin-bottom:12px;">경기 등록·리마인드 알림을 폰으로 받습니다.</div>
 		<button class="btn-primary btn-block" id="pushBtn">알림 켜기</button>
 	</div>
 
-	<div class="section-title">내 팀</div>
-	<div class="card">
+	<div class="section-title" style="margin-top:8px;">내 팀</div>
+	<div class="card" style="margin-bottom:22px;">
 		<c:forEach var="t" items="${teams}">
 			<a class="member-row" href="/team/${t.id}">
 				<span class="emblem">${t.sportEmoji}</span>
