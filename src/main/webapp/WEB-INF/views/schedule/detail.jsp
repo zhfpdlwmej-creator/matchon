@@ -45,35 +45,6 @@
 		<div id="otherList"></div>
 	</div>
 
-	<div class="card" id="resultCard">
-		<h3>경기 결과</h3>
-		<div id="resultBox"></div>
-		<c:if test="${canManage}">
-			<div class="row-2" style="margin-top:8px;">
-				<div><label class="small">우리 득점</label><input type="number" id="ourScore" min="0" value="0" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;"></div>
-				<div><label class="small">상대 득점</label><input type="number" id="oppScore" min="0" value="0" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;"></div>
-			</div>
-			<button class="btn-primary btn-sm btn-block" id="saveResult" style="margin-top:8px;">결과 저장</button>
-		</c:if>
-
-		<div class="section-title" style="margin-left:0;">⚽ 득점 / 도움</div>
-		<div id="eventList"></div>
-		<c:if test="${canManage}">
-			<div style="display:flex;gap:6px;margin-top:8px;">
-				<select id="scorerSel" style="flex:1;min-width:0;padding:9px;border:1px solid var(--line);border-radius:10px;"></select>
-				<select id="assistSel" style="flex:1;min-width:0;padding:9px;border:1px solid var(--line);border-radius:10px;"></select>
-				<button class="btn-primary btn-sm" id="addEvent">＋골</button>
-			</div>
-		</c:if>
-
-		<div class="section-title" style="margin-left:0;">👑 MOM 투표</div>
-		<div id="momBox"></div>
-		<div style="display:flex;gap:6px;margin-top:8px;">
-			<select id="momSel" style="flex:1;min-width:0;padding:9px;border:1px solid var(--line);border-radius:10px;"></select>
-			<button class="btn-primary btn-sm" id="voteMomBtn">투표</button>
-		</div>
-	</div>
-
 	<div class="card">
 		<h3>용병 <span class="muted small" id="guestSum"></span></h3>
 		<div class="muted small" style="margin-bottom:8px;">팀원이 아닌 외부 참석 인원을 추가해 정확히 집계해요.</div>
@@ -105,36 +76,6 @@ const MY_ID = ${user.id};
 const TEAM_NAME = "${team.name}";
 let isPast = false; // 경기 종료 여부
 let sched = null;   // 현재 일정 (공유용)
-let attendees = [];   // 참석 멤버 [{userId,name}]
-let scorerPool = [];  // 참석멤버 + 용병 [{userId,name}]
-
-async function loadResult() {
-	const r = await api.get('/api/schedule/' + SCHEDULE_ID + '/result');
-	if (!r.ok) return;
-	const res = r.result;
-	if (res) $('#resultBox').html('<div style="font-size:24px;font-weight:800;text-align:center;color:var(--green);">우리 ' + res.ourScore + ' : ' + res.oppScore + ' <span style="color:var(--text);font-size:16px;">상대</span></div>');
-	else $('#resultBox').html('<div class="muted small">아직 결과가 입력되지 않았습니다.</div>');
-	if (CAN_MANAGE && res) { $('#ourScore').val(res.ourScore); $('#oppScore').val(res.oppScore); }
-
-	const el = $('#eventList').empty();
-	if (!r.events.length) el.html('<div class="muted small" style="padding:6px 0;">기록 없음</div>');
-	r.events.forEach(e => {
-		const del = CAN_MANAGE ? ' <a href="javascript:void(0)" class="evtDel muted small" data-id="' + e.id + '">삭제</a>' : '';
-		el.append('<div class="member-row"><span class="name">⚽ ' + esc(e.scorerName) + (e.assistName ? ' <span class="muted small">(도움 ' + esc(e.assistName) + ')</span>' : '') + '</span><span class="right">' + del + '</span></div>');
-	});
-
-	// 득점/도움 드롭다운 (팀장)
-	const s = $('#scorerSel').empty().append('<option value="">득점자</option>');
-	const a = $('#assistSel').empty().append('<option value="">도움 없음</option>');
-	scorerPool.forEach(p => { const v = (p.userId || '') + '|' + p.name; s.append('<option value="' + v + '">' + esc(p.name) + '</option>'); a.append('<option value="' + v + '">' + esc(p.name) + '</option>'); });
-
-	// MOM
-	const mb = $('#momBox').empty();
-	if (!r.mom.length) mb.html('<div class="muted small" style="padding:6px 0;">아직 투표가 없습니다.</div>');
-	r.mom.forEach((m, i) => mb.append('<div class="member-row"><span class="name">' + (i === 0 ? '👑 ' : '') + esc(m.name) + '</span><span class="right muted small">' + m.votes + '표' + (m.userId === r.myVote ? ' · 내 표' : '') + '</span></div>'));
-	const ms = $('#momSel').empty().append('<option value="">MOM 선택</option>');
-	attendees.forEach(p => ms.append('<option value="' + p.userId + '"' + (p.userId === r.myVote ? ' selected' : '') + '>' + esc(p.name) + '</option>'));
-}
 
 function fmtDate(iso) {
 	const d = new Date(iso + 'T00:00:00');
@@ -171,11 +112,6 @@ async function loadAttendance() {
 	const shortage = target - (sm.attend + (sm.guestCount || 0));
 	if (CAN_MANAGE && shortage > 0) $('#recruitBtn').show().text('🆘 용병 ' + shortage + '명 모집글 올리기');
 	else $('#recruitBtn').hide();
-
-	// 결과 카드용 명단 캐시
-	attendees = (sm.attendList || []).map(m => ({ userId: m.userId, name: m.nickname }));
-	scorerPool = attendees.slice();
-	(sm.guests || []).forEach(g => { for (let k = 0; k < g.headcount; k++) scorerPool.push({ userId: null, name: g.name + (g.headcount > 1 ? (k + 1) : '') }); });
 
 	// 참석자
 	const al = $('#attendList').empty();
@@ -222,31 +158,8 @@ async function loadComments() {
 }
 
 $(function () {
-	loadInfo().then(loadAttendance).then(loadResult);
+	loadInfo().then(loadAttendance);
 	loadComments();
-
-	$('#saveResult').on('click', async function () {
-		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/result', { our: parseInt($('#ourScore').val() || '0', 10), opp: parseInt($('#oppScore').val() || '0', 10) });
-		if (r.ok) loadResult(); else alert(r.message || '실패');
-	});
-	$('#addEvent').on('click', async function () {
-		const sv = $('#scorerSel').val(); if (!sv) { alert('득점자를 선택하세요.'); return; }
-		const sp = sv.split('|');
-		const av = $('#assistSel').val(); let auid = null, aname = null;
-		if (av) { const ap = av.split('|'); auid = ap[0] || null; aname = ap[1]; }
-		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/event', { scorerUserId: sp[0] || null, scorerName: sp[1], assistUserId: auid, assistName: aname });
-		if (r.ok) loadResult(); else alert(r.message || '실패');
-	});
-	$('#eventList').on('click', '.evtDel', async function () {
-		if (!confirm('이 기록을 삭제할까요?')) return;
-		const r = await api.del('/api/schedule/event/' + $(this).data('id'));
-		if (r.ok) loadResult(); else alert(r.message || '실패');
-	});
-	$('#voteMomBtn').on('click', async function () {
-		const t = $('#momSel').val(); if (!t) { alert('MOM 후보를 선택하세요.'); return; }
-		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/mom', { targetUserId: t });
-		if (r.ok) { alert('투표 완료!'); loadResult(); } else alert(r.message || '실패');
-	});
 
 	$('#recruitBtn').on('click', async function () {
 		if (!confirm('인원이 부족한 만큼 매칭 탭에 용병 모집글을 올릴까요?')) return;
