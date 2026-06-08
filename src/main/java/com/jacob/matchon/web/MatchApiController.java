@@ -142,7 +142,19 @@ public class MatchApiController {
 			applicable.add(teamMap(teamId, teamService.get(teamId).getName()));
 		}
 		res.put("applicableTeams", applicable);
+		res.putAll(matchService.ratingInfo(id, uid));   // canRate / targetTeamName / alreadyRated
 		return res;
+	}
+
+	/** 상대팀 매너/실력 평가 */
+	@PostMapping("/{id}/rate")
+	public Map<String, Object> rate(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		int manner = body.get("manner") == null ? 0 : Integer.parseInt(String.valueOf(body.get("manner")));
+		String skill = body.get("skill") == null ? null : String.valueOf(body.get("skill"));
+		String comment = body.get("comment") == null ? null : String.valueOf(body.get("comment"));
+		matchService.rateOpponent(id, uid, manner, skill, comment);
+		return Map.of("ok", true);
 	}
 
 	/** 매칭 등록 */
@@ -231,6 +243,9 @@ public class MatchApiController {
 		m.put("status", p.getStatus().name());
 		m.put("applications", matchService.applicationCount(p.getId()));
 		m.put("mine", mine.contains(p.getHostTeamId()));
+		double[] mn = matchService.mannerSummary(p.getHostTeamId());
+		m.put("mannerAvg", mn[1] > 0 ? mn[0] : null);
+		m.put("mannerCount", (int) mn[1]);
 		return m;
 	}
 

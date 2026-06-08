@@ -53,6 +53,11 @@
 			<button class="region-chip" data-v="AGE_30">30대</button>
 			<button class="region-chip" data-v="AGE_40">40대+</button>
 		</div>
+		<div class="small" style="font-weight:700;margin:12px 0 8px;">매너</div>
+		<div class="region-row" id="fManner">
+			<button class="region-chip on" data-v="">전체</button>
+			<button class="region-chip" data-v="hidebad">😡 비매너(3★미만) 숨기기</button>
+		</div>
 		<div class="small" style="font-weight:700;margin:12px 0 8px;">지역으로 보기</div>
 		<div id="filterRegion"></div>
 	</div>
@@ -137,7 +142,7 @@ const IS_LEADER = ${isLeader};                       // 현재 팀의 팀장인�
 let map, marker, mapReady = false;
 let currentRegion = '';
 let currentSport = '';   // 축구 전용 — 종목 필터 미사용
-let currentType = '', currentLevel = '', currentAge = '';
+let currentType = '', currentLevel = '', currentAge = '', currentManner = '';
 let allMatches = [];     // 지역 필터로 받아온 원본(타입/실력/연령은 클라이언트 필터)
 
 const TYPE_LABEL = { FUTSAL_5: '5인제 풋살', SOCCER_8: '8인제', SOCCER_11: '11인제 축구' };
@@ -198,6 +203,7 @@ function passFilter(m) {
 	if (currentType && m.matchType !== currentType) return false;
 	if (currentLevel && m.level !== currentLevel) return false;
 	if (currentAge && m.ageGroup !== currentAge) return false;
+	if (currentManner === 'hidebad' && m.mannerAvg != null && m.mannerAvg < 3) return false;
 	return true;
 }
 
@@ -221,7 +227,8 @@ function renderList() {
 		}
 		const tags = lvBadge(m.level, '수준 ' + m.levelLabel) +
 			(m.matchType ? '<span class="lvl-badge" style="background:#2f6df0;">' + (TYPE_LABEL[m.matchType] || m.matchType) + '</span>' : '') +
-			(m.ageGroup ? '<span class="lvl-badge" style="background:#7b8794;">' + (AGE_LABEL[m.ageGroup] || m.ageGroup) + '</span>' : '');
+			(m.ageGroup ? '<span class="lvl-badge" style="background:#7b8794;">' + (AGE_LABEL[m.ageGroup] || m.ageGroup) + '</span>' : '') +
+			(m.mannerAvg != null ? '<span class="lvl-badge" style="background:#1a9d52;">🤝 ' + m.mannerAvg + '</span>' : '');
 		box.append(
 			'<a class="schedule-item" href="/matches/' + m.id + '">' +
 			'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + tags +
@@ -300,6 +307,7 @@ $(function () {
 		$('#fType .region-chip').on('click', function () { $('#fType .region-chip').removeClass('on'); $(this).addClass('on'); currentType = $(this).data('v') || ''; renderList(); });
 		$('#fLevel .region-chip').on('click', function () { $('#fLevel .region-chip').removeClass('on'); $(this).addClass('on'); currentLevel = $(this).data('v') || ''; renderList(); });
 		$('#fAge .region-chip').on('click', function () { $('#fAge .region-chip').removeClass('on'); $(this).addClass('on'); currentAge = $(this).data('v') || ''; renderList(); });
+		$('#fManner .region-chip').on('click', function () { $('#fManner .region-chip').removeClass('on'); $(this).addClass('on'); currentManner = $(this).data('v') || ''; renderList(); });
 
 	$('#placeSearch').on('click', function () {
 		const kw = $('#placeName').val().trim();

@@ -4,6 +4,7 @@ import com.jacob.matchon.dto.ScheduleForm;
 import com.jacob.matchon.model.MatchSchedule;
 import com.jacob.matchon.security.CurrentUser;
 import com.jacob.matchon.service.AttendanceService;
+import com.jacob.matchon.service.ResultService;
 import com.jacob.matchon.service.ScheduleService;
 import com.jacob.matchon.service.TeamService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class ScheduleApiController {
 	private final ScheduleService scheduleService;
 	private final TeamService teamService;
 	private final AttendanceService attendanceService;
+	private final ResultService resultService;
 
 	/** 내 다가오는 경기 + 내 참석 상태 (홈 개인 탭) */
 	@GetMapping("/my-upcoming")
@@ -107,6 +109,53 @@ public class ScheduleApiController {
 		scheduleService.saveFormation(id, uid, body.get("data"));
 		return Map.of("ok", true);
 	}
+
+	// ---------- 경기 결과 / 득점·도움 / MOM ----------
+
+	/** 결과+득점+MOM 조회 (팀 멤버) */
+	@GetMapping("/{id}/result")
+	public Map<String, Object> getResult(@PathVariable Long id) {
+		Long uid = CurrentUser.required();
+		return resultService.view(id, uid);
+	}
+
+	/** 결과 저장 (팀장/운영진) */
+	@PostMapping("/{id}/result")
+	public Map<String, Object> saveResult(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		resultService.saveResult(id, uid, num(body.get("our")), num(body.get("opp")), str(body.get("opponentName")));
+		return Map.of("ok", true);
+	}
+
+	/** 득점/도움 추가 (팀장/운영진) */
+	@PostMapping("/{id}/event")
+	public Map<String, Object> addEvent(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		resultService.addEvent(id, uid,
+				lng(body.get("scorerUserId")), str(body.get("scorerName")),
+				lng(body.get("assistUserId")), str(body.get("assistName")));
+		return Map.of("ok", true);
+	}
+
+	/** 득점/도움 삭제 (팀장/운영진) */
+	@DeleteMapping("/event/{eventId}")
+	public Map<String, Object> deleteEvent(@PathVariable Long eventId) {
+		Long uid = CurrentUser.required();
+		resultService.deleteEvent(eventId, uid);
+		return Map.of("ok", true);
+	}
+
+	/** MOM 투표 (팀 멤버) */
+	@PostMapping("/{id}/mom")
+	public Map<String, Object> voteMom(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		resultService.voteMom(id, uid, lng(body.get("targetUserId")));
+		return Map.of("ok", true);
+	}
+
+	private int num(Object o) { return o == null ? 0 : Integer.parseInt(String.valueOf(o)); }
+	private Long lng(Object o) { return (o == null || String.valueOf(o).isBlank()) ? null : Long.valueOf(String.valueOf(o)); }
+	private String str(Object o) { return o == null ? null : String.valueOf(o); }
 
 	/** 다가오는 가장 가까운 일정 1건 (홈 화면) */
 	@GetMapping("/nearest")

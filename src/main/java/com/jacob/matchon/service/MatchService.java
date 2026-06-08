@@ -4,12 +4,15 @@ import com.jacob.matchon.dto.MatchForm;
 import com.jacob.matchon.model.*;
 import com.jacob.matchon.repo.MatchApplicationRepository;
 import com.jacob.matchon.repo.MatchPostRepository;
+import com.jacob.matchon.repo.TeamRatingRepository;
 import com.jacob.matchon.web.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class MatchService {
 	private final ScheduleService scheduleService;
 	private final AttendanceService attendanceService;
 	private final UserService userService;
+	private final TeamRatingRepository teamRatingRepo;
 
 	// ---------- 조회 ----------
 
@@ -151,6 +155,68 @@ public class MatchService {
 
 	private String blankToNull(String s) {
 		return (s == null || s.isBlank() || "ANY".equals(s)) ? null : s;
+	}
+
+	// ---------- 상대팀 매너/실력 평점 ----------
+
+	/** 성사된 매칭의 상대팀 평가 (두 팀의 팀장/운영진만, 팀당 1회) */
+	@Transactional
+	public void rateOpponent(Long postId, Long uid, int manner, String skill, String comment) {
+		MatchPost post = get(postId);
+		if (post.getStatus() != MatchStatus.MATCHED && post.getStatus() != MatchStatus.CLOSED) {
+			throw new ApiException(409, "성사된 경기만 평가할 수 있습니다.");
+		}
+		if (manner < 1 || manner > 5) throw new ApiException(400, "매너 점수는 1~5 입니다.");
+		MatchApplication accepted = appRepo.findByMatchPostIdOrderByCreatedAtAsc(postId).stream()
+				.filter(a -> a.getStatus() == ApplicationStatus.ACCEPTED).findFirst()
+				.orElseThrow(() -> new ApiException(409, "상대 팀 정보가 없습니다."));
+		Long hostTeam = post.getHostTeamId();
+		Long oppTeam = accepted.getApplicantTeamId();
+		Long raterTeam, targetTeam;
+		if (teamService.isLeader(hostTeam, uid)) { raterTeam = hostTeam; targetTeam = oppTeam; }
+		else if (teamService.isLeader(oppTeam, uid)) { raterTeam = oppTeam; targetTeam = hostTeam; }
+		else throw new ApiException(403, "두 팀의 팀장/운영진만 평가할 수 있습니다.");
+		if (teamRatingRepo.existsByMatchPostIdAndRaterTeamIdAndTargetTeamId(postId, raterTeam, targetTeam)) {
+			throw new ApiException(409, "이미 평가했습니다.");
+		}
+		teamRatingRepo.save(TeamRating.builder()
+				.matchPostId(postId).raterUserId(uid).raterTeamId(raterTeam).targetTeamId(targetTeam)
+				.manner(manner).skill(skill)
+				.comment(comment == null || comment.isBlank() ? null : comment.trim())
+				.build());
+	}
+
+	/** 대상 팀의 평균 매너 [avg, count] */
+	public double[] mannerSummary(Long teamId) {
+		List<TeamRating> rs = teamRatingRepo.findByTargetTeamId(teamId);
+		if (rs.isEmpty()) return new double[]{0, 0};
+		double sum = rs.stream().mapToInt(TeamRating::getManner).sum();
+		return new double[]{ Math.round(sum / rs.size() * 10) / 10.0, rs.size() };
+	}
+
+	/** 상세 화면 평점 컨텍스트 (평가 가능 여부 + 상대팀) */
+	public Map<String, Object> ratingInfo(Long postId, Long uid) {
+		Map<String, Object> info = new HashMap<>();
+		info.put("canRate", false);
+		MatchPost post = get(postId);
+		if (post.isRecruitGuest()) return info;
+		if (post.getStatus() != MatchStatus.MATCHED && post.getStatus() != MatchStatus.CLOSED) return info;
+		MatchApplication accepted = appRepo.findByMatchPostIdOrderByCreatedAtAsc(postId).stream()
+				.filter(a -> a.getStatus() == ApplicationStatus.ACCEPTED).findFirst().orElse(null);
+		if (accepted == null) return info;
+		Long hostTeam = post.getHostTeamId();
+		Long oppTeam = accepted.getApplicantTeamId();
+		Long raterTeam = null, targetTeam = null;
+		if (teamService.isLeader(hostTeam, uid)) { raterTeam = hostTeam; targetTeam = oppTeam; }
+		else if (teamService.isLeader(oppTeam, uid)) { raterTeam = oppTeam; targetTeam = hostTeam; }
+		if (raterTeam != null) {
+			boolean rated = teamRatingRepo.existsByMatchPostIdAndRaterTeamIdAndTargetTeamId(postId, raterTeam, targetTeam);
+			info.put("canRate", !rated);
+			info.put("alreadyRated", rated);
+			info.put("targetTeamId", targetTeam);
+			info.put("targetTeamName", teamService.get(targetTeam).getName());
+		}
+		return info;
 	}
 
 	@Transactional

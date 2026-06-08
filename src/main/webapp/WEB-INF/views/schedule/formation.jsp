@@ -97,6 +97,7 @@ let fm = { quarters: { '1': [] } };   // 쿼터별 토큰
 let curQ = '1';
 let tokens = fm.quarters['1'];        // 현재 쿼터 토큰(참조)
 let seq = 1;
+let roster = [];                      // 참석자+용병 이름 명단
 
 const PRESETS = {
 	'11': { '4-4-2': [[50,88],[15,70],[38,70],[62,70],[85,70],[15,46],[38,46],[62,46],[85,46],[38,22],[62,22]],
@@ -184,15 +185,26 @@ function switchQ(q) {
 	renderQTabs(); render();
 }
 
-async function loadRoster(merge) {
+// 참석자/용병 명단을 한 번 가져와 roster 에 보관 (쿼터마다 벤치 채울 때 재사용)
+async function fetchRoster() {
 	const r = await api.get('/api/attendance/list?scheduleId=' + SCHEDULE_ID);
 	if (!r.ok) return;
-	const names = [];
-	(r.summary.attendList || []).forEach(m => names.push(m.nickname));
-	(r.summary.guests || []).forEach(g => { for (let k = 0; k < g.headcount; k++) names.push(g.name + (g.headcount > 1 ? (k + 1) : '')); });
+	roster = [];
+	(r.summary.attendList || []).forEach(m => roster.push(m.nickname));
+	(r.summary.guests || []).forEach(g => { for (let k = 0; k < g.headcount; k++) roster.push(g.name + (g.headcount > 1 ? (k + 1) : '')); });
+}
+
+// 해당 쿼터에 명단 중 빠진 사람을 벤치(미배치)로 보충
+function fillBench(q) {
+	const arr = fm.quarters[q];
+	const existing = new Set(arr.map(t => t.label));
+	roster.forEach(n => { if (!existing.has(n)) arr.push({ id: seq++, label: n, x: null, y: null }); });
+}
+
+async function loadRoster(merge) {
+	await fetchRoster();
 	if (!merge) { fm.quarters[curQ] = []; tokens = fm.quarters[curQ]; }
-	const existing = new Set(tokens.map(t => t.label));
-	names.forEach(n => { if (!existing.has(n)) addToken(n); });
+	fillBench(curQ);
 	render();
 }
 
@@ -215,8 +227,9 @@ async function load() {
 	curQ = Object.keys(fm.quarters).sort((a, b) => a - b)[0] || '1';
 	tokens = fm.quarters[curQ];
 	renderQTabs();
-	if (!tokens.length) await loadRoster(false);
-	else render();
+	await fetchRoster();                       // 명단 미리 확보 → 새 쿼터/복사 시 벤치 자동 보충
+	if (!tokens.length && !VIEW_ONLY) fillBench(curQ);
+	render();
 }
 
 async function saveImage() {
@@ -243,13 +256,15 @@ $(function () {
 		const keys = Object.keys(fm.quarters).map(Number);
 		const next = (Math.max.apply(null, keys.concat(0)) + 1);
 		if (next > 6) { alert('최대 6쿼터까지 가능합니다.'); return; }
-		fm.quarters[next] = []; switchQ(next + '');
+		fm.quarters[next] = []; fillBench(next + ''); switchQ(next + '');   // 새 쿼터에 참석자 벤치 자동 채움
 	});
 	$('#copyPrev').on('click', function () {
 		const prev = (Number(curQ) - 1);
 		if (prev < 1 || !fm.quarters[prev]) { alert('복사할 이전 쿼터가 없습니다.'); return; }
 		fm.quarters[curQ] = fm.quarters[prev].map(t => ({ id: seq++, label: t.label, x: t.x, y: t.y }));
-		tokens = fm.quarters[curQ]; render();
+		tokens = fm.quarters[curQ];
+		fillBench(curQ);   // 복사 후 빠진 참석자도 벤치로 보충
+		render();
 	});
 	$('#delQ').on('click', function () {
 		if (Object.keys(fm.quarters).length <= 1) { alert('최소 1쿼터는 필요합니다.'); return; }

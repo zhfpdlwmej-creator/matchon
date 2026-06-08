@@ -33,6 +33,13 @@ public class StatsApiController {
 		return Map.of("ok", true, "stats", statsService.teamStats(teamId));
 	}
 
+	/** 팀/개인 통계 대시보드 (경기결과·득점·도움·MOM) */
+	@GetMapping("/stats/dashboard")
+	public Map<String, Object> dashboard(@RequestParam Long teamId) {
+		Long uid = CurrentUser.required();
+		return statsService.teamDashboard(teamId, uid);
+	}
+
 	/** 알림 발송 이력 */
 	@GetMapping("/notification/list")
 	public Map<String, Object> notifications(@RequestParam Long teamId) {
