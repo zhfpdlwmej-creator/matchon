@@ -204,6 +204,8 @@ public class ScheduleApiController {
 		m.put("startTime", s.getStartTime().toString());
 		m.put("endTime", s.getEndTime() == null ? null : s.getEndTime().toString());
 		m.put("place", s.getPlace());
+		m.put("lat", s.getLat());
+		m.put("lng", s.getLng());
 		m.put("fee", s.getFee());
 		m.put("targetHeadcount", s.getTargetHeadcount());
 		m.put("limitAttendance", s.isLimitAttendance());

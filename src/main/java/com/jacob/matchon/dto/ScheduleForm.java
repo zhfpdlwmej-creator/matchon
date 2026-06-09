@@ -22,6 +22,8 @@ public class ScheduleForm {
 	private LocalTime endTime;
 
 	private String place;
+	private Double lat;
+	private Double lng;
 	private Integer fee;
 	private Integer targetHeadcount;
 	private Boolean limitAttendance;

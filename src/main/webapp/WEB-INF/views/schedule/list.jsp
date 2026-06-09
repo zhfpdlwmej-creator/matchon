@@ -6,6 +6,9 @@
 <head>
 	<title>matchon · 일정</title>
 	<%@ include file="../layout/head.jsp" %>
+	<c:if test="${not empty kakaoJsKey}">
+		<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJsKey}&libraries=services&autoload=false"></script>
+	</c:if>
 </head>
 <body>
 <%@ include file="../layout/header.jsp" %>
@@ -44,8 +47,14 @@
 				<div><label>시작시간</label><input type="text" id="schStart" required></div>
 				<div><label>종료시간</label><input type="text" id="schEnd"></div>
 			</div>
-			<label>장소</label>
-			<input type="text" id="schPlace" maxlength="120" placeholder="예: 잠실 풋살장 A구장">
+			<label>장소 (검색 또는 지도 탭)</label>
+			<div style="display:flex;gap:8px;margin-bottom:8px;">
+				<input type="text" id="schPlace" maxlength="120" placeholder="장소명/주소 검색 (예: 잠실 풋살장)" style="flex:1;min-width:0;">
+				<button type="button" class="btn-ghost btn-sm" id="schPlaceSearch">검색</button>
+			</div>
+			<div id="schMap" style="width:100%;height:200px;border-radius:12px;background:#eef1f0;"></div>
+			<div class="muted small" id="schMapHint" style="margin-top:6px;">검색하거나 지도를 탭하면 위치가 지정됩니다.</div>
+			<input type="hidden" id="schLat"><input type="hidden" id="schLng">
 			<label>모집 인원 (성원 게이지 / 선착순 정원 기준)</label>
 			<input type="number" id="schTarget" min="0" value="0" placeholder="예: 16">
 			<label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:600;">
@@ -144,13 +153,45 @@ function openModal(s) {
 	$('#schStart').val(s ? s.startTime.slice(0,5) : '');
 	$('#schEnd').val(s && s.endTime ? s.endTime.slice(0,5) : '');
 	$('#schPlace').val(s ? (s.place || '') : '');
+	$('#schLat').val(s && s.lat != null ? s.lat : '');
+	$('#schLng').val(s && s.lng != null ? s.lng : '');
 	$('#schTarget').val(s ? s.targetHeadcount : 0);
 	$('#schLimit').prop('checked', s ? !!s.limitAttendance : false);
 	$('#schMemo').val(s ? (s.memo || '') : '');
 	$('#schDelete').toggle(!!s);
 	$('#schModal').addClass('open');
+	const center = (s && s.lat != null) ? { lat: s.lat, lng: s.lng } : null;
+	setTimeout(function () { ensureSchMap(center); }, 200);
 }
 function closeModal() { $('#schModal').removeClass('open'); }
+
+// ── 카카오맵 (일정 장소 선택) ──
+let kmap, kmarker, kgeocoder, kready = false;
+function ensureSchMap(center) {
+	if (!window.kakao || !kakao.maps) { $('#schMapHint').text('카카오맵 키 미설정 — 장소명만 입력해도 됩니다.'); $('#schMap').hide(); return; }
+	kakao.maps.load(function () {
+		if (!kready) {
+			const c = new kakao.maps.LatLng(37.5145, 127.1066);
+			kmap = new kakao.maps.Map(document.getElementById('schMap'), { center: c, level: 4 });
+			kmarker = new kakao.maps.Marker({ position: c }); kmarker.setMap(kmap);
+			kgeocoder = new kakao.maps.services.Geocoder();
+			kakao.maps.event.addListener(kmap, 'click', function (me) { setSchPoint(me.latLng, true); });
+			kready = true;
+		}
+		kmap.relayout();
+		if (center) { const ll = new kakao.maps.LatLng(center.lat, center.lng); kmap.setCenter(ll); kmarker.setPosition(ll); }
+	});
+}
+function setSchPoint(latlng, fillAddr) {
+	kmarker.setPosition(latlng);
+	$('#schLat').val(latlng.getLat()); $('#schLng').val(latlng.getLng());
+	if (fillAddr && kgeocoder) kgeocoder.coord2Address(latlng.getLng(), latlng.getLat(), function (res, status) {
+		if (status === kakao.maps.services.Status.OK && res[0]) {
+			const a = res[0].road_address ? res[0].road_address.address_name : res[0].address.address_name;
+			if (a && !$('#schPlace').val().trim()) $('#schPlace').val(a);
+		}
+	});
+}
 
 $(function () {
 	loadMonth();
@@ -160,6 +201,20 @@ $(function () {
 	if (CAN_MANAGE) {
 		bindTime('#schStart'); bindTime('#schEnd');
 		$('#addBtn').on('click', () => openModal(null));
+		$('#schPlaceSearch').on('click', function () {
+			const kw = $('#schPlace').val().trim();
+			if (!kw) { alert('장소명이나 주소를 입력하세요.'); return; }
+			if (!kready || !window.kakao || !kakao.maps.services) { alert('지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요.'); return; }
+			const ps = new kakao.maps.services.Places();
+			ps.keywordSearch(kw, function (data, status) {
+				if (status === kakao.maps.services.Status.OK && data.length) {
+					const f = data[0];
+					const ll = new kakao.maps.LatLng(f.y, f.x);
+					kmap.setCenter(ll); kmarker.setPosition(ll);
+					$('#schLat').val(f.y); $('#schLng').val(f.x); $('#schPlace').val(f.place_name);
+				} else alert('검색 결과가 없습니다. 장소명/주소를 다시 확인해주세요.');
+			});
+		});
 		$('#schCancel').on('click', closeModal);
 		$('#schModal').on('click', e => { if (e.target.id === 'schModal') closeModal(); });
 		$('#schForm').on('submit', async function (e) {
@@ -173,6 +228,8 @@ $(function () {
 				startTime: $('#schStart').val(),
 				endTime: $('#schEnd').val() || null,
 				place: $('#schPlace').val().trim(),
+				lat: $('#schLat').val() ? parseFloat($('#schLat').val()) : null,
+				lng: $('#schLng').val() ? parseFloat($('#schLng').val()) : null,
 				targetHeadcount: parseInt($('#schTarget').val() || '0', 10),
 				limitAttendance: $('#schLimit').is(':checked'),
 				memo: $('#schMemo').val().trim()

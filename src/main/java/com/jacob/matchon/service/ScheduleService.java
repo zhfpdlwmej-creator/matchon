@@ -57,6 +57,8 @@ public class ScheduleService {
 				.startTime(form.getStartTime())
 				.endTime(form.getEndTime())
 				.place(form.getPlace())
+				.lat(form.getLat())
+				.lng(form.getLng())
 				.fee(form.getFee() == null ? 0 : form.getFee())
 				.targetHeadcount(form.getTargetHeadcount() == null ? 0 : form.getTargetHeadcount())
 				.limitAttendance(Boolean.TRUE.equals(form.getLimitAttendance()))
@@ -81,6 +83,8 @@ public class ScheduleService {
 		s.setStartTime(form.getStartTime());
 		s.setEndTime(form.getEndTime());
 		s.setPlace(form.getPlace());
+		s.setLat(form.getLat());
+		s.setLng(form.getLng());
 		s.setFee(form.getFee() == null ? 0 : form.getFee());
 		s.setTargetHeadcount(form.getTargetHeadcount() == null ? 0 : form.getTargetHeadcount());
 		s.setLimitAttendance(Boolean.TRUE.equals(form.getLimitAttendance()));

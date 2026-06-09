@@ -6,6 +6,9 @@
 <head>
 	<title>matchon · 경기 상세</title>
 	<%@ include file="../layout/head.jsp" %>
+	<c:if test="${not empty kakaoJsKey}">
+		<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJsKey}&libraries=services&autoload=false"></script>
+	</c:if>
 </head>
 <body>
 <%@ include file="../layout/header.jsp" %>
@@ -18,6 +21,8 @@
 		<div class="meta muted small" id="dMeta"></div>
 		<div class="meta small" id="dMemo" style="margin-top:8px;white-space:pre-wrap;"></div>
 		<button class="btn-primary btn-block" id="shareBtn" style="margin-top:14px;">📢 카카오톡으로 일정 공유</button>
+		<button class="btn-ghost btn-block" id="locBtn" style="margin-top:8px;display:none;">📍 위치 확인</button>
+		<div id="schMap" style="width:100%;height:220px;border-radius:12px;margin-top:8px;display:none;"></div>
 		<a href="/team/${team.id}/schedule/${scheduleId}/formation" class="btn-ghost btn-block" style="margin-top:8px;text-align:center;"><c:choose><c:when test="${canManage}">📋 포메이션 짜기</c:when><c:otherwise>📋 포메이션 보기</c:otherwise></c:choose></a>
 		<button class="btn-ghost btn-block" id="recruitBtn" style="margin-top:8px;display:none;color:var(--red);"></button>
 	</div>
@@ -96,6 +101,32 @@ async function loadInfo() {
 	$('#dMeta').text(meta);
 	isPast = !!s.isPast;
 	$('#dMemo').text(s.memo || '');
+	$('#locBtn').toggle(s.lat != null || !!s.place);
+}
+
+let mapReady2 = false, kmap2, kmarker2;
+function showSchMap() {
+	if (!window.kakao || !kakao.maps) { alert('지도를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.'); return; }
+	kakao.maps.load(function () {
+		if (!mapReady2) {
+			kmap2 = new kakao.maps.Map(document.getElementById('schMap'), { center: new kakao.maps.LatLng(37.5145, 127.1066), level: 4 });
+			kmarker2 = new kakao.maps.Marker(); kmarker2.setMap(kmap2);
+			mapReady2 = true;
+		}
+		kmap2.relayout();
+		if (sched && sched.lat != null) {
+			const ll = new kakao.maps.LatLng(sched.lat, sched.lng);
+			kmap2.setCenter(ll); kmarker2.setPosition(ll);
+		} else if (sched && sched.place && kakao.maps.services) {
+			const ps = new kakao.maps.services.Places();
+			ps.keywordSearch(sched.place, function (data, status) {
+				if (status === kakao.maps.services.Status.OK && data.length) {
+					const f = data[0], ll = new kakao.maps.LatLng(f.y, f.x);
+					kmap2.setCenter(ll); kmarker2.setPosition(ll);
+				}
+			});
+		}
+	});
 }
 
 async function loadAttendance() {
@@ -171,6 +202,12 @@ async function loadComments() {
 $(function () {
 	loadInfo().then(loadAttendance);
 	loadComments();
+
+	$('#locBtn').on('click', function () {
+		const box = $('#schMap');
+		if (box.is(':visible')) { box.hide(); $(this).text('📍 위치 확인'); return; }
+		box.show(); $(this).text('📍 위치 닫기'); showSchMap();
+	});
 
 	$('#recruitBtn').on('click', async function () {
 		if (!confirm('인원이 부족한 만큼 매칭 탭에 용병 모집글을 올릴까요?')) return;

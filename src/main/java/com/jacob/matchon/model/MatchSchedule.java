@@ -36,6 +36,10 @@ public class MatchSchedule {
 	@Column(length = 120)
 	private String place;
 
+	/** 장소 좌표(카카오맵) */
+	private Double lat;
+	private Double lng;
+
 	@Column(nullable = false)
 	private int fee;
 
