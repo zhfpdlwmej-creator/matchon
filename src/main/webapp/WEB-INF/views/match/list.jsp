@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -20,7 +21,7 @@
 
 <div class="app-wrap">
 	<div class="muted small" style="padding:2px 4px 8px;">
-		<c:if test="${not empty team}">현재 팀: <b style="color:var(--green);">${team.name}</b> 기준 · </c:if>지역별 친선경기 · 용병 모집
+		<c:if test="${not empty team}">현재 팀: <b style="color:var(--green);">${fn:escapeXml(team.name)}</b> 기준 · </c:if>지역별 친선경기 · 용병 모집
 	</div>
 
 	<div class="tabs" id="mainTabs">
@@ -137,7 +138,7 @@
 <script>
 const LEVEL_CLASS = { HIGH: 'lv-high', MID: 'lv-mid', LOW: 'lv-low' };
 const TEAM_ID = ${empty team ? 'null' : team.id};
-const TEAM_NAME = "${team.name}";
+const TEAM_NAME = "${fn:escapeXml(team.name)}";
 const IS_LEADER = ${isLeader};
 let map, marker, mapReady = false;
 let currentRegion = '';

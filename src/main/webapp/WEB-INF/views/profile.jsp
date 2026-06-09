@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="navActive" value="profile" />
 <!DOCTYPE html>
 <html lang="ko">
@@ -17,7 +18,7 @@
 <div class="app-wrap" style="padding-top:20px;">
 	<div class="card-form" style="margin-bottom:22px;">
 		<label>이름 (카카오 계정)</label>
-		<div style="padding:13px 14px;border:1px solid var(--line);border-radius:11px;background:#f4f6f5;font-weight:700;">${user.nickname}</div>
+		<div style="padding:13px 14px;border:1px solid var(--line);border-radius:11px;background:#f4f6f5;font-weight:700;">${fn:escapeXml(user.nickname)}</div>
 		<div class="muted small" style="margin-top:6px;">이름은 카카오 계정 이름으로 자동 설정됩니다.</div>
 	</div>
 
@@ -33,7 +34,7 @@
 		<c:forEach var="t" items="${teams}">
 			<a class="member-row" href="/team/${t.id}">
 				<span class="emblem">${t.sportEmoji}</span>
-				<span class="name">${t.name}</span>
+				<span class="name">${fn:escapeXml(t.name)}</span>
 				<span class="right muted small">이동 ›</span>
 			</a>
 		</c:forEach>
@@ -46,6 +47,13 @@
 		<div class="muted small" style="margin-top:10px;">
 			<a href="/terms" class="muted">이용약관</a> · <a href="/privacy" class="muted">개인정보처리방침</a>
 		</div>
+	</div>
+
+	<div class="muted" style="font-size:11px;line-height:1.6;text-align:center;padding:14px 12px 4px;">
+		📱 <b>홈 화면에 앱으로 추가</b> (테스트 버전)<br>
+		<b>아이폰</b>: 사파리에서 열기 → 하단 <b>공유(⬆️)</b> → <b>"홈 화면에 추가"</b><br>
+		<b>안드로이드</b>: 크롬에서 하단 <b>"📲 앱 설치"</b> 버튼 → 설치 (또는 ⋮ 메뉴 → 앱 설치)<br>
+		<span style="opacity:.8;">※ 카카오톡 내부 브라우저는 설치가 안 돼요 → ⋮ → "다른 브라우저로 열기"</span>
 	</div>
 </div>
 

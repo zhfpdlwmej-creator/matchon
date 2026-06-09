@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="navActive" value="schedule" />
 <!DOCTYPE html>
 <html lang="ko">
@@ -79,7 +80,7 @@ const TEAM_ID = ${team.id};
 const SCHEDULE_ID = ${scheduleId};
 const CAN_MANAGE = ${canManage};
 const MY_ID = ${user.id};
-const TEAM_NAME = "${team.name}";
+const TEAM_NAME = "${fn:escapeXml(team.name)}";
 let isPast = false; // 경기 종료 여부
 let sched = null;   // 현재 일정 (공유용)
 

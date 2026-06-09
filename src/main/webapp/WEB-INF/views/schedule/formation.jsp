@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="navActive" value="schedule" />
 <!DOCTYPE html>
 <html lang="ko">
@@ -108,7 +109,7 @@ const TEAM_ID = ${team.id};
 const SCHEDULE_ID = ${scheduleId};
 const CAN_MANAGE = ${canManage};
 const VIEW_ONLY = !CAN_MANAGE;   // 일반 회원 = 조회 전용 뷰어
-const TEAM_NAME = "${team.name}";
+const TEAM_NAME = "${fn:escapeXml(team.name)}";
 let SPORT = 'SOCCER';
 let fm = { quarters: { '1': [] } };   // 쿼터별 토큰
 let curQ = '1';

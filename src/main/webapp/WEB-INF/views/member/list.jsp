@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="navActive" value="members" />
 <!DOCTYPE html>
 <html lang="ko">
@@ -118,10 +119,10 @@ $(function () {
 	});
 	$('#shareLink').on('click', async function () {
 		const link = inviteLink();
-		const msg = '[${team.name}] 출석 관리에 초대합니다!\n아래 링크를 눌러 가입하세요 👇\n' + link;
+		const msg = '[${fn:escapeXml(team.name)}] 출석 관리에 초대합니다!\n아래 링크를 눌러 가입하세요 👇\n' + link;
 		// 모바일이면 카카오톡 등 네이티브 공유, 아니면 클립보드 복사
 		if (navigator.share) {
-			try { await navigator.share({ title: '${team.name} 초대', text: msg }); return; }
+			try { await navigator.share({ title: '${fn:escapeXml(team.name)} 초대', text: msg }); return; }
 			catch (e) { /* 취소 시 복사로 폴백 */ }
 		}
 		copyText(msg, '초대 링크를 복사했습니다.\n카카오톡에 붙여넣어 보내세요!');

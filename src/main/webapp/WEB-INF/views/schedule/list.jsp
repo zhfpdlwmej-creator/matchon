@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="navActive" value="schedule" />
 <!DOCTYPE html>
 <html lang="ko">
@@ -74,7 +75,7 @@
 
 <script>
 const TEAM_ID = ${team.id};
-const TEAM_NAME = "${team.name}";
+const TEAM_NAME = "${fn:escapeXml(team.name)}";
 const CAN_MANAGE = ${canManage};
 let cur = new Date();
 cur.setDate(1);

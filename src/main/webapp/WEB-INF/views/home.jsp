@@ -1,10 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="navActive" value="home" />
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-	<title>matchon · ${team.name}</title>
+	<title>matchon · ${fn:escapeXml(team.name)}</title>
 	<%@ include file="layout/head.jsp" %>
 </head>
 <body>
@@ -13,7 +14,7 @@
 
 	<div style="padding:2px 4px 10px;">
 		<div class="muted small">반가워요 👋</div>
-		<div style="font-size:21px;font-weight:800;letter-spacing:-.3px;">${user.nickname}님</div>
+		<div style="font-size:21px;font-weight:800;letter-spacing:-.3px;">${fn:escapeXml(user.nickname)}님</div>
 	</div>
 
 	<div class="tabs" id="homeTabs">
@@ -31,11 +32,11 @@
 					<span class="dday-badge" id="dday">⚽ -</span>
 					<span class="muted small" id="nearestDate"></span>
 				</div>
-				<div class="title" style="font-size:21px;font-weight:800;margin:12px 0;line-height:1.3;">${nearest.title}</div>
+				<div class="title" style="font-size:21px;font-weight:800;margin:12px 0;line-height:1.3;">${fn:escapeXml(nearest.title)}</div>
 
 				<div class="info-grid">
 					<div class="info-cell"><span class="ic">⏰</span><span>${nearest.startTime}<c:if test="${nearest.endTime != null}"> ~ ${nearest.endTime}</c:if></span></div>
-					<c:if test="${nearest.place != null}"><div class="info-cell"><span class="ic">📍</span><span>${nearest.place}</span></div></c:if>
+					<c:if test="${nearest.place != null}"><div class="info-cell"><span class="ic">📍</span><span>${fn:escapeXml(nearest.place)}</span></div></c:if>
 					<div class="info-cell"><span class="ic">👥</span><span id="iAttend">-</span></div>
 					<div class="info-cell" id="iShortCell" style="display:none;color:var(--red);font-weight:700;"><span class="ic">⚠️</span><span id="iShort"></span></div>
 				</div>

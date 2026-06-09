@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -13,7 +14,7 @@
 
 	<form id="setupForm" class="card-form">
 		<label>닉네임</label>
-		<input type="text" id="nickname" maxlength="20" value="${user.nickname}" placeholder="예: 손흥민" required>
+		<input type="text" id="nickname" maxlength="20" value="${fn:escapeXml(user.nickname)}" placeholder="예: 손흥민" required>
 
 		<label>선호 포지션</label>
 		<div class="pos-picker" id="posPicker">
