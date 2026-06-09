@@ -32,6 +32,13 @@ public class MainController {
 		return CurrentUser.id() != null ? "redirect:/" : "login";
 	}
 
+	/** 약관·개인정보처리방침 (비로그인 접근 가능) */
+	@GetMapping("/terms")
+	public String terms() { return "legal/terms"; }
+
+	@GetMapping("/privacy")
+	public String privacy() { return "legal/privacy"; }
+
 	@GetMapping("/welcome")
 	public String welcome(Model model) {
 		Long uid = CurrentUser.id();

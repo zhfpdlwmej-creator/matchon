@@ -22,6 +22,7 @@
 	</a>
 
 	<p class="login-help">최초 로그인 시 닉네임만 설정하면 바로 사용할 수 있어요.</p>
+	<p class="login-help" style="margin-top:6px;">로그인 시 <a href="/terms" style="color:var(--green);">이용약관</a> 및 <a href="/privacy" style="color:var(--green);">개인정보처리방침</a>에 동의하게 됩니다.</p>
 </div>
 
 <script>

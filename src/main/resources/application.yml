@@ -1,6 +1,8 @@
 server:
   # 로컬 = 8282, PaaS = 환경변수 PORT 주입
   port: ${PORT:8282}
+  # 프록시(Railway) 뒤에서 X-Forwarded-Proto 반영 → req.isSecure()/https 인식(Secure 쿠키)
+  forward-headers-strategy: framework
   servlet:
     encoding:
       charset: UTF-8

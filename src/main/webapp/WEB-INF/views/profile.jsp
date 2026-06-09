@@ -43,6 +43,9 @@
 
 	<div class="card" style="text-align:center;">
 		<a href="/auth/logout" class="muted small">로그아웃</a>
+		<div class="muted small" style="margin-top:10px;">
+			<a href="/terms" class="muted">이용약관</a> · <a href="/privacy" class="muted">개인정보처리방침</a>
+		</div>
 	</div>
 </div>
 

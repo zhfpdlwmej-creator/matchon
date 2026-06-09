@@ -6,6 +6,7 @@ import com.jacob.matchon.security.JwtAuthFilter;
 import com.jacob.matchon.security.JwtTokenProvider;
 import com.jacob.matchon.service.UserService;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -21,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -66,6 +68,7 @@ public class AuthController {
 	public String callback(
 			@RequestParam(required = false) String code,
 			@RequestParam(required = false) String error,
+			HttpServletRequest req,
 			HttpServletResponse res) {
 
 		if (error != null) {
@@ -108,7 +111,7 @@ public class AuthController {
 					.orElseGet(() -> userService.createFromKakao(kakaoId, nick));
 			userService.syncName(user.getId(), nick);
 
-			issueToken(res, user);
+			issueToken(req, res, user);
 			return "redirect:/";
 
 		} catch (Exception e) {
@@ -118,24 +121,24 @@ public class AuthController {
 	}
 
 	@GetMapping("/auth/logout")
-	public String logout(HttpServletResponse res) {
-		Cookie c = new Cookie(JwtAuthFilter.COOKIE_NAME, "");
-		c.setPath("/");
-		c.setMaxAge(0);
-		c.setHttpOnly(true);
-		res.addCookie(c);
+	public String logout(HttpServletRequest req, HttpServletResponse res) {
+		ResponseCookie c = ResponseCookie.from(JwtAuthFilter.COOKIE_NAME, "")
+				.httpOnly(true).path("/").maxAge(0)
+				.sameSite("Lax").secure(req.isSecure()).build();
+		res.addHeader("Set-Cookie", c.toString());
 		return "redirect:/login";
 	}
 
 	// --- helpers ---
 
-	private void issueToken(HttpServletResponse res, User user) {
+	private void issueToken(HttpServletRequest req, HttpServletResponse res, User user) {
 		String token = jwt.createToken(user.getId(), user.getKakaoId());
-		Cookie c = new Cookie(JwtAuthFilter.COOKIE_NAME, token);
-		c.setPath("/");
-		c.setHttpOnly(true);
-		c.setMaxAge(60 * 60 * 24 * 30); // 30일
-		res.addCookie(c);
+		ResponseCookie c = ResponseCookie.from(JwtAuthFilter.COOKIE_NAME, token)
+				.httpOnly(true).path("/").maxAge(Duration.ofDays(30))
+				.sameSite("Lax")          // 카카오 리다이렉트(top-level GET)에 안전, CSRF 완화
+				.secure(req.isSecure())   // https(운영)에서만 Secure → 로컬 http 로그인 유지
+				.build();
+		res.addHeader("Set-Cookie", c.toString());
 	}
 
 	@SuppressWarnings("unchecked")
