@@ -55,7 +55,7 @@
 			<div class="small" style="font-weight:700;margin:12px 0 8px;">매너</div>
 			<div class="region-row" id="fManner">
 				<button class="region-chip on" data-v="">전체</button>
-				<button class="region-chip" data-v="hidebad">😡 비매너(3★미만) 숨기기</button>
+				<button class="region-chip" data-v="hidebad">😡 비매너(2.5★미만) 숨기기</button>
 			</div>
 			<div class="small" style="font-weight:700;margin:12px 0 8px;">지역으로 보기</div>
 			<div id="filterRegion"></div>
@@ -197,7 +197,7 @@ async function loadList() {
 function passFilter(m) {
 	if (currentType && m.matchType !== currentType) return false;
 	if (currentLevel && m.level !== currentLevel) return false;
-	if (currentManner === 'hidebad' && m.mannerAvg != null && m.mannerAvg < 3) return false;
+	if (currentManner === 'hidebad' && m.mannerAvg != null && m.mannerAvg < 2.5) return false;
 	return true;
 }
 

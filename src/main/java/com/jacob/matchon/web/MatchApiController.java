@@ -3,6 +3,7 @@ package com.jacob.matchon.web;
 import com.jacob.matchon.dto.MatchForm;
 import com.jacob.matchon.model.*;
 import com.jacob.matchon.security.CurrentUser;
+import com.jacob.matchon.service.MatchCommentService;
 import com.jacob.matchon.service.MatchService;
 import com.jacob.matchon.service.TeamService;
 import com.jacob.matchon.service.UserService;
@@ -21,6 +22,7 @@ public class MatchApiController {
 	private final MatchService matchService;
 	private final TeamService teamService;
 	private final UserService userService;
+	private final MatchCommentService matchCommentService;
 
 	/** 매칭 등록/신청에 쓸 수 있는 내 팀(팀장/운영진) 목록 */
 	@GetMapping("/my-teams")
@@ -149,6 +151,33 @@ public class MatchApiController {
 		res.put("applicableTeams", applicable);
 		res.putAll(matchService.ratingInfo(id, uid));   // canRate / targetTeamName / alreadyRated
 		return res;
+	}
+
+	/** 매칭 댓글(소통) 조회 — 모집팀=전체 스레드, 신청팀=본인 스레드 */
+	@GetMapping("/{id}/comments")
+	public Map<String, Object> comments(@PathVariable Long id, @RequestParam(required = false) Long teamId) {
+		Long uid = CurrentUser.required();
+		return matchCommentService.list(id, uid, teamId);
+	}
+
+	/** 매칭 댓글/대댓글 작성 */
+	@PostMapping("/{id}/comments")
+	public Map<String, Object> addComment(@PathVariable Long id, @RequestParam(required = false) Long teamId,
+										  @RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		Long applicantTeamId = body.get("applicantTeamId") == null ? null : Long.valueOf(String.valueOf(body.get("applicantTeamId")));
+		Long parentId = body.get("parentId") == null || String.valueOf(body.get("parentId")).isBlank()
+				? null : Long.valueOf(String.valueOf(body.get("parentId")));
+		matchCommentService.add(id, uid, teamId, applicantTeamId, parentId, String.valueOf(body.getOrDefault("content", "")));
+		return Map.of("ok", true);
+	}
+
+	/** 매칭 댓글 삭제 (작성자/모집팀) */
+	@DeleteMapping("/comment/{commentId}")
+	public Map<String, Object> deleteComment(@PathVariable Long commentId, @RequestParam(required = false) Long teamId) {
+		Long uid = CurrentUser.required();
+		matchCommentService.delete(commentId, uid, teamId);
+		return Map.of("ok", true);
 	}
 
 	/** 상대팀 매너/실력 평가 */

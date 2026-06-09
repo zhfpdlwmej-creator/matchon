@@ -70,6 +70,9 @@
 		<button class="btn-primary btn-block" id="rateBtn">평가 저장</button>
 	</div>
 	<div class="card muted small" id="ratedNote" style="display:none;text-align:center;">상대팀 평가를 완료했습니다. 감사합니다! 🙏</div>
+
+	<!-- 신청 댓글(소통) -->
+	<div id="commentSection" style="margin-top:8px;"></div>
 </div>
 
 <%@ include file="../layout/bottomnav.jsp" %>
@@ -158,14 +161,81 @@ function showMap() {
 	setTimeout(() => naver.maps.Event.trigger(map, 'resize'), 150);
 }
 
+async function loadComments() {
+	if (!TEAM_ID) return;
+	const r = await api.get('/api/match/' + MATCH_ID + '/comments?teamId=' + TEAM_ID);
+	const box = $('#commentSection').empty();
+	if (!r.ok || r.side === 'none') return;
+	const isHost = r.side === 'host';
+	box.append('<div class="section-title">💬 ' + (isHost ? '신청팀 메시지 (전체)' : '모집팀과 메시지') + '</div>');
+	if (!r.threads.length) { box.append('<div class="card muted small">신청이 들어오면 메시지를 주고받을 수 있어요.</div>'); return; }
+	r.threads.forEach(function (th) {
+		const card = $('<div class="card thread" data-app="' + th.applicantTeamId + '"></div>');
+		if (isHost) card.append('<h3 style="margin-bottom:4px;">' + esc(th.teamName) + '</h3>');
+		const list = $('<div class="cmt-list"></div>');
+		renderThread(list, th.comments);
+		card.append(list);
+		card.append('<div class="reply-hint muted small" style="display:none;margin-top:8px;"></div>' +
+			'<div class="comment-input" style="margin-top:8px;">' +
+			'<input type="text" class="cmt-text" maxlength="500" placeholder="메시지 (시간·장소·룰 협의 등)">' +
+			'<button class="btn-primary btn-sm cmt-send">전송</button></div>' +
+			'<input type="hidden" class="cmt-parent">');
+		box.append(card);
+	});
+}
+function renderThread(list, comments) {
+	list.empty();
+	if (!comments.length) { list.html('<div class="muted small" style="padding:6px 0;">첫 메시지를 남겨보세요.</div>'); return; }
+	const byParent = {};
+	comments.forEach(function (c) { const k = c.parentId || 0; (byParent[k] = byParent[k] || []).push(c); });
+	(byParent[0] || []).forEach(function (c) {
+		list.append(commentRow(c, false));
+		(byParent[c.id] || []).forEach(function (rep) { list.append(commentRow(rep, true)); });
+	});
+}
+function commentRow(c, isReply) {
+	const tag = c.isHost ? '<span style="color:var(--green);">모집팀</span>' : '<span style="color:#2f6df0;">신청팀</span>';
+	return '<div class="cmt-row" style="padding:7px 0;border-top:1px solid var(--line);' + (isReply ? 'margin-left:22px;' : '') + '">' +
+		'<div class="small muted"><b style="color:var(--text);">' + esc(c.name) + '</b> ' + tag + ' · ' + esc(c.createdAt) + '</div>' +
+		'<div style="margin:2px 0;">' + (isReply ? '↳ ' : '') + esc(c.content) + '</div>' +
+		'<div class="small">' + (!isReply ? '<a href="javascript:void(0)" class="cmt-reply" data-pid="' + c.id + '">답글</a>' : '') +
+		(c.mine ? ' <a href="javascript:void(0)" class="cmt-del muted" data-id="' + c.id + '">삭제</a>' : '') + '</div></div>';
+}
+
 $(function () {
 	load();
+	loadComments();
+
+	$('#commentSection').on('click', '.cmt-reply', function () {
+		const card = $(this).closest('.thread');
+		card.find('.cmt-parent').val($(this).data('pid'));
+		card.find('.reply-hint').html('↳ 답글 작성 중 <a href="javascript:void(0)" class="reply-cancel">취소</a>').show();
+		card.find('.cmt-text').focus();
+	});
+	$('#commentSection').on('click', '.reply-cancel', function () {
+		const card = $(this).closest('.thread');
+		card.find('.cmt-parent').val(''); card.find('.reply-hint').hide();
+	});
+	async function sendComment(card) {
+		const text = card.find('.cmt-text').val().trim();
+		if (!text) return;
+		const body = { applicantTeamId: card.data('app'), parentId: card.find('.cmt-parent').val() || null, content: text };
+		const r = await api.post('/api/match/' + MATCH_ID + '/comments?teamId=' + TEAM_ID, body);
+		if (r.ok) loadComments(); else alert(r.message || '실패');
+	}
+	$('#commentSection').on('click', '.cmt-send', function () { sendComment($(this).closest('.thread')); });
+	$('#commentSection').on('keypress', '.cmt-text', function (e) { if (e.which === 13) sendComment($(this).closest('.thread')); });
+	$('#commentSection').on('click', '.cmt-del', async function () {
+		if (!confirm('이 메시지를 삭제할까요?')) return;
+		const r = await api.del('/api/match/comment/' + $(this).data('id') + '?teamId=' + TEAM_ID);
+		if (r.ok) loadComments(); else alert(r.message || '실패');
+	});
 
 	$('#applyBtn').on('click', async function () {
 		const teamId = $('#applyTeam').val();
 		if (!teamId) { alert('신청할 팀이 없습니다.'); return; }
 		const r = await api.post('/api/match/' + MATCH_ID + '/apply', { teamId: teamId, message: $('#applyMsg').val().trim() });
-		if (r.ok) { alert('신청 완료! 상대 팀장이 수락하면 성사됩니다.'); load(); }
+		if (r.ok) { alert('신청 완료! 상대 팀장이 수락하면 성사됩니다.'); load(); loadComments(); }
 		else alert(r.message || '신청 실패');
 	});
 
