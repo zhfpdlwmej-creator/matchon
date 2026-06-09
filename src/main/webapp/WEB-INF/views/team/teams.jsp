@@ -41,6 +41,13 @@
 		<input type="text" id="inviteCode" maxlength="12" placeholder="예: AB3K9X" style="text-transform:uppercase;" required>
 		<button type="submit" class="btn-primary btn-block" style="margin-top:14px;">가입 신청</button>
 	</form>
+
+	<div class="section-title">팀 없이 참여</div>
+	<a href="/matches" class="card" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+		<span style="font-size:26px;">🧤</span>
+		<span style="flex:1;"><strong>개인(용병)으로 둘러보기</strong><div class="muted small">팀에 가입하지 않아도, 용병 모집글에 지원해 경기에 참여할 수 있어요.</div></span>
+		<span style="font-size:20px;opacity:.6;">›</span>
+	</a>
 </div>
 
 <%@ include file="../layout/bottomnav.jsp" %>

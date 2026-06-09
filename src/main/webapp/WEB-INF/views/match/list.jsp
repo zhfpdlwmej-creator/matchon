@@ -284,6 +284,7 @@ $(function () {
 	bindTime('#startTime');
 	loadMine();
 	loadList();
+	if (!TEAM_ID) switchPane('guest');   // 팀 없는 개인은 용병 탭부터
 
 	$('#mainTabs .tab').on('click', function () { switchPane($(this).data('pane')); });
 

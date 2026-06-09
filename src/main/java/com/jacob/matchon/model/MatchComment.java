@@ -19,9 +19,13 @@ public class MatchComment {
 	@Column(name = "match_post_id", nullable = false)
 	private Long matchPostId;
 
-	/** 어느 신청팀 스레드인지 */
-	@Column(name = "applicant_team_id", nullable = false)
+	/** 팀 매칭: 어느 신청팀 스레드인지 (용병 모집이면 null) */
+	@Column(name = "applicant_team_id")
 	private Long applicantTeamId;
+
+	/** 용병 모집: 어느 신청 개인 스레드인지 (팀 매칭이면 null) */
+	@Column(name = "applicant_user_id")
+	private Long applicantUserId;
 
 	@Column(name = "author_user_id", nullable = false)
 	private Long authorUserId;

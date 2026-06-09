@@ -54,7 +54,7 @@
 
 	<!-- 호스트 영역: 신청 목록 -->
 	<div id="hostArea" style="display:none;">
-		<div class="section-title">신청한 팀</div>
+		<div class="section-title" id="appListTitle">신청한 팀</div>
 		<div class="card" id="appList"></div>
 		<button class="btn-ghost btn-block" id="closeBtn" style="margin-bottom:14px;color:var(--red);">매칭 마감하기</button>
 	</div>
@@ -104,22 +104,25 @@ async function load() {
 
 	showMap();
 
-	// 호스트면 신청/지원 관리 영역
-	if (isHost) {
+	// 팀 매칭 호스트: 신청팀 목록 관리. (용병 모집은 아래 댓글 스레드로 처리)
+	if (isHost && !isGuestRecruit) {
 		$('#hostArea').show();
-		$('#closeBtn').text(isGuestRecruit ? '용병 모집 마감하기' : '매칭 마감하기');
+		$('#closeBtn').text('매칭 마감하기');
 		renderApps(r.applications || []);
+	}
+	// 용병 모집 호스트(팀장): 마감 버튼만 (지원자 소통은 댓글 스레드)
+	if (isHost && isGuestRecruit) {
+		$('#hostArea').show();
+		$('#appListTitle').hide(); $('#appList').hide();
+		$('#closeBtn').text('용병 모집 마감하기');
 	}
 
 	// 상대팀 평가 (성사된 경기)
 	if (r.canRate) { $('#rateCard').show(); $('#rateTarget').text(r.targetTeamName || '상대팀'); }
 	else if (r.alreadyRated) { $('#ratedNote').show(); }
 
-	if (isGuestRecruit) {
-		// 용병 모집글: 개인 지원
-		if (r.canApplyGuest) $('#guestApplyCard').show();
-	} else {
-		// 팀 매칭: 내 팀으로 신청
+	// 팀 매칭: 내 팀으로 신청 (용병 모집은 댓글로 신청)
+	if (!isGuestRecruit) {
 		const applicable = r.applicableTeams || [];
 		if (mp.status === 'OPEN' && applicable.length) {
 			$('#applyCard').show();
@@ -162,41 +165,58 @@ function showMap() {
 }
 
 async function loadComments() {
-	if (!TEAM_ID) return;
-	const r = await api.get('/api/match/' + MATCH_ID + '/comments?teamId=' + TEAM_ID);
+	const q = TEAM_ID ? ('?teamId=' + TEAM_ID) : '';
+	const r = await api.get('/api/match/' + MATCH_ID + '/comments' + q);
 	const box = $('#commentSection').empty();
 	if (!r.ok || r.side === 'none') return;
 	const isHost = r.side === 'host';
-	box.append('<div class="section-title">💬 ' + (isHost ? '신청팀 메시지 (전체)' : '모집팀과 메시지') + '</div>');
-	if (!r.threads.length) { box.append('<div class="card muted small">신청이 들어오면 메시지를 주고받을 수 있어요.</div>'); return; }
-	r.threads.forEach(function (th) {
-		const card = $('<div class="card thread" data-app="' + th.applicantTeamId + '"></div>');
-		if (isHost) card.append('<h3 style="margin-bottom:4px;">' + esc(th.teamName) + '</h3>');
-		const list = $('<div class="cmt-list"></div>');
-		renderThread(list, th.comments);
-		card.append(list);
-		card.append('<div class="reply-hint muted small" style="display:none;margin-top:8px;"></div>' +
-			'<div class="comment-input" style="margin-top:8px;">' +
-			'<input type="text" class="cmt-text" maxlength="500" placeholder="메시지 (시간·장소·룰 협의 등)">' +
-			'<button class="btn-primary btn-sm cmt-send">전송</button></div>' +
-			'<input type="hidden" class="cmt-parent">');
-		box.append(card);
-	});
+	const guest = !!r.guestRecruit;
+	const canManage = !!r.canManage;
+	const title = guest
+		? (isHost ? '🆘 용병 지원 · 소통 (전체)' : '🆘 용병 지원 · 모집팀과 소통')
+		: (isHost ? '💬 신청팀 메시지 (전체)' : '💬 모집팀과 메시지');
+	box.append('<div class="section-title">' + title + '</div>');
+	if (!r.threads.length) {
+		box.append('<div class="card muted small">' + (guest && !isHost ? '아래에 메시지를 남기면 용병 지원이 접수됩니다.' : (isHost ? '아직 들어온 지원/신청이 없습니다.' : '신청 후 메시지를 주고받을 수 있어요.')) + '</div>');
+		if (guest && !isHost) box.append(threadCard({ comments: [] }, guest, isHost, canManage));   // 빈 스레드(입력창)
+		return;
+	}
+	r.threads.forEach(function (th) { box.append(threadCard(th, guest, isHost, canManage)); });
 }
-function renderThread(list, comments) {
+function threadCard(th, guest, isHost, canManage) {
+	const card = $('<div class="card thread" data-team="' + (th.applicantTeamId || '') + '" data-user="' + (th.applicantUserId || '') + '"></div>');
+	if (isHost) {
+		let head = '<h3 style="margin-bottom:4px;">' + esc(th.name || '지원자') + '</h3>';
+		if (guest && th.accepted) head += '<div class="small" style="color:var(--green);font-weight:700;margin-bottom:6px;">✅ 용병 확정됨</div>';
+		else if (guest && canManage && th.applicationId) head += '<button class="btn-primary btn-sm cmt-accept" data-app-id="' + th.applicationId + '" style="margin-bottom:8px;">🧤 용병으로 확정</button>';
+		card.append(head);
+	}
+	const list = $('<div class="cmt-list"></div>');
+	renderThread(list, th.comments || [], guest);
+	card.append(list);
+	const ph = guest && !isHost ? '메시지를 남기면 지원 접수돼요 (포지션·도착시간 등)' : '메시지 (시간·장소 협의 등)';
+	card.append('<div class="reply-hint muted small" style="display:none;margin-top:8px;"></div>' +
+		'<div class="comment-input" style="margin-top:8px;">' +
+		'<input type="text" class="cmt-text" maxlength="500" placeholder="' + ph + '">' +
+		'<button class="btn-primary btn-sm cmt-send">전송</button></div>' +
+		'<input type="hidden" class="cmt-parent">');
+	return card;
+}
+function renderThread(list, comments, guest) {
 	list.empty();
 	if (!comments.length) { list.html('<div class="muted small" style="padding:6px 0;">첫 메시지를 남겨보세요.</div>'); return; }
 	const byParent = {};
 	comments.forEach(function (c) { const k = c.parentId || 0; (byParent[k] = byParent[k] || []).push(c); });
 	(byParent[0] || []).forEach(function (c) {
-		list.append(commentRow(c, false));
-		(byParent[c.id] || []).forEach(function (rep) { list.append(commentRow(rep, true)); });
+		list.append(commentRow(c, false, guest));
+		(byParent[c.id] || []).forEach(function (rep) { list.append(commentRow(rep, true, guest)); });
 	});
 }
-function commentRow(c, isReply) {
-	const tag = c.isHost ? '<span style="color:var(--green);">모집팀</span>' : '<span style="color:#2f6df0;">신청팀</span>';
+function commentRow(c, isReply, guest) {
+	const who = c.isHost ? '모집팀' : (guest ? '신청자' : '신청팀');
+	const color = c.isHost ? 'var(--green)' : '#2f6df0';
 	return '<div class="cmt-row" style="padding:7px 0;border-top:1px solid var(--line);' + (isReply ? 'margin-left:22px;' : '') + '">' +
-		'<div class="small muted"><b style="color:var(--text);">' + esc(c.name) + '</b> ' + tag + ' · ' + esc(c.createdAt) + '</div>' +
+		'<div class="small muted"><b style="color:var(--text);">' + esc(c.name) + '</b> <span style="color:' + color + ';">' + who + '</span> · ' + esc(c.createdAt) + '</div>' +
 		'<div style="margin:2px 0;">' + (isReply ? '↳ ' : '') + esc(c.content) + '</div>' +
 		'<div class="small">' + (!isReply ? '<a href="javascript:void(0)" class="cmt-reply" data-pid="' + c.id + '">답글</a>' : '') +
 		(c.mine ? ' <a href="javascript:void(0)" class="cmt-del muted" data-id="' + c.id + '">삭제</a>' : '') + '</div></div>';
@@ -219,15 +239,20 @@ $(function () {
 	async function sendComment(card) {
 		const text = card.find('.cmt-text').val().trim();
 		if (!text) return;
-		const body = { applicantTeamId: card.data('app'), parentId: card.find('.cmt-parent').val() || null, content: text };
-		const r = await api.post('/api/match/' + MATCH_ID + '/comments?teamId=' + TEAM_ID, body);
+		const body = { applicantTeamId: card.data('team') || null, applicantUserId: card.data('user') || null, parentId: card.find('.cmt-parent').val() || null, content: text };
+		const r = await api.post('/api/match/' + MATCH_ID + '/comments' + (TEAM_ID ? ('?teamId=' + TEAM_ID) : ''), body);
 		if (r.ok) loadComments(); else alert(r.message || '실패');
 	}
 	$('#commentSection').on('click', '.cmt-send', function () { sendComment($(this).closest('.thread')); });
 	$('#commentSection').on('keypress', '.cmt-text', function (e) { if (e.which === 13) sendComment($(this).closest('.thread')); });
+		$('#commentSection').on('click', '.cmt-accept', async function () {
+			if (!confirm('이 지원자를 용병으로 확정할까요? 우리 일정에 자동 추가됩니다.')) return;
+			const r = await api.post('/api/match/application/' + $(this).data('app-id') + '/accept-guest', {});
+			if (r.ok) { alert('용병으로 확정했어요!'); loadComments(); } else alert(r.message || '실패');
+		});
 	$('#commentSection').on('click', '.cmt-del', async function () {
 		if (!confirm('이 메시지를 삭제할까요?')) return;
-		const r = await api.del('/api/match/comment/' + $(this).data('id') + '?teamId=' + TEAM_ID);
+		const r = await api.del('/api/match/comment/' + $(this).data('id') + (TEAM_ID ? ('?teamId=' + TEAM_ID) : ''));
 		if (r.ok) loadComments(); else alert(r.message || '실패');
 	});
 

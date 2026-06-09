@@ -165,10 +165,10 @@ public class MatchApiController {
 	public Map<String, Object> addComment(@PathVariable Long id, @RequestParam(required = false) Long teamId,
 										  @RequestBody Map<String, Object> body) {
 		Long uid = CurrentUser.required();
-		Long applicantTeamId = body.get("applicantTeamId") == null ? null : Long.valueOf(String.valueOf(body.get("applicantTeamId")));
-		Long parentId = body.get("parentId") == null || String.valueOf(body.get("parentId")).isBlank()
-				? null : Long.valueOf(String.valueOf(body.get("parentId")));
-		matchCommentService.add(id, uid, teamId, applicantTeamId, parentId, String.valueOf(body.getOrDefault("content", "")));
+		Long applicantTeamId = parseLong(body.get("applicantTeamId"));
+		Long applicantUserId = parseLong(body.get("applicantUserId"));
+		Long parentId = parseLong(body.get("parentId"));
+		matchCommentService.add(id, uid, teamId, applicantTeamId, applicantUserId, parentId, String.valueOf(body.getOrDefault("content", "")));
 		return Map.of("ok", true);
 	}
 
@@ -281,6 +281,10 @@ public class MatchApiController {
 		m.put("mannerAvg", mn[1] > 0 ? mn[0] : null);
 		m.put("mannerCount", (int) mn[1]);
 		return m;
+	}
+
+	private Long parseLong(Object o) {
+		return (o == null || String.valueOf(o).isBlank()) ? null : Long.valueOf(String.valueOf(o));
 	}
 
 	private Map<String, Object> teamMap(Long id, String name) {

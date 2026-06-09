@@ -138,6 +138,19 @@ public class MatchService {
 				.build());
 	}
 
+	/** 용병 신청 보장 — 댓글(소통) 남길 때 지원 레코드가 없으면 생성 (이미 있으면 그대로) */
+	@Transactional
+	public void ensureGuestApplication(Long userId, Long postId, String message) {
+		MatchPost post = get(postId);
+		if (!post.isRecruitGuest()) throw new ApiException(400, "용병 모집글이 아닙니다.");
+		if (post.getStatus() != MatchStatus.OPEN) throw new ApiException(409, "마감된 모집입니다.");
+		if (post.getHostUserId().equals(userId)) throw new ApiException(400, "내가 올린 모집글에는 지원할 수 없습니다.");
+		if (appRepo.existsByMatchPostIdAndApplicantUserId(postId, userId)) return;
+		appRepo.save(MatchApplication.builder()
+				.matchPostId(postId).applicantTeamId(null).applicantUserId(userId)
+				.message(message).status(ApplicationStatus.PENDING).build());
+	}
+
 	/** 용병 지원 수락 → 우리 일정에 용병으로 자동 추가 (모집글은 계속 열어둠) */
 	@Transactional
 	public void acceptGuest(Long applicationId, Long userId) {

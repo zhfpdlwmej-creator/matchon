@@ -25,9 +25,8 @@
 	<c:otherwise>
 		<nav class="bottom-nav">
 			<a href="/" class="nav-item"><span class="ic">🏠</span><span>홈</span></a>
-			<a href="/teams" class="nav-item"><span class="ic">📅</span><span>일정</span></a>
-			<a href="/teams" class="nav-item"><span class="ic">👥</span><span>팀원</span></a>
-			<a href="/teams" class="nav-item"><span class="ic">📊</span><span>통계</span></a>
+			<a href="/matches" class="nav-item ${navActive == 'matches' ? 'active' : ''}"><span class="ic">⚔️</span><span>매칭/용병</span></a>
+			<a href="/teams" class="nav-item"><span class="ic">👥</span><span>팀</span></a>
 			<a href="/profile" class="nav-item ${navActive == 'profile' ? 'active' : ''}">
 				<span class="ic">⚙️</span><span>내정보</span>
 			</a>
