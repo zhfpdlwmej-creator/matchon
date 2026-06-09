@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -27,6 +28,14 @@ public class SecurityConfig {
 	public SecurityConfig(JwtTokenProvider jwt, UserRepository userRepo) {
 		this.jwt = jwt;
 		this.userRepo = userRepo;
+	}
+
+	/** 정적 리소스는 보안 필터 체인에서 제외 → no-store 헤더 없이 브라우저 캐싱 허용(속도) */
+	@Bean
+	public WebSecurityCustomizer webSecurityCustomizer() {
+		return web -> web.ignoring().requestMatchers(
+				"/css/**", "/js/**", "/img/**", "/icons/**",
+				"/favicon.ico", "/manifest.webmanifest", "/sw.js");
 	}
 
 	@Bean

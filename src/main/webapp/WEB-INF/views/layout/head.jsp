@@ -31,12 +31,15 @@
 		window.addEventListener('appinstalled', function () { var b = document.getElementById('pwaInstall'); if (b) b.remove(); });
 	})();
 </script>
+<link rel="dns-prefetch" href="https://t1.kakaocdn.net">
+<link rel="dns-prefetch" href="https://oapi.map.naver.com">
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 <link rel="stylesheet" href="/css/app.css">
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="/js/jquery-3.7.1.min.js"></script>
 <c:if test="${not empty kakaoJsKey}">
-<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"></script>
+<script defer src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"></script>
 <script>
-	if (window.Kakao && !Kakao.isInitialized()) { Kakao.init('${kakaoJsKey}'); }
+	window.addEventListener('load', function () { if (window.Kakao && !Kakao.isInitialized()) Kakao.init('${kakaoJsKey}'); });
 </script>
 </c:if>
 <script src="/js/app.js" defer></script>

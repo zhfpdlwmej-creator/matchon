@@ -26,6 +26,15 @@ spring:
       prefix: /WEB-INF/views/
       suffix: .jsp
 
+  # 정적 리소스 브라우저 캐싱(화면 전환 속도 개선)
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          max-age: 3600
+          cache-public: true
+        use-last-modified: true
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:}
     username: ${SPRING_DATASOURCE_USERNAME:}
