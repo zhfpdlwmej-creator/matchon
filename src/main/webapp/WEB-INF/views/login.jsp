@@ -17,11 +17,23 @@
 		<div class="alert">로그인에 실패했습니다. 다시 시도해주세요.</div>
 	</c:if>
 
-	<a href="/auth/kakao" class="btn-kakao">
+	<a href="/auth/kakao" id="kakaoBtn" class="btn-kakao">
 		<span class="kakao-ic">💬</span> 카카오로 시작하기
 	</a>
 
 	<p class="login-help">최초 로그인 시 닉네임만 설정하면 바로 사용할 수 있어요.</p>
 </div>
+
+<script>
+	var KAKAO_REDIRECT_URI = '${kakaoRedirectUri}' || (location.origin + '/auth/kakao/callback');
+	document.getElementById('kakaoBtn').addEventListener('click', function (e) {
+		// JS SDK 가 준비되면 Kakao.Auth.authorize 로 카카오톡 앱 간편로그인 호출
+		if (window.Kakao && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Auth && Kakao.Auth.authorize) {
+			e.preventDefault();
+			Kakao.Auth.authorize({ redirectUri: KAKAO_REDIRECT_URI });
+		}
+		// SDK 미준비(키 없음/로드 실패) 시엔 기존 서버 리다이렉트(/auth/kakao)로 폴백
+	});
+</script>
 </body>
 </html>

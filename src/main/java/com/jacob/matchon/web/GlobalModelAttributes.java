@@ -14,9 +14,17 @@ public class GlobalModelAttributes {
 	@Value("${app.naver.maps-client-id:}")
 	private String naverMapsClientId;
 
+	@Value("${app.kakao.redirect-uri:}")
+	private String kakaoRedirectUri;
+
 	@ModelAttribute("kakaoJsKey")
 	public String kakaoJsKey() {
 		return kakaoJsKey == null ? "" : kakaoJsKey;
+	}
+
+	@ModelAttribute("kakaoRedirectUri")
+	public String kakaoRedirectUri() {
+		return kakaoRedirectUri == null ? "" : kakaoRedirectUri;
 	}
 
 	@ModelAttribute("naverMapsClientId")
