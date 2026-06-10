@@ -186,8 +186,10 @@ async function loadComments() {
 function threadCard(th, guest, isHost, canManage) {
 	const card = $('<div class="card thread" data-team="' + (th.applicantTeamId || '') + '" data-user="' + (th.applicantUserId || '') + '"></div>');
 	if (isHost) {
+		const LV = { BEG: '입문', NOV: '초급', INT: '중급', ADV: '상급' };
 		const mb = (guest && th.mannerAvg != null) ? ' <span class="lvl-badge" style="background:#f5b301;color:#3a2e00;">' + th.mannerAvg + '★ <span style="opacity:.7;">(' + th.mannerCount + ')</span></span>' : '';
-		let head = '<h3 style="margin-bottom:4px;">' + esc(th.name || '지원자') + mb + '</h3>';
+		const lv = (guest && th.level) ? ' <span class="lvl-badge" style="background:#7b8794;">' + (LV[th.level] || th.level) + '</span>' : '';
+		let head = '<h3 style="margin-bottom:4px;">' + esc(th.name || '지원자') + lv + mb + '</h3>';
 		if (guest && th.accepted) {
 			head += '<div class="small" style="color:var(--green);font-weight:700;margin-bottom:6px;">✅ 용병 확정됨</div>';
 			if (canManage && !th.ratedByMe) head += guestRateWidget(th.applicantUserId);

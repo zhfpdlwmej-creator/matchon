@@ -69,6 +69,7 @@ public class MatchCommentService {
 			Map<String, Object> th = new HashMap<>();
 			th.put("applicantUserId", u);
 			th.put("name", nameOf(users, u));
+			th.put("level", users.get(u) == null ? null : users.get(u).getSkillLevel());
 			MatchApplication app = appByUser.get(u);
 			th.put("applicationId", app == null ? null : app.getId());
 			th.put("accepted", app != null && app.getStatus() == ApplicationStatus.ACCEPTED);

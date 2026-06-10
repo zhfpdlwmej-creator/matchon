@@ -138,6 +138,7 @@ public class StatsService {
 	public Map<String, Object> personalStats(Long uid) {
 		Map<String, Object> res = new HashMap<>();
 		res.put("ok", true);
+		res.put("level", userService.get(uid).getSkillLevel());
 		res.put("attend", attendanceRepo.countByUserIdAndStatus(uid, AttendanceStatus.ATTEND));
 		res.put("goals", eventRepo.countByScorerUserId(uid));
 		res.put("assists", eventRepo.countByAssistUserId(uid));

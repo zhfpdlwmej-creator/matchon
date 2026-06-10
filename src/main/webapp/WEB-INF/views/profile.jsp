@@ -37,6 +37,18 @@
 		<div class="muted small" style="text-align:center;margin-top:4px;">가입한 모든 팀의 기록을 합산합니다.</div>
 	</div>
 
+	<!-- 내 실력 레벨 -->
+	<div class="section-title">내 실력 레벨</div>
+	<div class="card" style="margin-bottom:22px;">
+		<div class="region-row" id="levelPick">
+			<button class="region-chip" data-v="BEG">입문</button>
+			<button class="region-chip" data-v="NOV">초급</button>
+			<button class="region-chip" data-v="INT">중급</button>
+			<button class="region-chip" data-v="ADV">상급</button>
+		</div>
+		<div class="muted small" style="margin-top:8px;">용병 지원 시 모집팀에게 표시돼요. (탭하면 저장)</div>
+	</div>
+
 	<!-- 알림 설정 -->
 	<div class="card" style="margin-bottom:24px;">
 		<h3>🔔 알림</h3>
@@ -77,6 +89,8 @@
 	$(function () {
 		api.get('/api/me/stats').then(function (r) {
 			if (!r.ok) return;
+			$('#levelPick .region-chip').removeClass('on');
+			if (r.level) $('#levelPick .region-chip[data-v="' + r.level + '"]').addClass('on');
 			$('#psAttend').text(r.attend);
 			$('#psGoals').text(r.goals);
 			$('#psAssists').text(r.assists);
@@ -88,6 +102,12 @@
 			(r.reviews || []).forEach(function (x) {
 				rv.append('<div class="member-row" style="font-size:13px;"><span class="name" style="color:#f5b301;">' + '★'.repeat(x.manner) + '</span><span class="right small">' + esc(x.comment) + '</span></div>');
 			});
+		});
+		$('#levelPick .region-chip').on('click', async function () {
+			const v = $(this).hasClass('on') ? '' : $(this).data('v');
+			const r = await api.post('/api/me/level', { level: v });
+			if (r.ok) { $('#levelPick .region-chip').removeClass('on'); if (v) $('#levelPick .region-chip[data-v="' + v + '"]').addClass('on'); }
+			else alert(r.message || '실패');
 		});
 	});
 </script>

@@ -22,6 +22,7 @@ public class StatsApiController {
 	private final StatsService statsService;
 	private final NotificationService notificationService;
 	private final TeamService teamService;
+	private final com.jacob.matchon.service.UserService userService;
 
 	private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("MM-dd HH:mm");
 
@@ -44,6 +45,14 @@ public class StatsApiController {
 	@GetMapping("/me/stats")
 	public Map<String, Object> myStats() {
 		return statsService.personalStats(CurrentUser.required());
+	}
+
+	/** 내 실력 레벨 설정 */
+	@PostMapping("/me/level")
+	public Map<String, Object> setLevel(@RequestBody Map<String, String> body) {
+		Long uid = CurrentUser.required();
+		userService.setSkillLevel(uid, body.get("level"));
+		return Map.of("ok", true);
 	}
 
 	/** 알림 발송 이력 */

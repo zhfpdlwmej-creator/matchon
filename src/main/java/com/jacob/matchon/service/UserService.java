@@ -56,6 +56,18 @@ public class UserService {
 	}
 
 	/** 로그인 때마다 카카오 이름으로 동기화 (실명 고정) */
+	/** 실력 자기등급 설정 (BEG/NOV/INT/ADV, 빈값=해제) */
+	@Transactional
+	public void setSkillLevel(Long userId, String level) {
+		User u = get(userId);
+		if (level == null || level.isBlank()) { u.setSkillLevel(null); return; }
+		String v = level.trim().toUpperCase();
+		if (!java.util.List.of("BEG", "NOV", "INT", "ADV").contains(v)) {
+			throw new com.jacob.matchon.web.ApiException(400, "올바른 레벨이 아닙니다.");
+		}
+		u.setSkillLevel(v);
+	}
+
 	@Transactional
 	public void syncName(Long userId, String kakaoName) {
 		if (kakaoName == null || kakaoName.isBlank()) return;

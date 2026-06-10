@@ -32,6 +32,10 @@ public class User {
 	@Column(name = "setup_done", nullable = false)
 	private boolean setupDone;
 
+	/** 실력 자기등급: BEG(입문)/NOV(초급)/INT(중급)/ADV(상급) */
+	@Column(name = "skill_level", length = 8)
+	private String skillLevel;
+
 	@Column(name = "created_at", insertable = false, updatable = false)
 	private LocalDateTime createdAt;
 
