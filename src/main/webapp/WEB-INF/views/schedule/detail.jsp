@@ -26,6 +26,9 @@
 		<div id="schMap" style="width:100%;height:220px;border-radius:12px;margin-top:8px;display:none;"></div>
 		<a href="/team/${team.id}/schedule/${scheduleId}/formation" class="btn-ghost btn-block" style="margin-top:8px;text-align:center;"><c:choose><c:when test="${canManage}">📋 포메이션 짜기</c:when><c:otherwise>📋 포메이션 보기</c:otherwise></c:choose></a>
 		<button class="btn-ghost btn-block" id="recruitBtn" style="margin-top:8px;display:none;color:var(--red);"></button>
+		<c:if test="${canManage}">
+			<button class="btn-ghost btn-block" id="delSchedBtn" style="margin-top:8px;color:var(--red);">🗑 일정 삭제</button>
+		</c:if>
 	</div>
 
 	<div class="card">
@@ -227,6 +230,13 @@ async function loadComments() {
 $(function () {
 	loadInfo().then(loadAttendance);
 	loadComments();
+
+	$('#delSchedBtn').on('click', async function () {
+		if (!confirm('이 일정을 삭제할까요?\n참석·댓글·기록도 함께 삭제되며 되돌릴 수 없습니다.')) return;
+		const r = await api.del('/api/schedule/' + SCHEDULE_ID);
+		if (r.ok) { alert('일정을 삭제했습니다.'); location.href = '/team/' + TEAM_ID + '/schedules'; }
+		else alert(r.message || '삭제 실패');
+	});
 
 	$('#locBtn').on('click', function () {
 		const box = $('#schMap');
