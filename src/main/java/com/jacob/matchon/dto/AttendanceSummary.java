@@ -29,6 +29,7 @@ public class AttendanceSummary {
 		private String nickname;
 		private String position;  // (미사용)
 		private boolean paid;
+		private boolean noShow;
 	}
 
 	/** 용병 한 행 */

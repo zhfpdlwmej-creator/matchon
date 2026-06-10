@@ -30,6 +30,10 @@ public class Attendance {
 	@Column(nullable = false)
 	private boolean paid;
 
+	/** 노쇼: 참석 확정 후 안 옴 (팀장/운영진이 표시) */
+	@Column(name = "no_show", nullable = false)
+	private boolean noShow;
+
 	@Column(name = "updated_at", insertable = false, updatable = false)
 	private LocalDateTime updatedAt;
 }

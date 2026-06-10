@@ -159,7 +159,7 @@ async function loadAttendance() {
 	// 참석자
 	const al = $('#attendList').empty();
 	if (!sm.attendList.length) al.html('<div class="muted small" style="padding:8px 0;">아직 참석자가 없습니다.</div>');
-	sm.attendList.forEach(m => al.append(memberRow(m)));
+	sm.attendList.forEach(m => al.append(memberRow(m, true)));
 
 	// 불참/미정
 	const ol = $('#otherList').empty();
@@ -181,8 +181,10 @@ async function loadAttendance() {
 		'<span class="right"><a href="javascript:void(0)" class="guestDel muted small" data-id="' + g.id + '">삭제</a></span></div>'));
 }
 
-function memberRow(m) {
-	return '<div class="member-row"><span class="name">' + esc(m.nickname) + '</span></div>';
+function memberRow(m, allowNoShow) {
+	const badge = m.noShow ? ' <span class="lvl-badge" style="background:var(--red);">🚫 노쇼</span>' : '';
+	const toggle = (CAN_MANAGE && allowNoShow) ? '<a href="javascript:void(0)" class="noShowBtn muted small" data-uid="' + m.userId + '" data-on="' + (m.noShow ? 1 : 0) + '">' + (m.noShow ? '노쇼 해제' : '노쇼 표시') + '</a>' : '';
+	return '<div class="member-row"><span class="name">' + esc(m.nickname) + badge + '</span><span class="right">' + toggle + '</span></div>';
 }
 
 async function loadComments() {
@@ -220,6 +222,12 @@ $(function () {
 	$('#attendBtns .att-btn').on('click', async function () {
 		const s = $(this).data('s');
 		const r = await api.post('/api/attendance', { scheduleId: SCHEDULE_ID, status: s });
+		if (r.ok) loadAttendance(); else alert(r.message || '실패');
+	});
+
+	$('#attendList').on('click', '.noShowBtn', async function () {
+		const on = String($(this).data('on')) === '1';
+		const r = await api.post('/api/attendance/no-show', { scheduleId: SCHEDULE_ID, userId: $(this).data('uid'), noShow: !on });
 		if (r.ok) loadAttendance(); else alert(r.message || '실패');
 	});
 

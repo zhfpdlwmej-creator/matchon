@@ -141,6 +141,7 @@ public class StatsService {
 		res.put("goals", eventRepo.countByScorerUserId(uid));
 		res.put("assists", eventRepo.countByAssistUserId(uid));
 		res.put("mom", momRepo.countByTargetUserId(uid));
+		res.put("noShow", attendanceRepo.countByUserIdAndNoShowTrue(uid));
 		return res;
 	}
 

@@ -31,7 +31,8 @@
 			<div class="box"><div class="num" style="color:var(--blue);" id="psAssists">-</div><div class="lbl">도움</div></div>
 			<div class="box"><div class="num" style="color:#f5b301;" id="psMom">-</div><div class="lbl">👑 MOM</div></div>
 		</div>
-		<div class="muted small" style="text-align:center;margin-top:10px;">가입한 모든 팀의 기록을 합산합니다.</div>
+		<div class="small" id="psNoShow" style="text-align:center;margin-top:10px;"></div>
+		<div class="muted small" style="text-align:center;margin-top:4px;">가입한 모든 팀의 기록을 합산합니다.</div>
 	</div>
 
 	<!-- 알림 설정 -->
@@ -78,6 +79,8 @@
 			$('#psGoals').text(r.goals);
 			$('#psAssists').text(r.assists);
 			$('#psMom').text(r.mom);
+			if (r.noShow > 0) $('#psNoShow').html('🚫 노쇼 <b style="color:var(--red);">' + r.noShow + '회</b>');
+			else $('#psNoShow').html('🚫 노쇼 0회 <span class="muted">· 성실 출석!</span>');
 		});
 	});
 </script>

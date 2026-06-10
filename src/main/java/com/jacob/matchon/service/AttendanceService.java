@@ -91,6 +91,16 @@ public class AttendanceService {
 		att.setPaid(paid);
 	}
 
+	/** 노쇼 표시/해제 (팀장/운영진) */
+	@Transactional
+	public void setNoShow(Long scheduleId, Long actorId, Long targetUserId, boolean noShow) {
+		MatchSchedule s = scheduleService.get(scheduleId);
+		teamService.requireManager(s.getTeamId(), actorId);
+		Attendance att = attendanceRepo.findByScheduleIdAndUserId(scheduleId, targetUserId)
+				.orElseThrow(() -> new ApiException(404, "참석 정보가 없습니다."));
+		att.setNoShow(noShow);
+	}
+
 	/** 참석 현황 집계 + 목록 + 포지션별 인원 */
 	public AttendanceSummary summary(Long scheduleId) {
 		MatchSchedule s = scheduleService.get(scheduleId);
@@ -116,8 +126,9 @@ public class AttendanceService {
 			AttendanceStatus st = a == null ? AttendanceStatus.PENDING : a.getStatus();
 			String pos = u.getPosition() == null ? null : u.getPosition().name();
 			boolean paid = a != null && a.isPaid();
+			boolean noShow = a != null && a.isNoShow();
 			AttendanceSummary.MemberRow row =
-					new AttendanceSummary.MemberRow(u.getId(), u.getNickname(), pos, paid);
+					new AttendanceSummary.MemberRow(u.getId(), u.getNickname(), pos, paid, noShow);
 			switch (st) {
 				case ATTEND -> {
 					attendList.add(row);

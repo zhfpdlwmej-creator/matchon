@@ -68,4 +68,15 @@ public class AttendanceApiController {
 		attendanceService.setPaid(scheduleId, uid, targetUserId, paid);
 		return Map.of("ok", true);
 	}
+
+	/** 노쇼 표시/해제 (팀장/운영진) */
+	@PostMapping("/no-show")
+	public Map<String, Object> noShow(@RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		Long scheduleId = Long.valueOf(String.valueOf(body.get("scheduleId")));
+		Long targetUserId = Long.valueOf(String.valueOf(body.get("userId")));
+		boolean v = Boolean.parseBoolean(String.valueOf(body.get("noShow")));
+		attendanceService.setNoShow(scheduleId, uid, targetUserId, v);
+		return Map.of("ok", true);
+	}
 }
