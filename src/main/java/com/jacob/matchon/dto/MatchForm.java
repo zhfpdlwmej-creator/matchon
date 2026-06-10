@@ -10,6 +10,7 @@ import java.time.LocalTime;
 /** 매칭 등록 폼. */
 @Getter @Setter
 public class MatchForm {
+	private String title;
 	private String level;      // HIGH/MID/LOW
 	private String matchType;  // FUTSAL_5 / SOCCER_8 / SOCCER_11
 	private String ageGroup;   // AGE_20 / AGE_30 / AGE_40 / ANY

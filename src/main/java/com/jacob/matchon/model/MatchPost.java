@@ -29,6 +29,10 @@ public class MatchPost {
 	@Column(nullable = false, length = 12)
 	private Sport sport;
 
+	/** 글 제목 (개인 오픈매치 등) */
+	@Column(length = 120)
+	private String title;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 8)
 	private MatchLevel level;

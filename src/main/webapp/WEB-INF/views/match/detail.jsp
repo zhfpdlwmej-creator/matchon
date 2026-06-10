@@ -97,9 +97,9 @@ async function load() {
 		(mp.mannerAvg != null ? ' <span class="lvl-badge" style="background:#f5b301;color:#3a2e00;">' + mp.mannerAvg + '★ <span style="opacity:.7;">(' + mp.mannerCount + ')</span></span>' : ''));
 	$('#dRegion').text(mp.region || mp.placeName || '지역 미정');
 	$('#dStatus').text(STATUS_LABEL[mp.status] || mp.status);
-	$('#dTeam').text(mp.hostTeamName);
+	$('#dTeam').text(mp.title || mp.hostTeamName);
 	let when = mp.matchDate ? (mp.matchDate.replaceAll('-', '.') + (mp.startTime ? ' ' + mp.startTime.slice(0,5) : '')) : '일정 협의';
-	$('#dMeta').html('👥 ' + mp.headcount + '명 · 📅 ' + when + (mp.placeName ? ' · 📍 ' + esc(mp.placeName) : ''));
+	$('#dMeta').html((mp.title ? '👤 ' + esc(mp.hostTeamName) + ' · ' : '') + '👥 ' + mp.headcount + '명 · 📅 ' + when + (mp.placeName ? ' · 📍 ' + esc(mp.placeName) : ''));
 	$('#dMemo').text(mp.memo || '');
 
 	showMap();

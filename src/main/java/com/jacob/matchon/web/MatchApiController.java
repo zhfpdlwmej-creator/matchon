@@ -286,6 +286,7 @@ public class MatchApiController {
 		m.put("matchType", p.getMatchType());
 		m.put("ageGroup", p.getAgeGroup());
 		m.put("recruitGuest", p.isRecruitGuest());
+		m.put("title", p.getTitle());
 		m.put("sourceScheduleId", p.getSourceScheduleId());
 		m.put("headcount", p.getHeadcount());
 		m.put("region", p.getRegion());

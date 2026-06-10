@@ -130,6 +130,7 @@ public class MatchService {
 		MatchPost p = MatchPost.builder()
 				.hostTeamId(null)
 				.hostUserId(userId)
+				.title(form.getTitle() == null || form.getTitle().isBlank() ? null : form.getTitle().trim())
 				.sport(Sport.SOCCER)
 				.level(level == null ? MatchLevel.MID : level)
 				.matchType(blankToNull(form.getMatchType()))

@@ -140,6 +140,8 @@
 	<div class="modal">
 		<h3>오픈매치 만들기 (개인 주최)</h3>
 		<form id="openForm" class="card-form" style="padding:0;box-shadow:none;">
+			<label>제목</label>
+			<input type="text" id="omTitle" maxlength="120" placeholder="예: 일요일 오전 풋살 같이 하실 분!" required>
 			<label>종목</label>
 			<div class="lvl-picker" id="omType">
 				<button type="button" class="lvl on" data-v="SOCCER_11">⚽ 축구</button>
@@ -274,10 +276,10 @@ async function loadGuestList() {
 		box.append(
 			'<a class="schedule-item" href="/matches/' + m.id + '">' +
 			'<div style="display:flex;align-items:center;gap:8px;">' +
-			'<span class="lvl-badge" style="background:#e0454f;">🆘 용병 ' + m.headcount + '명</span>' +
+			'<span class="lvl-badge" style="background:#e0454f;">🆘 ' + (m.openMatch ? '오픈매치' : '용병') + ' ' + m.headcount + '명</span>' +
 			(m.placeName ? '<span class="date">' + esc(m.placeName) + '</span>' : '') + '</div>' +
-			'<div class="title">' + esc(m.hostTeamName) + '</div>' +
-			'<div class="meta">📅 ' + when + '</div>' +
+			'<div class="title">' + esc(m.title || m.hostTeamName) + '</div>' +
+			'<div class="meta">👤 ' + esc(m.hostTeamName) + ' · 📅 ' + when + '</div>' +
 			'<div class="meta muted small">' + esc(m.memo || '') + ' · 지원 ' + m.applications + '명</div>' +
 			'</a>');
 	});
@@ -331,8 +333,10 @@ $(function () {
 	$('#openModalBox').on('click', function (e) { if (e.target.id === 'openModalBox') $(this).removeClass('open'); });
 	$('#openForm').on('submit', async function (e) {
 		e.preventDefault();
+		if (!$('#omTitle').val().trim()) { alert('제목을 입력해주세요.'); return; }
 		if ($('#omTime').val() && !validTime($('#omTime').val())) { alert('시작시간을 HH:MM 형식으로 입력해주세요. 예: 20:00'); return; }
 		const body = {
+			title: $('#omTitle').val().trim(),
 			matchType: $('#omTypeV').val(),
 			headcount: parseInt($('#omHead').val() || '1', 10),
 			region: $('#omRegionV').val().trim(),
