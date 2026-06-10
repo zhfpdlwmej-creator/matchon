@@ -36,6 +36,18 @@ public class Team {
 	@Column(name = "min_attendees", nullable = false)
 	private int minAttendees;
 
+	/** 연령대: AGE_20/AGE_30/AGE_40/MIX */
+	@Column(name = "age_group", length = 8)
+	private String ageGroup;
+
+	/** 팀 실력: HIGH/MID/LOW */
+	@Column(length = 8)
+	private String level;
+
+	/** 활동 지역 */
+	@Column(length = 60)
+	private String region;
+
 	@Column(name = "owner_id", nullable = false)
 	private Long ownerId;
 

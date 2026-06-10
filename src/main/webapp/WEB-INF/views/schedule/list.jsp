@@ -215,6 +215,7 @@ $(function () {
 		bindTime('#schStart'); bindTime('#schEnd');
 		$('#addBtn').on('click', () => openModal(null));
 		$('#schVenue').on('change', function () {
+			if (!$(this).val()) { $('#schPlace, #schLat, #schLng').val(''); return; }  // 직접입력/검색 → 장소 비움
 			const v = venuesData.find(x => String(x.id) === String($(this).val()));
 			if (!v) return;
 			$('#schPlace').val(v.name); $('#schLat').val(v.lat != null ? v.lat : ''); $('#schLng').val(v.lng != null ? v.lng : '');

@@ -23,6 +23,20 @@ public class TeamApiController {
 	private final UserService userService;
 	private final TeamService teamService;
 
+	/** 팀 프로필/설정 수정 (팀장/운영진) */
+	@PostMapping("/team/{teamId}/settings")
+	public Map<String, Object> updateSettings(@PathVariable Long teamId, @RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		Integer min = body.get("minAttendees") == null || String.valueOf(body.get("minAttendees")).isBlank()
+				? null : Integer.valueOf(String.valueOf(body.get("minAttendees")));
+		teamService.updateSettings(teamId, uid,
+				str(body.get("name")), str(body.get("description")),
+				str(body.get("ageGroup")), str(body.get("level")), str(body.get("region")), min);
+		return Map.of("ok", true);
+	}
+
+	private String str(Object o) { return o == null ? null : String.valueOf(o); }
+
 	// ---------- 사용자 ----------
 
 	/** 현재 로그인 사용자 정보 */

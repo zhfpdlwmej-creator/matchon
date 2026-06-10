@@ -214,6 +214,19 @@ public class MainController {
 		return "venue/list";
 	}
 
+	@GetMapping("/team/{teamId}/settings")
+	public String teamSettings(@PathVariable Long teamId, HttpServletResponse res, Model model) {
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		if (!teamService.isLeader(teamId, uid) && !teamService.members(teamId).stream()
+				.anyMatch(m -> m.getUserId().equals(uid) && m.getRole().canManage())) {
+			return "redirect:/team/" + teamId;
+		}
+		setCurrentTeam(res, teamId);
+		return "team/settings";
+	}
+
 	@GetMapping("/team/{teamId}/board")
 	public String board(@PathVariable Long teamId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();

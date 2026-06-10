@@ -16,6 +16,7 @@
 <div class="app-wrap">
 	<div class="section-title">자주 가는 구장</div>
 	<div class="muted small" style="padding:0 4px 8px;">팀이 자주 쓰는 구장을 저장해두면, 일정 등록 시 빠르게 선택할 수 있어요.</div>
+	<div id="vViewMap" style="width:100%;height:220px;border-radius:12px;margin-bottom:12px;display:none;"></div>
 	<div id="venueList"><div class="empty">불러오는 중...</div></div>
 
 	<c:if test="${canManage}">
@@ -48,7 +49,7 @@ async function load() {
 	if (!r.venues.length) { box.html('<div class="empty"><div class="big">📍</div>저장된 구장이 없어요.</div>'); return; }
 	r.venues.forEach(function (v) {
 		const del = CAN_MANAGE ? '<a href="javascript:void(0)" class="delV muted small" data-id="' + v.id + '">삭제</a>' : '';
-		const mapLink = (v.lat != null) ? '<a href="https://map.kakao.com/link/map/' + encodeURIComponent(v.name) + ',' + v.lat + ',' + v.lng + '" target="_blank" class="small" style="color:var(--green);">지도 ›</a>' : '';
+		const mapLink = (v.lat != null) ? '<a href="javascript:void(0)" class="vView small" style="color:var(--green);" data-lat="' + v.lat + '" data-lng="' + v.lng + '" data-name="' + esc(v.name) + '">📍 지도</a>' : '';
 		box.append(
 			'<div class="card" style="margin-bottom:10px;">' +
 			'<div style="display:flex;align-items:center;gap:6px;">' +
@@ -86,9 +87,29 @@ function setPoint(ll, fill) {
 	});
 }
 
+let viewMap, viewMarker, viewReady = false;
+function showVenue(lat, lng) {
+	$('#vViewMap').show();
+	if (!window.kakao || !kakao.maps) { alert('지도를 불러올 수 없습니다.'); return; }
+	kakao.maps.load(function () {
+		if (!viewReady) {
+			viewMap = new kakao.maps.Map(document.getElementById('vViewMap'), { center: new kakao.maps.LatLng(lat, lng), level: 4 });
+			viewMarker = new kakao.maps.Marker(); viewMarker.setMap(viewMap);
+			viewReady = true;
+		}
+		const ll = new kakao.maps.LatLng(lat, lng);
+		viewMap.relayout(); viewMap.setCenter(ll); viewMarker.setPosition(ll);
+	});
+}
+
 $(function () {
 	load();
 	if (CAN_MANAGE) setTimeout(ensureMap, 200);
+
+	$('#venueList').on('click', '.vView', function () {
+		showVenue(parseFloat($(this).data('lat')), parseFloat($(this).data('lng')));
+		$('html,body').animate({ scrollTop: Math.max(0, $('#vViewMap').offset().top - 60) }, 200);
+	});
 
 	$('#vSearch').on('click', function () {
 		const kw = $('#vName').val().trim();

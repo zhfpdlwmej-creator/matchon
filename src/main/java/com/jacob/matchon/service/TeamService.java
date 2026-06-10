@@ -113,6 +113,23 @@ public class TeamService {
 		memberRepo.delete(m);
 	}
 
+	/** 팀 프로필/설정 수정 (팀장/운영진) */
+	@Transactional
+	public Team updateSettings(Long teamId, Long userId, String name, String description,
+							   String ageGroup, String level, String region, Integer minAttendees) {
+		requireManager(teamId, userId);
+		Team t = get(teamId);
+		if (name != null && !name.isBlank()) t.setName(name.trim().length() > 40 ? name.trim().substring(0, 40) : name.trim());
+		t.setDescription(description == null || description.isBlank() ? null : description.trim());
+		t.setAgeGroup(blankUpper(ageGroup));
+		t.setLevel(blankUpper(level));
+		t.setRegion(region == null || region.isBlank() ? null : region.trim());
+		if (minAttendees != null) t.setMinAttendees(Math.max(0, minAttendees));
+		return t;
+	}
+
+	private String blankUpper(String s) { return (s == null || s.isBlank()) ? null : s.trim().toUpperCase(); }
+
 	/** 팀 해체 (팀장만) — 팀원·일정·매칭 등 관련 데이터 전부 삭제(FK CASCADE) */
 	@Transactional
 	public void disband(Long teamId, Long userId) {
