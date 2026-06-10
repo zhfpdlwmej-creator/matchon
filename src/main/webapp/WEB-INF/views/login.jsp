@@ -28,12 +28,13 @@
 <script>
 	var KAKAO_REDIRECT_URI = '${kakaoRedirectUri}' || (location.origin + '/auth/kakao/callback');
 	document.getElementById('kakaoBtn').addEventListener('click', function (e) {
-		// JS SDK 가 준비되면 Kakao.Auth.authorize 로 카카오톡 앱 간편로그인 호출
-		if (window.Kakao && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Auth && Kakao.Auth.authorize) {
+		var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+		// 모바일에서만 JS SDK(카카오톡 앱 간편로그인) 시도. 데스크탑/SDK미준비는 서버 웹 로그인(/auth/kakao)
+		if (isMobile && window.Kakao && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Auth && Kakao.Auth.authorize) {
 			e.preventDefault();
 			Kakao.Auth.authorize({ redirectUri: KAKAO_REDIRECT_URI });
 		}
-		// SDK 미준비(키 없음/로드 실패) 시엔 기존 서버 리다이렉트(/auth/kakao)로 폴백
+		// 그 외 → 기본 링크(/auth/kakao)로 진행
 	});
 </script>
 </body>
