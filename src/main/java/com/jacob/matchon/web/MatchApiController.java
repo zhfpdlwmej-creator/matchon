@@ -191,6 +191,21 @@ public class MatchApiController {
 		return Map.of("ok", true);
 	}
 
+	/** 상대팀 평가 컨텍스트 (일정 화면에서 사용) */
+	@GetMapping("/{id}/rate-info")
+	public Map<String, Object> rateInfo(@PathVariable Long id) {
+		Long uid = CurrentUser.required();
+		Map<String, Object> info = new HashMap<>(matchService.ratingInfo(id, uid));
+		Long targetTeam = (Long) info.get("targetTeamId");
+		if (targetTeam != null) {
+			double[] mn = matchService.mannerSummary(targetTeam);
+			info.put("targetMannerAvg", mn[1] > 0 ? mn[0] : null);
+			info.put("targetMannerCount", (int) mn[1]);
+		}
+		info.put("ok", true);
+		return info;
+	}
+
 	/** 상대팀 매너/실력 평가 */
 	@PostMapping("/{id}/rate")
 	public Map<String, Object> rate(@PathVariable Long id, @RequestBody Map<String, Object> body) {

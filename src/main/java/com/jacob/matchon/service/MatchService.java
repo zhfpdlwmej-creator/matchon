@@ -367,9 +367,11 @@ public class MatchService {
 			Team host = teamService.get(post.getHostTeamId());
 			Team opp = teamService.get(app.getApplicantTeamId());
 			scheduleService.createDirect(post.getHostTeamId(), userId, "⚔️ vs " + opp.getName(),
-					post.getMatchDate(), post.getStartTime(), post.getPlaceName(), post.getLat(), post.getLng(), post.getHeadcount());
+					post.getMatchDate(), post.getStartTime(), post.getPlaceName(), post.getLat(), post.getLng(), post.getHeadcount(),
+					post.getId(), opp.getId());
 			scheduleService.createDirect(app.getApplicantTeamId(), app.getApplicantUserId(), "⚔️ vs " + host.getName(),
-					post.getMatchDate(), post.getStartTime(), post.getPlaceName(), post.getLat(), post.getLng(), post.getHeadcount());
+					post.getMatchDate(), post.getStartTime(), post.getPlaceName(), post.getLat(), post.getLng(), post.getHeadcount(),
+					post.getId(), host.getId());
 		}
 	}
 

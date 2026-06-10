@@ -77,6 +77,7 @@ async function loadDashboard() {
 		'<div><div style="font-size:20px;font-weight:800;color:var(--green);">' + t.gf + '</div><div class="muted small">총 득점</div></div>' +
 		'<div><div style="font-size:20px;font-weight:800;color:var(--red);">' + t.ga + '</div><div class="muted small">총 실점</div></div>' +
 		'</div>' +
+		'<div style="text-align:center;margin-top:10px;font-size:13px;">🤝 우리 팀 매너 ' + (t.mannerAvg != null ? '<b style="color:#b8860b;">' + t.mannerAvg + '★</b> <span class="muted">(' + t.mannerCount + '회 받음)</span>' : '<span class="muted">아직 받은 평가 없음</span>') + '</div>' +
 		(t.recent.length ? '<div style="margin-top:12px;">' + t.recent.map(recentRow).join('') + '</div>'
 			: '<div class="muted small" style="margin-top:10px;text-align:center;">기록된 경기 결과가 없습니다.<br>경기 상세 → 경기 결과에서 입력해보세요.</div>')
 	);

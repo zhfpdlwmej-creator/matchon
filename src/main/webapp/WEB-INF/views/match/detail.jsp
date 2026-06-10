@@ -118,9 +118,7 @@ async function load() {
 		$('#closeBtn').text('용병 모집 마감하기');
 	}
 
-	// 상대팀 평가 (성사된 경기)
-	if (r.canRate) { $('#rateCard').show(); $('#rateTarget').text(r.targetTeamName || '상대팀'); }
-	else if (r.alreadyRated) { $('#ratedNote').show(); }
+	// 상대팀 매너 평가는 성사 시 생성되는 '일정(경기) 상세'에서 진행 → 여기선 표시하지 않음
 
 	// 팀 매칭: 내 팀으로 신청 (용병 모집은 댓글로 신청)
 	if (!isGuestRecruit) {

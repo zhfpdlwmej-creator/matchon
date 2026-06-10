@@ -31,6 +31,19 @@
 		</c:if>
 	</div>
 
+	<c:if test="${canManage}">
+		<div class="card" id="rateCard" style="display:none;">
+			<h3>상대팀 매너 평가 · <span id="rateOpp"></span></h3>
+			<div class="muted small" id="rateOppManner" style="margin-bottom:4px;"></div>
+			<div id="starPick" style="font-size:40px;text-align:center;margin:8px 0;letter-spacing:8px;color:#f5b301;cursor:pointer;user-select:none;">
+				<span data-v="1">☆</span><span data-v="2">☆</span><span data-v="3">☆</span><span data-v="4">☆</span><span data-v="5">☆</span>
+			</div>
+			<input type="hidden" id="mannerVal">
+			<button class="btn-primary btn-block" id="rateBtn">평가 저장</button>
+		</div>
+		<div class="card muted small" id="ratedNote" style="display:none;text-align:center;">상대팀 평가를 완료했습니다. 🙏</div>
+	</c:if>
+
 	<div class="card">
 		<h3>내 참석 여부</h3>
 		<div class="attend-buttons" id="attendBtns">
@@ -112,6 +125,17 @@ async function loadInfo() {
 	isPast = !!s.isPast;
 	$('#dMemo').text(s.memo || '');
 	$('#locBtn').toggle(s.lat != null || !!s.place);
+	loadRating();
+}
+
+async function loadRating() {
+	if (!CAN_MANAGE || !sched || !sched.matchPostId) return;
+	const r = await api.get('/api/match/' + sched.matchPostId + '/rate-info');
+	if (!r.ok) return;
+	$('#rateOpp').text(sched.opponentName || r.targetTeamName || '상대팀');
+	if (r.targetMannerAvg != null) $('#rateOppManner').html('상대팀 현재 매너: <b style="color:#b8860b;">' + r.targetMannerAvg + '★</b> (' + r.targetMannerCount + '회)');
+	if (r.canRate) $('#rateCard').show();
+	else if (r.alreadyRated) $('#ratedNote').show();
 }
 
 let mapReady2 = false, kmap2, kmarker2;
@@ -230,6 +254,15 @@ async function loadComments() {
 $(function () {
 	loadInfo().then(loadAttendance);
 	loadComments();
+
+	function renderStars(n) { $('#starPick span').each(function () { $(this).text($(this).data('v') <= n ? '★' : '☆'); }); }
+	$('#starPick span').on('click', function () { const n = $(this).data('v'); $('#mannerVal').val(n); renderStars(n); });
+	$('#rateBtn').on('click', async function () {
+		const m = $('#mannerVal').val();
+		if (!m) { alert('별점을 선택해주세요.'); return; }
+		const r = await api.post('/api/match/' + sched.matchPostId + '/rate', { manner: parseInt(m, 10) });
+		if (r.ok) { alert('평가 완료! 감사합니다.'); $('#rateCard').hide(); $('#ratedNote').show(); } else alert(r.message || '실패');
+	});
 
 	$('#delSchedBtn').on('click', async function () {
 		if (!confirm('이 일정을 삭제할까요?\n참석·댓글·기록도 함께 삭제되며 되돌릴 수 없습니다.')) return;

@@ -31,12 +31,14 @@ public class ScheduleService {
 	@Transactional
 	public MatchSchedule createDirect(Long teamId, Long createdBy, String title,
 									  java.time.LocalDate date, java.time.LocalTime start,
-									  String place, Double lat, Double lng, int target) {
+									  String place, Double lat, Double lng, int target,
+									  Long matchPostId, Long opponentTeamId) {
 		MatchSchedule s = MatchSchedule.builder()
 				.teamId(teamId).title(title)
 				.matchDate(date).startTime(start)
 				.place(place).lat(lat).lng(lng)
 				.fee(0).targetHeadcount(Math.max(0, target)).limitAttendance(false)
+				.matchPostId(matchPostId).opponentTeamId(opponentTeamId)
 				.createdBy(createdBy)
 				.build();
 		s = scheduleRepo.save(s);

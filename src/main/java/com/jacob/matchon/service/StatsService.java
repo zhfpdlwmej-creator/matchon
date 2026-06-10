@@ -25,6 +25,7 @@ public class StatsService {
 	private final MomVoteRepository momRepo;
 	private final AttendanceRepository attendanceRepo;
 	private final UserRatingRepository userRatingRepo;
+	private final TeamRatingRepository teamRatingRepo;
 
 	public List<StatRow> teamStats(Long teamId) {
 		LocalDate today = LocalDate.now();
@@ -123,6 +124,11 @@ public class StatsService {
 
 		Map<Long, Long> momCount = momRepo.findByTeamId(teamId).stream()
 				.collect(Collectors.groupingBy(MomVote::getTargetUserId, Collectors.counting()));
+
+		List<TeamRating> tr = teamRatingRepo.findByTargetTeamId(teamId);
+		team.put("mannerAvg", tr.isEmpty() ? null
+				: Math.round(tr.stream().mapToInt(TeamRating::getManner).sum() / (double) tr.size() * 10) / 10.0);
+		team.put("mannerCount", tr.size());
 
 		Map<String, Object> res = new HashMap<>();
 		res.put("ok", true);

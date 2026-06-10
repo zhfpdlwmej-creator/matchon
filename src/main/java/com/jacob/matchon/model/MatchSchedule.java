@@ -58,6 +58,13 @@ public class MatchSchedule {
 	@Column(columnDefinition = "text")
 	private String formation;
 
+	/** 매칭 성사로 생성된 일정이면 매칭글/상대팀 연결 (상대 평가용) */
+	@Column(name = "match_post_id")
+	private Long matchPostId;
+
+	@Column(name = "opponent_team_id")
+	private Long opponentTeamId;
+
 	@Column(name = "created_by", nullable = false)
 	private Long createdBy;
 
