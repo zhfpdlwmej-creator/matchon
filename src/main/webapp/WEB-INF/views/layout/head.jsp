@@ -35,7 +35,7 @@
 <link rel="dns-prefetch" href="https://t1.kakaocdn.net">
 <link rel="dns-prefetch" href="https://oapi.map.naver.com">
 <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/app.css?v=2">
 <script src="/js/jquery-3.7.1.min.js"></script>
 <c:if test="${not empty kakaoJsKey}">
 <script defer src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"></script>

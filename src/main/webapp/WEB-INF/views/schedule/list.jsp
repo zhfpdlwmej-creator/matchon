@@ -40,7 +40,7 @@
 <div class="modal-back" id="schModal">
 	<div class="modal">
 		<h3 id="schModalTitle">경기 일정 등록</h3>
-		<form id="schForm" class="card-form" style="padding:0;">
+		<form id="schForm" class="card-form" style="padding:0;border:none;box-shadow:none;background:transparent;">
 			<input type="hidden" id="schId">
 			<label>경기명</label>
 			<input type="text" id="schTitle" maxlength="60" placeholder="예: FC 챔피언스 vs FC 드림" required>
