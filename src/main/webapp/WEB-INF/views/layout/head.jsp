@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#1a9d52">
+<meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -25,7 +25,7 @@
 			if (document.getElementById('pwaInstall')) return;
 			var b = document.createElement('button');
 			b.id = 'pwaInstall'; b.textContent = '📲 앱 설치';
-			b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:74px;z-index:9999;background:#1a9d52;color:#fff;border:none;border-radius:999px;padding:10px 18px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;';
+			b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:74px;z-index:9999;background:#16a34a;color:#fff;border:none;border-radius:999px;padding:10px 18px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.22);cursor:pointer;';
 			b.onclick = function () { b.remove(); if (deferred) { deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; }); } };
 			(document.body || document.documentElement).appendChild(b);
 		});
