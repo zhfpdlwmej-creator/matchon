@@ -52,6 +52,12 @@
 		<div id="otherList"></div>
 	</div>
 
+	<div class="card" id="feeCard" style="display:none;">
+		<h3>💰 회비 정산</h3>
+		<div id="feeSummary" class="small" style="margin-bottom:8px;"></div>
+		<div id="feeList"></div>
+	</div>
+
 	<div class="card">
 		<h3>용병 <span class="muted small" id="guestSum"></span></h3>
 		<div class="muted small" style="margin-bottom:8px;">팀원이 아닌 외부 참석 인원을 추가해 정확히 집계해요.</div>
@@ -156,6 +162,22 @@ async function loadAttendance() {
 		$('#attendBtns .att-btn.attend').css('opacity', left > 0 ? '1' : '.5');
 	} else $('#limitStatus').empty();
 
+	// 회비 정산 (구장비 / 참여 인원)
+	const fee = sched ? sched.fee : 0;
+	const partTotal = sm.attend + (sm.guestCount || 0);
+	if (fee > 0 && partTotal > 0) {
+		$('#feeCard').show();
+		const per = Math.ceil(fee / partTotal / 100) * 100;
+		let paidCnt = 0;
+		const fl = $('#feeList').empty();
+		(sm.attendList || []).forEach(function (m) {
+			if (m.paid) paidCnt++;
+			const tog = CAN_MANAGE ? '<a href="javascript:void(0)" class="paidBtn muted small" data-uid="' + m.userId + '" data-on="' + (m.paid ? 1 : 0) + '">' + (m.paid ? '납부취소' : '납부확인') + '</a>' : '';
+			fl.append('<div class="member-row"><span class="name">' + (m.paid ? '✅ ' : '') + esc(m.nickname) + '</span><span class="right">' + (m.paid ? '<span class="muted small">납부</span>' : '<span class="small" style="color:var(--red);">미납</span>') + ' ' + tog + '</span></div>');
+		});
+		$('#feeSummary').html('총 <b>' + fee.toLocaleString() + '원</b> · ' + partTotal + '명 → 인당 <b style="color:var(--green);">' + per.toLocaleString() + '원</b> · 납부 ' + paidCnt + '/' + (sm.attendList || []).length + '명');
+	} else $('#feeCard').hide();
+
 	// 참석자
 	const al = $('#attendList').empty();
 	if (!sm.attendList.length) al.html('<div class="muted small" style="padding:8px 0;">아직 참석자가 없습니다.</div>');
@@ -228,6 +250,12 @@ $(function () {
 	$('#attendList').on('click', '.noShowBtn', async function () {
 		const on = String($(this).data('on')) === '1';
 		const r = await api.post('/api/attendance/no-show', { scheduleId: SCHEDULE_ID, userId: $(this).data('uid'), noShow: !on });
+		if (r.ok) loadAttendance(); else alert(r.message || '실패');
+	});
+
+	$('#feeList').on('click', '.paidBtn', async function () {
+		const on = String($(this).data('on')) === '1';
+		const r = await api.post('/api/attendance/paid', { scheduleId: SCHEDULE_ID, userId: $(this).data('uid'), paid: !on });
 		if (r.ok) loadAttendance(); else alert(r.message || '실패');
 	});
 
