@@ -6,5 +6,6 @@ public enum NotificationType {
 	D_1,               // 경기 하루 전
 	H_3,               // 경기 3시간 전
 	M_30,              // 경기 시작 30분 전
-	LOW_ATTENDANCE     // 인원 부족
+	LOW_ATTENDANCE,    // 인원 부족
+	MOM_VOTE           // 경기 종료 — MOM 투표 안내
 }

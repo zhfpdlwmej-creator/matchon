@@ -42,7 +42,10 @@ public class ReminderScheduler {
 	public void remindAll() {
 		LocalDateTime now = LocalDateTime.now();
 		Map<Long, Team> teamCache = new HashMap<>();
-		List<MatchSchedule> upcoming = scheduleRepo.findAll().stream()
+		List<MatchSchedule> all = scheduleRepo.findAll();
+
+		// 1) 다가오는 일정 리마인드 (하루전/3시간전/30분전)
+		List<MatchSchedule> upcoming = all.stream()
 				.filter(s -> {
 					LocalDateTime start = s.startsAt();
 					return start.isAfter(now) && start.isBefore(now.plusDays(2));
@@ -63,6 +66,17 @@ public class ReminderScheduler {
 			if (team == null) continue;
 			notificationService.remind(team, s, type);
 		}
+
+		// 2) 방금 종료된 경기 — MOM 투표 안내 (종료시각이 직전 ~70분 이내, 1회만)
+		for (MatchSchedule s : all) {
+			LocalDateTime end = s.endsAt();
+			if (!(end.isBefore(now) && end.isAfter(now.minusMinutes(70)))) continue;
+			Team team = teamCache.computeIfAbsent(s.getTeamId(),
+					id -> teamRepo.findById(id).orElse(null));
+			if (team == null) continue;
+			notificationService.momVote(team, s);
+		}
+
 		if (!upcoming.isEmpty()) {
 			log.debug("리마인드 점검: {}건 임박 일정 확인", upcoming.size());
 		}

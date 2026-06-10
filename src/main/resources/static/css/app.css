@@ -316,3 +316,16 @@ input[type="date"], input[type="time"], input[type="number"] { -webkit-appearanc
 	.pos-picker .pos { font-size: 14px; }
 	.team-switch { font-size: 16px; }
 }
+
+/* ── 데스크탑/웹(≥600px): 모바일 컬럼을 가운데 프레임처럼 정렬 ── */
+@media (min-width: 600px) {
+	body { background: #d4dcd8; }
+	/* 헤더도 컬럼 폭에 맞춰 가운데 정렬(전체폭 그라데이션 → 앱 프레임) */
+	.app-header { max-width: var(--maxw); margin: 0 auto; border-radius: 0 0 22px 22px; }
+	/* 본문 컬럼을 띄워 프레임감 부여 */
+	.app-wrap { background: var(--bg); min-height: calc(100vh - 70px); box-shadow: 0 0 0 1px rgba(20,40,30,.05), 0 14px 44px rgba(20,40,30,.16); }
+	/* 하단 네비 — 컬럼 위에 떠 있는 알약 */
+	.bottom-nav { border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(20,40,30,.12); }
+	/* 모달은 컬럼 안에서 가운데 */
+	.modal { margin: 0 auto; }
+}

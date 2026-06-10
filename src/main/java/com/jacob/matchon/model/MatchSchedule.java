@@ -76,4 +76,10 @@ public class MatchSchedule {
 	public LocalDateTime startsAt() {
 		return LocalDateTime.of(matchDate, startTime);
 	}
+
+	/** 경기 종료 시각(종료시간 있으면 그 시각, 없으면 시작+2시간) */
+	@Transient
+	public LocalDateTime endsAt() {
+		return endTime != null ? LocalDateTime.of(matchDate, endTime) : startsAt().plusHours(2);
+	}
 }

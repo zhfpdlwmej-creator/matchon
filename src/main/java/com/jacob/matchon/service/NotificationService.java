@@ -83,6 +83,16 @@ public class NotificationService {
 				scheduleUrl(team.getId(), s.getId()));
 	}
 
+	/** 경기 종료 — MOM 투표 안내 */
+	public void momVote(Team team, MatchSchedule s) {
+		String msg = String.format("[%s]%n경기가 종료되었습니다.%n%s%n오늘의 MOM(맨 오브 더 매치)에 투표해주세요!",
+				team.getName(), s.getTitle());
+		notifyOnce(team.getId(), s.getId(), NotificationType.MOM_VOTE, msg);
+		webPush.sendToTeam(team.getId(), "[" + team.getName() + "] 👑 MOM 투표",
+				s.getTitle() + " 경기가 끝났어요 · 오늘의 MOM에 투표해주세요",
+				scheduleUrl(team.getId(), s.getId()));
+	}
+
 	public List<Notification> history(Long teamId) {
 		return notiRepo.findByTeamIdOrderByCreatedAtDesc(teamId);
 	}

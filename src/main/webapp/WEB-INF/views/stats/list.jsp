@@ -121,14 +121,9 @@ async function loadGame(id) {
 	const res = rr.ok ? rr.result : null;
 	const outcome = res ? (res.ourScore > res.oppScore ? 'W' : res.ourScore < res.oppScore ? 'L' : 'D') : null;
 	const label = { W: '승', L: '패', D: '무' };
-	const color = { W: 'var(--green)', L: 'var(--red)', D: '#9aa3a0' };
 	$('#score' + id).text(outcome ? label[outcome] : '미입력');
 
-	let html = outcome
-		? '<div style="text-align:center;font-size:22px;font-weight:900;margin:4px 0;color:' + color[outcome] + ';">' + label[outcome] + '</div>'
-		: '<div class="muted small" style="text-align:center;padding:4px 0;">결과 미입력</div>';
-
-	html += '<div class="section-title" style="margin-left:0;">👑 MOM</div>';
+	let html = '<div class="section-title" style="margin-left:0;margin-top:0;">👑 MOM</div>';
 	const mom = rr.ok ? rr.mom : [];
 	if (!mom.length) html += '<div class="muted small" style="padding:4px 0;">투표 없음</div>';
 	else mom.forEach((m, i) => html += '<div class="member-row"><span class="name">' + (i === 0 ? '👑 ' : '') + esc(m.name) + '</span><span class="right muted small">' + m.votes + '표</span></div>');
