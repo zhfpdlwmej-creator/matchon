@@ -96,6 +96,8 @@
 
 		<div class="section-title" style="margin-left:0;">참석자</div>
 		<div id="attendList"></div>
+		<div class="section-title" id="waitTitle" style="margin-left:0;display:none;">🕒 예비 (대기)</div>
+		<div id="waitList"></div>
 		<div class="section-title" style="margin-left:0;">불참 / 미정</div>
 		<div id="otherList"></div>
 	</div>
@@ -138,6 +140,9 @@ const TEAM_NAME = "${fn:escapeXml(team.name)}";
 let isPast = false; // 경기 종료 여부
 let sched = null;   // 현재 일정 (공유용)
 let attendeePool = []; // MOM 투표 후보(참석자)
+let myAtt = 'PENDING'; // 내 현재 참석 상태
+let curLimit = false;  // 선착순 마감 사용 여부
+let lastFull = false;  // 현재 정원 마감 여부
 
 function fmtDate(iso) {
 	const d = new Date(iso + 'T00:00:00');
@@ -217,13 +222,23 @@ async function loadAttendance() {
 	if (CAN_MANAGE && shortage > 0 && !isPast) $('#recruitBtn').show().text('🆘 용병 ' + shortage + '명 모집글 올리기');
 	else $('#recruitBtn').hide();
 
-	// 선착순 마감 상태 표시
-	if (sched && sched.limitAttendance && target > 0) {
+	// 선착순 마감 / 예비(대기) 상태
+	myAtt = r.myStatus;
+	curLimit = !!(sched && sched.limitAttendance && target > 0);
+	lastFull = curLimit && (filled >= target);
+	const wl = sm.waitlistList || [];
+	if (curLimit) {
 		const left = target - filled;
-		$('#limitStatus').html(left > 0
-			? '🔒 선착순 마감 · <b>' + filled + ' / ' + target + '</b>명 (남은 자리 ' + left + ')'
-			: '🔒 <b style="color:var(--red);">선착순 정원 마감</b> (' + filled + ' / ' + target + '명)');
-		$('#attendBtns .att-btn.attend').css('opacity', left > 0 ? '1' : '.5');
+		let html = left > 0
+			? '🔒 선착순 · <b>' + filled + ' / ' + target + '</b>명 (남은 자리 ' + left + ')'
+			: '🔒 <b style="color:var(--red);">정원 마감</b> (' + filled + ' / ' + target + '명)';
+		if (wl.length) html += ' · 예비 ' + wl.length + '명';
+		if (myAtt === 'WAITLIST') {
+			const pos = wl.findIndex(m => m.userId === MY_ID) + 1;
+			html += '<br><b style="color:var(--amber);">🕒 예비 ' + (pos || '') + '번 대기 중 — 자리가 나면 자동 참석됩니다.</b>';
+		}
+		$('#limitStatus').html(html);
+		$('#attendBtns .att-btn.attend').css('opacity', (left > 0 || myAtt === 'WAITLIST') ? '1' : '.5');
 	} else $('#limitStatus').empty();
 
 	// 회비 정산 (구장비 / 참여 인원)
@@ -246,6 +261,11 @@ async function loadAttendance() {
 	const al = $('#attendList').empty();
 	if (!sm.attendList.length) al.html('<div class="muted small" style="padding:8px 0;">아직 참석자가 없습니다.</div>');
 	sm.attendList.forEach(m => al.append(memberRow(m, true)));
+
+	// 예비(대기) — 등록 순으로 '예비 N번'
+	const wlBox = $('#waitList').empty();
+	$('#waitTitle').toggle(wl.length > 0);
+	wl.forEach((m, i) => wlBox.append('<div class="member-row"><span class="name">예비 ' + (i + 1) + '번 · ' + esc(m.nickname) + '</span></div>'));
 
 	// 불참/미정
 	const ol = $('#otherList').empty();
@@ -372,8 +392,17 @@ $(function () {
 
 	$('#attendBtns .att-btn').on('click', async function () {
 		const s = $(this).data('s');
+		// 정원이 찬 상태에서 참석자가 빠질 때 — 예비 자동 승급 안내 확인창
+		if ((s === 'ABSENT' || s === 'PENDING') && myAtt === 'ATTEND' && curLimit && lastFull) {
+			if (!confirm('지금 빠지면 예비 인원이 참석으로 올라갑니다.\n추후 다시 참석하면 예비(대기) 인원으로 등록됩니다.\n\n계속할까요?')) return;
+		}
 		const r = await api.post('/api/attendance', { scheduleId: SCHEDULE_ID, status: s });
-		if (r.ok) loadAttendance(); else alert(r.message || '실패');
+		if (r.ok) {
+			if (s === 'ATTEND' && r.status === 'WAITLIST') {
+				alert('정원이 마감되어 예비(대기) 인원으로 등록되었습니다.\n자리가 나면 등록 순서대로 자동 참석 처리됩니다.');
+			}
+			loadAttendance();
+		} else alert(r.message || '실패');
 	});
 
 	$('#attendList').on('click', '.noShowBtn', async function () {

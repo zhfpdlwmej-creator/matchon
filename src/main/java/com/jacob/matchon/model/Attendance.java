@@ -34,6 +34,10 @@ public class Attendance {
 	@Column(name = "no_show", nullable = false)
 	private boolean noShow;
 
+	/** 예비(대기) 등록 시각 — 선착순 승급 순서(FIFO) 기준. 참석/불참이면 null. */
+	@Column(name = "waitlist_at")
+	private LocalDateTime waitlistAt;
+
 	@Column(name = "updated_at", insertable = false, updatable = false)
 	private LocalDateTime updatedAt;
 }

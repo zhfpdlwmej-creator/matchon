@@ -82,6 +82,13 @@ public class WebPushService {
 		}
 	}
 
+	/** 특정 유저에게 제목/본문/링크로 발송 */
+	public void sendToUser(Long userId, String title, String body, String url) {
+		if (pushService == null) return;
+		String payload = gson.toJson(Map.of("title", title, "body", body, "url", url == null ? "/" : url));
+		sendToUser(userId, payload);
+	}
+
 	/** 특정 유저의 모든 기기에 발송 */
 	public void sendToUser(Long userId, String payload) {
 		if (pushService == null) return;

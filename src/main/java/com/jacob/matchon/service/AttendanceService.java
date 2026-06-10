@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,11 +47,13 @@ public class AttendanceService {
 			throw new ApiException(403, "삭제 권한이 없습니다.");
 		}
 		guestRepo.delete(g);
+		// 용병이 빠져 자리가 났으면 예비 인원 자동 승급
+		promoteWaitlist(s);
 	}
 
 	/** 참석 상태 변경(버튼 클릭). 멤버면 누구나 본인 상태 변경 가능. */
 	@Transactional
-	public Attendance setStatus(Long scheduleId, Long userId, AttendanceStatus status) {
+	public Attendance setStatus(Long scheduleId, Long userId, AttendanceStatus requested) {
 		MatchSchedule s = scheduleService.get(scheduleId);
 		teamService.membership(s.getTeamId(), userId); // 팀 멤버 확인
 
@@ -62,23 +65,56 @@ public class AttendanceService {
 						.paid(false)
 						.build());
 
-		// 선착순 마감: 새로 '참석'하려는데 이미 정원이 찼으면 차단
-		if (status == AttendanceStatus.ATTEND && s.isLimitAttendance() && s.getTargetHeadcount() > 0
-				&& att.getStatus() != AttendanceStatus.ATTEND) {
-			long attendMembers = attendanceRepo.countByScheduleIdAndStatus(scheduleId, AttendanceStatus.ATTEND);
-			long guests = guestRepo.findByScheduleIdOrderByCreatedAtAsc(scheduleId).stream()
-					.mapToInt(MatchGuest::getHeadcount).sum();
-			if (attendMembers + guests >= s.getTargetHeadcount()) {
-				throw new ApiException(409, "선착순 마감되었습니다. (정원 " + s.getTargetHeadcount() + "명)");
-			}
+		boolean wasAttending = att.getStatus() == AttendanceStatus.ATTEND;
+
+		// 선착순 마감: 새로 '참석'하려는데 이미 정원이 찼으면 예비(대기)로 등록
+		AttendanceStatus result = requested;
+		if (requested == AttendanceStatus.ATTEND && att.getStatus() != AttendanceStatus.ATTEND
+				&& s.isLimitAttendance() && s.getTargetHeadcount() > 0
+				&& filledCount(scheduleId) >= s.getTargetHeadcount()) {
+			result = AttendanceStatus.WAITLIST;
 		}
 
-		att.setStatus(status);
+		att.setStatus(result);
+		if (result == AttendanceStatus.WAITLIST) {
+			if (att.getWaitlistAt() == null) att.setWaitlistAt(LocalDateTime.now()); // 재신청 시 순번 보존
+		} else {
+			att.setWaitlistAt(null);
+		}
 		att = attendanceRepo.save(att);
+
+		// 참석자가 빠져 자리가 났으면 예비 1번부터 자동 승급
+		if (wasAttending && result != AttendanceStatus.ATTEND) {
+			promoteWaitlist(s);
+		}
 
 		// 인원부족 알림 체크
 		checkLowAttendance(s);
 		return att;
+	}
+
+	/** 현재 채워진 인원 = 참석 멤버 + 용병 인원 */
+	private long filledCount(Long scheduleId) {
+		long attendMembers = attendanceRepo.countByScheduleIdAndStatus(scheduleId, AttendanceStatus.ATTEND);
+		long guests = guestRepo.findByScheduleIdOrderByCreatedAtAsc(scheduleId).stream()
+				.mapToInt(MatchGuest::getHeadcount).sum();
+		return attendMembers + guests;
+	}
+
+	/** 자리가 빈 만큼 예비(대기) 인원을 등록 순(FIFO)으로 참석 승급 + 본인에게 알림 */
+	private void promoteWaitlist(MatchSchedule s) {
+		if (!s.isLimitAttendance() || s.getTargetHeadcount() <= 0) return;
+		List<Attendance> waiting = attendanceRepo
+				.findByScheduleIdAndStatusOrderByWaitlistAtAsc(s.getId(), AttendanceStatus.WAITLIST);
+		Team team = null;
+		for (Attendance w : waiting) {
+			if (filledCount(s.getId()) >= s.getTargetHeadcount()) break;
+			w.setStatus(AttendanceStatus.ATTEND);
+			w.setWaitlistAt(null);
+			attendanceRepo.save(w);
+			if (team == null) team = teamService.get(s.getTeamId());
+			notificationService.promotedToAttend(team, s, w.getUserId());
+		}
 	}
 
 	/** 회비 납부 토글 (팀장/운영진) */
@@ -116,6 +152,7 @@ public class AttendanceService {
 		List<AttendanceSummary.MemberRow> attendList = new ArrayList<>();
 		List<AttendanceSummary.MemberRow> absentList = new ArrayList<>();
 		List<AttendanceSummary.MemberRow> pendingList = new ArrayList<>();
+		List<AttendanceSummary.MemberRow> waitlistList = new ArrayList<>();
 		Map<String, Long> byPosition = new LinkedHashMap<>();
 		for (String p : List.of("GK", "DF", "MF", "FW")) byPosition.put(p, 0L);
 
@@ -135,9 +172,15 @@ public class AttendanceService {
 					if (pos != null) byPosition.merge(pos, 1L, Long::sum);
 				}
 				case ABSENT -> absentList.add(row);
+				case WAITLIST -> waitlistList.add(row);
 				default -> pendingList.add(row);
 			}
 		}
+		// 예비 목록은 등록 순(FIFO)으로 정렬 → '예비 1번'부터
+		waitlistList.sort(Comparator.comparing(r -> {
+			Attendance a = attByUser.get(r.getUserId());
+			return a == null || a.getWaitlistAt() == null ? LocalDateTime.MAX : a.getWaitlistAt();
+		}));
 		// 용병 집계
 		List<MatchGuest> guestEntities = guestRepo.findByScheduleIdOrderByCreatedAtAsc(s.getId());
 		long guestCount = guestEntities.stream().mapToLong(MatchGuest::getHeadcount).sum();
@@ -149,7 +192,8 @@ public class AttendanceService {
 		return new AttendanceSummary(
 				attendList.size(), absentList.size(), pendingList.size(),
 				guestCount, totalCount,
-				byPosition, attendList, absentList, pendingList, guests);
+				byPosition, attendList, absentList, pendingList, guests,
+				waitlistList.size(), waitlistList);
 	}
 
 	/** 내 참석 상태 조회 */

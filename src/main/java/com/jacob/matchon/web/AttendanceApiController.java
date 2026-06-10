@@ -23,8 +23,9 @@ public class AttendanceApiController {
 		Long uid = CurrentUser.required();
 		Long scheduleId = Long.valueOf(body.get("scheduleId"));
 		AttendanceStatus status = AttendanceStatus.valueOf(body.get("status"));
-		attendanceService.setStatus(scheduleId, uid, status);
-		return Map.of("ok", true, "status", status.name());
+		var att = attendanceService.setStatus(scheduleId, uid, status);
+		// 참석 눌렀어도 정원이 차면 WAITLIST 로 반환됨
+		return Map.of("ok", true, "status", att.getStatus().name());
 	}
 
 	/** 참석 현황 집계 + 목록 */

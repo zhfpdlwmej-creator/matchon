@@ -83,6 +83,13 @@ public class NotificationService {
 				scheduleUrl(team.getId(), s.getId()));
 	}
 
+	/** 예비 → 참석 승급 알림 (해당 본인에게만 웹푸시) */
+	public void promotedToAttend(Team team, MatchSchedule s, Long userId) {
+		webPush.sendToUser(userId, "[" + team.getName() + "] 참석 확정 🎉",
+				s.getTitle() + " · 예비에서 참석으로 올라갔어요! " + s.startsAt().format(TIME_FMT),
+				scheduleUrl(team.getId(), s.getId()));
+	}
+
 	/** 경기 종료 — MOM 투표 안내 */
 	public void momVote(Team team, MatchSchedule s) {
 		String msg = String.format("[%s]%n경기가 종료되었습니다.%n%s%n오늘의 MOM(맨 오브 더 매치)에 투표해주세요!",

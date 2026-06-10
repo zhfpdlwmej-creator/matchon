@@ -20,6 +20,8 @@ public class AttendanceSummary {
 	private List<MemberRow> absentList;     // 불참자 목록
 	private List<MemberRow> pendingList;    // 미정자 목록
 	private List<Guest> guests;             // 용병 목록
+	private long waitlist;                  // 예비(대기) 인원 수
+	private List<MemberRow> waitlistList;   // 예비(대기) 목록 (등록 순 = 예비 1번부터)
 
 	/** 목록 한 행 */
 	@Getter
