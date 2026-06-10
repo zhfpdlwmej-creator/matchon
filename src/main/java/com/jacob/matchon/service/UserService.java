@@ -91,7 +91,7 @@ public class UserService {
 		return u;
 	}
 
-	/** 알림톡 수신용 휴대폰 번호 설정 (숫자만 보관, 빈값=해제) */
+	/** 연락처 휴대폰 번호 설정 (숫자만 보관, 빈값=해제) */
 	@Transactional
 	public void setPhone(Long userId, String phone) {
 		User u = get(userId);

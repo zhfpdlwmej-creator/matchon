@@ -29,7 +29,7 @@ public class User {
 	@Column(name = "profile_image", length = 255)
 	private String profileImage;
 
-	/** 휴대폰 번호(숫자만, 알림톡 수신용). 미설정 시 알림톡 미발송. */
+	/** 휴대폰 번호(숫자만) — 팀 내 연락처용. 선택 입력. */
 	@Column(length = 20)
 	private String phone;
 
