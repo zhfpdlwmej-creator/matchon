@@ -205,6 +205,15 @@ public class MainController {
 		return "schedule/formation";
 	}
 
+	@GetMapping("/team/{teamId}/board")
+	public String board(@PathVariable Long teamId, HttpServletResponse res, Model model) {
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		setCurrentTeam(res, teamId);
+		return "board/list";
+	}
+
 	@GetMapping("/team/{teamId}/members")
 	public String members(@PathVariable Long teamId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();
