@@ -1,6 +1,7 @@
 package com.jacob.matchon.service;
 
 import com.jacob.matchon.model.ApplicationStatus;
+import com.jacob.matchon.model.FeeMode;
 import com.jacob.matchon.model.JoinRequest;
 import com.jacob.matchon.model.MembershipType;
 import com.jacob.matchon.model.Role;
@@ -141,7 +142,7 @@ public class TeamService {
 	// --- 생성/가입 ---
 
 	@Transactional
-	public Team create(Long ownerId, String name, String description, Sport sport) {
+	public Team create(Long ownerId, String name, String description, Sport sport, FeeMode feeMode) {
 		if (name == null || name.isBlank()) {
 			throw new ApiException(400, "팀명을 입력해주세요.");
 		}
@@ -152,6 +153,7 @@ public class TeamService {
 				.inviteCode(generateUniqueCode())
 				.ownerId(ownerId)
 				.minAttendees(0)
+				.feeMode(feeMode == null ? FeeMode.NONE : feeMode)
 				.build();
 		team = teamRepo.save(team);
 		// 생성자는 팀장

@@ -33,6 +33,18 @@
 		<input type="text" id="teamName" maxlength="40" placeholder="예: FC 챔피언스" required>
 		<label>팀 소개 (선택)</label>
 		<input type="text" id="teamDesc" maxlength="255" placeholder="예: 매주 일요일 아침 풋살">
+		<label>회비 관리 방식 (선택)</label>
+		<div class="opt-list" id="feePicker">
+			<button type="button" class="opt-item on" data-v="NONE">
+				<b>구분 안 함</b><span>회비를 따로 관리하지 않아요 (나중에 바꿀 수 있어요)</span>
+			</button>
+			<button type="button" class="opt-item" data-v="MONTHLY">
+				<b>회비회원제</b><span>매월 정기 회비를 걷어요 · 월별 납부 관리</span>
+			</button>
+			<button type="button" class="opt-item" data-v="PER_GAME">
+				<b>참가회원제</b><span>경기마다 일정 금액을 납부해요</span>
+			</button>
+		</div>
 		<button type="submit" class="btn-primary btn-block" style="margin-top:14px;">팀 생성</button>
 	</form>
 
@@ -93,11 +105,18 @@ $(function () {
 		$('#createForm').toggle(m === 'create');
 		$('#joinForm').toggle(m === 'join');
 	});
+	let feeMode = 'NONE';
+	$('#feePicker .opt-item').on('click', function () {
+		$('#feePicker .opt-item').removeClass('on');
+		$(this).addClass('on');
+		feeMode = $(this).data('v');
+	});
 	$('#createForm').on('submit', async function (e) {
 		e.preventDefault();
 		const r = await api.post('/api/team', {
 			name: $('#teamName').val().trim(),
-			description: $('#teamDesc').val().trim()
+			description: $('#teamDesc').val().trim(),
+			feeMode: feeMode
 		});
 		if (r.ok) location.href = '/team/' + r.team.id;
 		else alert(r.message || '생성 실패');

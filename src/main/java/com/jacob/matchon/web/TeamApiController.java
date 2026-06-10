@@ -1,5 +1,6 @@
 package com.jacob.matchon.web;
 
+import com.jacob.matchon.model.FeeMode;
 import com.jacob.matchon.model.MembershipType;
 import com.jacob.matchon.model.Position;
 import com.jacob.matchon.model.Role;
@@ -83,7 +84,8 @@ public class TeamApiController {
 	@PostMapping("/team")
 	public Map<String, Object> createTeam(@RequestBody Map<String, String> body) {
 		Long uid = CurrentUser.required();
-		Team t = teamService.create(uid, body.get("name"), body.get("description"), Sport.parse(body.get("sport")));
+		Team t = teamService.create(uid, body.get("name"), body.get("description"),
+				Sport.parse(body.get("sport")), FeeMode.parse(body.get("feeMode")));
 		return Map.of("ok", true, "team", teamView(t, uid));
 	}
 
@@ -258,6 +260,8 @@ public class TeamApiController {
 		m.put("description", t.getDescription());
 		m.put("inviteCode", t.getInviteCode());
 		m.put("minAttendees", t.getMinAttendees());
+		m.put("feeMode", t.getFeeMode().name());
+		m.put("feeModeLabel", t.getFeeMode().label());
 		m.put("memberCount", teamService.members(t.getId()).size());
 		TeamMember me = teamService.members(t.getId()).stream()
 				.filter(x -> x.getUserId().equals(uid)).findFirst().orElse(null);
