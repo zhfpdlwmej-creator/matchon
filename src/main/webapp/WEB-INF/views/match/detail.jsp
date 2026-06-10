@@ -99,7 +99,8 @@ async function load() {
 	$('#dStatus').text(STATUS_LABEL[mp.status] || mp.status);
 	$('#dTeam').text(mp.title || mp.hostTeamName);
 	let when = mp.matchDate ? (mp.matchDate.replaceAll('-', '.') + (mp.startTime ? ' ' + mp.startTime.slice(0,5) : '')) : '일정 협의';
-	$('#dMeta').html((mp.title ? '👤 ' + esc(mp.hostTeamName) + ' · ' : '') + '👥 ' + mp.headcount + '명 · 📅 ' + when + (mp.placeName ? ' · 📍 ' + esc(mp.placeName) : ''));
+	const sizeStr = isGuestRecruit ? ('👥 ' + mp.headcount + '명') : ('⚔️ ' + mp.headcount + ':' + mp.headcount);
+	$('#dMeta').html((mp.title ? '👤 ' + esc(mp.hostTeamName) + ' · ' : '') + sizeStr + ' · 📅 ' + when + (mp.placeName ? ' · 📍 ' + esc(mp.placeName) : ''));
 	$('#dMemo').text(mp.memo || '');
 
 	showMap();

@@ -105,7 +105,17 @@
 			<input type="hidden" id="level">
 
 			<div class="row-2">
-				<div><label>인원</label><input type="number" id="headcount" min="1" value="6"></div>
+				<div><label>경기 방식 (한 팀)</label>
+					<select id="headcount">
+						<option value="5">5 : 5</option>
+						<option value="6" selected>6 : 6</option>
+						<option value="7">7 : 7</option>
+						<option value="8">8 : 8</option>
+						<option value="9">9 : 9</option>
+						<option value="10">10 : 10</option>
+						<option value="11">11 : 11</option>
+					</select>
+				</div>
 				<div><label>날짜</label><input type="date" id="matchDate"></div>
 			</div>
 			<label>시작시간</label>
@@ -257,7 +267,7 @@ function renderList() {
 			'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + tags +
 			(m.mine ? '<span class="muted small" style="margin-left:auto;">내 팀</span>' : '') + '</div>' +
 			'<div class="title">' + esc(m.hostTeamName) + '</div>' +
-			'<div class="meta">📍 ' + esc(m.region || '지역 미정') + ' · 👥 ' + m.headcount + '명 · 📅 ' + when + (m.placeName ? ' · ' + esc(m.placeName) : '') + '</div>' +
+			'<div class="meta">📍 ' + esc(m.region || '지역 미정') + ' · ⚔️ ' + m.headcount + ':' + m.headcount + ' · 📅 ' + when + (m.placeName ? ' · ' + esc(m.placeName) : '') + '</div>' +
 			'<div class="meta muted small">👤 등록자 ' + esc(m.hostName) + ' · 신청 ' + m.applications + '팀</div>' +
 			'</a>');
 	});
