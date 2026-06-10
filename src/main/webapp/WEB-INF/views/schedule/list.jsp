@@ -48,6 +48,9 @@
 				<div><label>시작시간</label><input type="text" id="schStart" required></div>
 				<div><label>종료시간</label><input type="text" id="schEnd"></div>
 			</div>
+			<label>저장된 구장 (선택)</label>
+			<select id="schVenue" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;"><option value="">직접 입력 / 검색</option></select>
+
 			<label>장소 (검색 또는 지도 탭)</label>
 			<div style="display:flex;gap:8px;margin-bottom:8px;">
 				<input type="text" id="schPlace" maxlength="120" placeholder="장소명/주소 검색 (예: 잠실 풋살장)" style="flex:1;min-width:0;">
@@ -166,6 +169,14 @@ function openModal(s) {
 }
 function closeModal() { $('#schModal').removeClass('open'); }
 
+let venuesData = [];
+async function loadVenues() {
+	const r = await api.get('/api/team/' + TEAM_ID + '/venues');
+	venuesData = r.ok ? r.venues : [];
+	const sel = $('#schVenue');
+	venuesData.forEach(function (v) { sel.append('<option value="' + v.id + '">📍 ' + esc(v.name) + '</option>'); });
+}
+
 // ── 카카오맵 (일정 장소 선택) ──
 let kmap, kmarker, kgeocoder, kready = false;
 function ensureSchMap(center) {
@@ -197,11 +208,18 @@ function setSchPoint(latlng, fillAddr) {
 $(function () {
 	loadMonth();
 	loadUpcoming();
+	loadVenues();
 	$('#prevMonth').on('click', () => { cur.setMonth(cur.getMonth() - 1); loadMonth(); });
 	$('#nextMonth').on('click', () => { cur.setMonth(cur.getMonth() + 1); loadMonth(); });
 	if (CAN_MANAGE) {
 		bindTime('#schStart'); bindTime('#schEnd');
 		$('#addBtn').on('click', () => openModal(null));
+		$('#schVenue').on('change', function () {
+			const v = venuesData.find(x => String(x.id) === String($(this).val()));
+			if (!v) return;
+			$('#schPlace').val(v.name); $('#schLat').val(v.lat != null ? v.lat : ''); $('#schLng').val(v.lng != null ? v.lng : '');
+			if (v.lat != null) ensureSchMap({ lat: v.lat, lng: v.lng });
+		});
 		$('#schPlaceSearch').on('click', function () {
 			const kw = $('#schPlace').val().trim();
 			if (!kw) { alert('장소명이나 주소를 입력하세요.'); return; }

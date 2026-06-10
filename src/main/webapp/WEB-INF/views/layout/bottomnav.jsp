@@ -50,6 +50,7 @@
 		<div class="d-sec">메뉴</div>
 		<c:if test="${not empty team}">
 			<a href="/team/${team.id}/board" class="d-item"><span class="ic">📝</span>팀 게시판</a>
+			<a href="/team/${team.id}/venues" class="d-item"><span class="ic">📍</span>구장 정보</a>
 			<a href="/team/${team.id}/members" class="d-item"><span class="ic">👥</span>팀원 관리</a>
 		</c:if>
 		<a href="/profile" class="d-item"><span class="ic">⚙️</span>내정보 · 설정</a>
