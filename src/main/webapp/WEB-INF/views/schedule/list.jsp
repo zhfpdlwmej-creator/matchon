@@ -213,6 +213,7 @@ $(function () {
 	$('#nextMonth').on('click', () => { cur.setMonth(cur.getMonth() + 1); loadMonth(); });
 	if (CAN_MANAGE) {
 		bindTime('#schStart'); bindTime('#schEnd');
+		$('#schDate').attr('min', new Date().toLocaleDateString('sv-SE'));   // 오늘 이전 선택 불가
 		$('#addBtn').on('click', () => openModal(null));
 		$('#schVenue').on('change', function () {
 			if (!$(this).val()) { $('#schPlace, #schLat, #schLng').val(''); return; }  // 직접입력/검색 → 장소 비움
@@ -240,6 +241,7 @@ $(function () {
 		$('#schForm').on('submit', async function (e) {
 			e.preventDefault();
 			const id = $('#schId').val();
+			if (!id && $('#schDate').val() && $('#schDate').val() < new Date().toLocaleDateString('sv-SE')) { alert('오늘 이전 날짜로는 일정을 등록할 수 없습니다.'); return; }
 			if (!validTime($('#schStart').val())) { alert('시작시간을 HH:MM 형식으로 입력해주세요. 예: 20:00'); return; }
 			if ($('#schEnd').val() && !validTime($('#schEnd').val())) { alert('종료시간을 HH:MM 형식으로 입력해주세요.'); return; }
 			const body = {

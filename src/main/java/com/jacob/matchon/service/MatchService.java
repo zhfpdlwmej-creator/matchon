@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,9 @@ public class MatchService {
 		teamService.requireLeader(hostTeamId, userId); // 팀장/운영진만
 		MatchLevel level = parseLevel(form.getLevel());
 		if (level == null) throw new ApiException(400, "팀 수준(상/중/하)을 선택해주세요.");
+		if (form.getMatchDate() != null && form.getMatchDate().isBefore(LocalDate.now())) {
+			throw new ApiException(400, "오늘 이전 날짜로는 매칭을 등록할 수 없습니다.");
+		}
 
 		MatchPost p = MatchPost.builder()
 				.hostTeamId(hostTeamId)
@@ -126,6 +130,9 @@ public class MatchService {
 	/** 개인 오픈매치(픽업) 등록 — 팀 없이 개인이 주최 */
 	@Transactional
 	public MatchPost createOpenMatch(Long userId, MatchForm form) {
+		if (form.getMatchDate() != null && form.getMatchDate().isBefore(LocalDate.now())) {
+			throw new ApiException(400, "오늘 이전 날짜로는 등록할 수 없습니다.");
+		}
 		MatchLevel level = parseLevel(form.getLevel());
 		MatchPost p = MatchPost.builder()
 				.hostTeamId(null)

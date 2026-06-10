@@ -333,6 +333,7 @@ $(function () {
 	buildRegionPicker('#filterRegion', { includeAll: true, onChange: function (region) { currentRegion = region; loadList(); } });
 	buildRegionPicker('#createRegion', { onChange: function (region) { $('#region').val(region); } });
 	bindTime('#startTime');
+	$('#matchDate, #omDate').attr('min', new Date().toLocaleDateString('sv-SE'));   // 오늘 이전 선택 불가
 
 	// 오픈매치(개인 주최)
 	buildRegionPicker('#omRegion', { onChange: function (region) { $('#omRegionV').val(region); } });
@@ -344,6 +345,7 @@ $(function () {
 	$('#openForm').on('submit', async function (e) {
 		e.preventDefault();
 		if (!$('#omTitle').val().trim()) { alert('제목을 입력해주세요.'); return; }
+		if ($('#omDate').val() && $('#omDate').val() < new Date().toLocaleDateString('sv-SE')) { alert('오늘 이전 날짜로는 등록할 수 없습니다.'); return; }
 		if ($('#omTime').val() && !validTime($('#omTime').val())) { alert('시작시간을 HH:MM 형식으로 입력해주세요. 예: 20:00'); return; }
 		const body = {
 			title: $('#omTitle').val().trim(),
@@ -406,6 +408,7 @@ $(function () {
 	$('#matchForm').on('submit', async function (e) {
 		e.preventDefault();
 		if (!TEAM_ID || !IS_LEADER) { alert('현재 팀의 팀장만 경기를 등록할 수 있습니다.'); return; }
+		if ($('#matchDate').val() && $('#matchDate').val() < new Date().toLocaleDateString('sv-SE')) { alert('오늘 이전 날짜로는 매칭을 등록할 수 없습니다.'); return; }
 		if (!$('#level').val()) { alert('팀 수준(상/중/하)을 선택해주세요.'); return; }
 		if ($('#startTime').val() && !validTime($('#startTime').val())) { alert('시작시간을 HH:MM 형식으로 입력해주세요. 예: 14:00'); return; }
 		const body = {

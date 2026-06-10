@@ -69,6 +69,9 @@ public class ScheduleService {
 	public MatchSchedule create(Long teamId, Long userId, ScheduleForm form) {
 		teamService.requireManager(teamId, userId); // 팀장/운영진만
 		validate(form);
+		if (form.getMatchDate() != null && form.getMatchDate().isBefore(LocalDate.now())) {
+			throw new ApiException(400, "오늘 이전 날짜로는 일정을 등록할 수 없습니다.");
+		}
 		MatchSchedule s = MatchSchedule.builder()
 				.teamId(teamId)
 				.title(form.getTitle().trim())
