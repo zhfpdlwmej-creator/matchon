@@ -18,7 +18,8 @@ public class MatchPost {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "host_team_id", nullable = false)
+	/** 팀 매칭/용병모집은 주최 팀, 개인 오픈매치는 null */
+	@Column(name = "host_team_id")
 	private Long hostTeamId;
 
 	@Column(name = "host_user_id", nullable = false)

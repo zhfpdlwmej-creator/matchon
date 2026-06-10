@@ -69,11 +69,12 @@
 
 	<!-- ===== 용병 모집 ===== -->
 	<div id="guestPane" style="display:none;">
+		<button class="btn-primary btn-block" id="openMatchBtn" style="margin-bottom:10px;">＋ 오픈매치 만들기 (개인 주최)</button>
 		<div class="card muted small">
-			인원이 부족한 팀이 올린 <b>용병 모집글</b>입니다. 누구나 지원할 수 있고, 팀장이 수락하면 해당 경기에 참여합니다.<br>
-			모집글은 <b>경기 상세 → 🆘 용병 모집글 올리기</b>에서 등록돼요.
+			팀이 올린 <b>용병 모집글</b> + 개인이 연 <b>오픈매치(픽업)</b>입니다. 누구나 댓글로 지원할 수 있어요.<br>
+			팀 모집글은 <b>경기 상세 → 🆘 용병 모집글 올리기</b>에서 등록돼요.
 		</div>
-		<div class="section-title">모집중인 용병</div>
+		<div class="section-title">모집중인 용병 · 오픈매치</div>
 		<div id="guestList"><div class="empty">불러오는 중...</div></div>
 	</div>
 </div>
@@ -128,6 +129,43 @@
 
 			<div class="row-2" style="margin-top:14px;">
 				<button type="button" class="btn-ghost" id="cancelBtn">취소</button>
+				<button type="submit" class="btn-primary">등록</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<!-- 오픈매치 등록 모달 -->
+<div class="modal-back" id="openModalBox">
+	<div class="modal">
+		<h3>오픈매치 만들기 (개인 주최)</h3>
+		<form id="openForm" class="card-form" style="padding:0;box-shadow:none;">
+			<label>종목</label>
+			<div class="lvl-picker" id="omType">
+				<button type="button" class="lvl on" data-v="SOCCER_11">⚽ 축구</button>
+				<button type="button" class="lvl" data-v="FUTSAL_5">🥅 풋살</button>
+			</div>
+			<input type="hidden" id="omTypeV" value="SOCCER_11">
+
+			<div class="row-2">
+				<div><label>모집 인원</label><input type="number" id="omHead" min="1" value="4"></div>
+				<div><label>날짜</label><input type="date" id="omDate"></div>
+			</div>
+			<label>시작시간</label>
+			<input type="text" id="omTime">
+
+			<label>지역 (도 → 시/군/구)</label>
+			<div id="omRegion"></div>
+			<input type="hidden" id="omRegionV">
+
+			<label>장소</label>
+			<input type="text" id="omPlace" maxlength="120" placeholder="예: 잠실 풋살장 A구장">
+
+			<label>소개글 (선택)</label>
+			<textarea id="omMemo" maxlength="500" placeholder="실력대, 회비, 룰 등 자유롭게"></textarea>
+
+			<div class="row-2" style="margin-top:14px;">
+				<button type="button" class="btn-ghost" id="omCancel">취소</button>
 				<button type="submit" class="btn-primary">등록</button>
 			</div>
 		</form>
@@ -283,6 +321,30 @@ $(function () {
 	buildRegionPicker('#filterRegion', { includeAll: true, onChange: function (region) { currentRegion = region; loadList(); } });
 	buildRegionPicker('#createRegion', { onChange: function (region) { $('#region').val(region); } });
 	bindTime('#startTime');
+
+	// 오픈매치(개인 주최)
+	buildRegionPicker('#omRegion', { onChange: function (region) { $('#omRegionV').val(region); } });
+	bindTime('#omTime');
+	$('#omType .lvl').on('click', function () { $('#omType .lvl').removeClass('on'); $(this).addClass('on'); $('#omTypeV').val($(this).data('v')); });
+	$('#openMatchBtn').on('click', function () { $('#openModalBox').addClass('open'); });
+	$('#omCancel').on('click', function () { $('#openModalBox').removeClass('open'); });
+	$('#openModalBox').on('click', function (e) { if (e.target.id === 'openModalBox') $(this).removeClass('open'); });
+	$('#openForm').on('submit', async function (e) {
+		e.preventDefault();
+		if ($('#omTime').val() && !validTime($('#omTime').val())) { alert('시작시간을 HH:MM 형식으로 입력해주세요. 예: 20:00'); return; }
+		const body = {
+			matchType: $('#omTypeV').val(),
+			headcount: parseInt($('#omHead').val() || '1', 10),
+			region: $('#omRegionV').val().trim(),
+			placeName: $('#omPlace').val().trim(),
+			matchDate: $('#omDate').val() || null,
+			startTime: $('#omTime').val() || null,
+			memo: $('#omMemo').val().trim()
+		};
+		const r = await api.post('/api/match/open-match', body);
+		if (r.ok) { $('#openModalBox').removeClass('open'); location.href = '/matches/' + r.id; } else alert(r.message || '등록 실패');
+	});
+
 	loadMine();
 	loadList();
 	if (!TEAM_ID) switchPane('guest');   // 팀 없는 개인은 용병 탭부터

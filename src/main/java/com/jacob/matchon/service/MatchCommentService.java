@@ -44,8 +44,8 @@ public class MatchCommentService {
 
 	private Map<String, Object> listGuest(MatchPost post, Long uid) {
 		Long postId = post.getId();
-		boolean isHost = teamService.isMember(post.getHostTeamId(), uid);
-		boolean canManage = isHost && teamService.membership(post.getHostTeamId(), uid).getRole().canManage();
+		boolean isHost = matchService.isGuestHost(post, uid);
+		boolean canManage = matchService.isGuestHostManager(post, uid);
 		Map<String, Object> res = new HashMap<>();
 		res.put("ok", true);
 		res.put("guestRecruit", true);
@@ -130,7 +130,7 @@ public class MatchCommentService {
 		Long threadTeam = null, threadUser = null;
 		boolean isHost;
 		if (post.isRecruitGuest()) {
-			isHost = teamService.isMember(post.getHostTeamId(), uid);
+			isHost = matchService.isGuestHost(post, uid);
 			if (isHost) {
 				threadUser = applicantUserId;
 				if (threadUser == null || !appRepo.existsByMatchPostIdAndApplicantUserId(postId, threadUser)) {
@@ -180,7 +180,7 @@ public class MatchCommentService {
 				.orElseThrow(() -> new ApiException(404, "댓글을 찾을 수 없습니다."));
 		MatchPost post = matchService.get(c.getMatchPostId());
 		boolean isHost = post.isRecruitGuest()
-				? teamService.isMember(post.getHostTeamId(), uid)
+				? matchService.isGuestHost(post, uid)
 				: isHostTeamSide(post, uid, currentTeamId);
 		if (!c.getAuthorUserId().equals(uid) && !isHost) {
 			throw new ApiException(403, "삭제 권한이 없습니다.");

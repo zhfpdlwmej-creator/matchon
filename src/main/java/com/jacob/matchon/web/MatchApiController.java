@@ -100,7 +100,7 @@ public class MatchApiController {
 
 		// 용병(개인) 모집글: 팀이 아닌 개인 지원 흐름
 		if (p.isRecruitGuest()) {
-			boolean isHostManager = teamService.isLeader(p.getHostTeamId(), uid);
+			boolean isHostManager = matchService.isGuestHostManager(p, uid);
 			res.put("isGuestRecruit", true);
 			res.put("isHost", isHostManager);
 			if (isHostManager) {
@@ -210,6 +210,14 @@ public class MatchApiController {
 		return Map.of("ok", true, "id", p.getId());
 	}
 
+	/** 개인 오픈매치(픽업) 등록 — 팀 없이 개인 주최 */
+	@PostMapping("/open-match")
+	public Map<String, Object> openMatch(@RequestBody MatchForm form) {
+		Long uid = CurrentUser.required();
+		MatchPost p = matchService.createOpenMatch(uid, form);
+		return Map.of("ok", true, "id", p.getId());
+	}
+
 	/** 신청 */
 	@PostMapping("/{id}/apply")
 	public Map<String, Object> apply(@PathVariable Long id, @RequestBody Map<String, String> body) {
@@ -262,12 +270,14 @@ public class MatchApiController {
 	// ---------- view helpers ----------
 
 	private Map<String, Object> postView(MatchPost p, Set<Long> mine) {
-		Team host = teamService.get(p.getHostTeamId());
+		boolean openMatch = p.getHostTeamId() == null;
+		String hostNick = userService.findById(p.getHostUserId()).map(User::getNickname).orElse("?");
 		Map<String, Object> m = new HashMap<>();
 		m.put("id", p.getId());
 		m.put("hostTeamId", p.getHostTeamId());
-		m.put("hostTeamName", host.getName());
-		m.put("hostName", userService.findById(p.getHostUserId()).map(User::getNickname).orElse("?"));
+		m.put("openMatch", openMatch);
+		m.put("hostTeamName", openMatch ? (hostNick + " (개인)") : teamService.get(p.getHostTeamId()).getName());
+		m.put("hostName", hostNick);
 		m.put("sport", p.getSport() == null ? "SOCCER" : p.getSport().name());
 		m.put("sportLabel", p.getSport() == null ? "" : p.getSport().label());
 		m.put("sportEmoji", p.getSport() == null ? "" : p.getSport().emoji());
@@ -287,8 +297,8 @@ public class MatchApiController {
 		m.put("memo", p.getMemo());
 		m.put("status", p.getStatus().name());
 		m.put("applications", matchService.applicationCount(p.getId()));
-		m.put("mine", mine.contains(p.getHostTeamId()));
-		double[] mn = matchService.mannerSummary(p.getHostTeamId());
+		m.put("mine", p.getHostTeamId() != null && mine.contains(p.getHostTeamId()));
+		double[] mn = openMatch ? matchService.userMannerSummary(p.getHostUserId()) : matchService.mannerSummary(p.getHostTeamId());
 		m.put("mannerAvg", mn[1] > 0 ? mn[0] : null);
 		m.put("mannerCount", (int) mn[1]);
 		return m;

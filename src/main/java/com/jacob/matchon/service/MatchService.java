@@ -123,6 +123,30 @@ public class MatchService {
 		return postRepo.save(p);
 	}
 
+	/** 개인 오픈매치(픽업) 등록 — 팀 없이 개인이 주최 */
+	@Transactional
+	public MatchPost createOpenMatch(Long userId, MatchForm form) {
+		MatchLevel level = parseLevel(form.getLevel());
+		MatchPost p = MatchPost.builder()
+				.hostTeamId(null)
+				.hostUserId(userId)
+				.sport(Sport.SOCCER)
+				.level(level == null ? MatchLevel.MID : level)
+				.matchType(blankToNull(form.getMatchType()))
+				.recruitGuest(true)
+				.headcount(form.getHeadcount() == null ? 1 : form.getHeadcount())
+				.region(form.getRegion())
+				.placeName(form.getPlaceName())
+				.lat(form.getLat())
+				.lng(form.getLng())
+				.matchDate(form.getMatchDate())
+				.startTime(form.getStartTime())
+				.memo(form.getMemo())
+				.status(MatchStatus.OPEN)
+				.build();
+		return postRepo.save(p);
+	}
+
 	/** 용병(개인) 지원 */
 	@Transactional
 	public MatchApplication applyGuest(Long userId, Long postId, String message) {
@@ -159,7 +183,7 @@ public class MatchService {
 		MatchApplication app = appRepo.findById(applicationId)
 				.orElseThrow(() -> new ApiException(404, "지원을 찾을 수 없습니다."));
 		MatchPost post = get(app.getMatchPostId());
-		teamService.requireLeader(post.getHostTeamId(), userId);
+		requireGuestHost(post, userId);
 		app.setStatus(ApplicationStatus.ACCEPTED);
 		if (post.getSourceScheduleId() != null) {
 			String name = userService.findById(app.getApplicantUserId())
@@ -170,6 +194,27 @@ public class MatchService {
 
 	private String blankToNull(String s) {
 		return (s == null || s.isBlank() || "ANY".equals(s)) ? null : s;
+	}
+
+	// ---------- 용병모집/오픈매치 주최자 판별 (팀 또는 개인) ----------
+
+	/** 주최자 권한 확인 — 팀 모집글=팀장/운영진, 개인 오픈매치=본인 */
+	public void requireGuestHost(MatchPost post, Long uid) {
+		if (post.getHostTeamId() != null) teamService.requireLeader(post.getHostTeamId(), uid);
+		else if (!post.getHostUserId().equals(uid)) throw new ApiException(403, "주최자만 할 수 있습니다.");
+	}
+
+	/** 주최 측 구성원인지(스레드 열람) */
+	public boolean isGuestHost(MatchPost post, Long uid) {
+		return post.getHostTeamId() != null ? teamService.isMember(post.getHostTeamId(), uid)
+				: uid.equals(post.getHostUserId());
+	}
+
+	/** 확정/평가 권한자인지(팀=운영권, 개인=본인) */
+	public boolean isGuestHostManager(MatchPost post, Long uid) {
+		if (post.getHostTeamId() == null) return uid.equals(post.getHostUserId());
+		return teamService.isMember(post.getHostTeamId(), uid)
+				&& teamService.membership(post.getHostTeamId(), uid).getRole().canManage();
 	}
 
 	// ---------- 상대팀 매너/실력 평점 ----------
@@ -206,7 +251,7 @@ public class MatchService {
 	public void rateGuest(Long postId, Long raterUid, Long targetUserId, int manner, String comment) {
 		MatchPost post = get(postId);
 		if (!post.isRecruitGuest()) throw new ApiException(400, "용병 모집글이 아닙니다.");
-		teamService.requireLeader(post.getHostTeamId(), raterUid);
+		requireGuestHost(post, raterUid);
 		if (manner < 1 || manner > 5) throw new ApiException(400, "매너 점수는 1~5 입니다.");
 		boolean accepted = appRepo.findByMatchPostIdOrderByCreatedAtAsc(postId).stream()
 				.anyMatch(a -> targetUserId.equals(a.getApplicantUserId()) && a.getStatus() == ApplicationStatus.ACCEPTED);
@@ -270,7 +315,8 @@ public class MatchService {
 	@Transactional
 	public void close(Long postId, Long userId) {
 		MatchPost p = get(postId);
-		teamService.requireLeader(p.getHostTeamId(), userId);
+		if (p.isRecruitGuest()) requireGuestHost(p, userId);
+		else teamService.requireLeader(p.getHostTeamId(), userId);
 		p.setStatus(MatchStatus.CLOSED);
 	}
 
