@@ -33,8 +33,6 @@
 
 	<div class="section-title">개인 랭킹 (TOP 5)</div>
 	<div class="card"><div class="rank-grid">
-		<div class="rank-box"><h4>⚽ 득점왕</h4><div id="rkScorers"></div></div>
-		<div class="rank-box"><h4>🅰️ 도움왕</h4><div id="rkAssists"></div></div>
 		<div class="rank-box"><h4>🙌 출석왕</h4><div id="rkAttend"></div></div>
 		<div class="rank-box"><h4>👑 MOM</h4><div id="rkMom"></div></div>
 	</div></div>
@@ -75,8 +73,6 @@ async function loadDashboard() {
 		'<div class="ts-metric"><div class="v" style="color:#b8860b;">' + (t.mannerAvg != null ? t.mannerAvg + '★' : '–') + '</div><div class="l">매너' + (t.mannerCount ? ' (' + t.mannerCount + ')' : '') + '</div></div>' +
 		'</div>'
 	);
-	rankList('#rkScorers', r.scorers, '골');
-	rankList('#rkAssists', r.assisters, '');
 	rankList('#rkAttend', r.attendance, '회');
 	rankList('#rkMom', r.mom, '표');
 }
@@ -128,11 +124,6 @@ async function loadGame(id) {
 	let html = res
 		? '<div style="text-align:center;font-size:20px;font-weight:800;margin:4px 0;">우리 <span style="color:var(--green);">' + res.ourScore + '</span> : <span style="color:var(--red);">' + res.oppScore + '</span> <span class="muted small">상대</span></div>'
 		: '<div class="muted small" style="text-align:center;padding:4px 0;">스코어 미입력</div>';
-
-	html += '<div class="section-title" style="margin-left:0;">⚽ 득점 / 도움</div>';
-	const events = rr.ok ? rr.events : [];
-	if (!events.length) html += '<div class="muted small" style="padding:4px 0;">기록 없음</div>';
-	else events.forEach(e => html += '<div class="member-row"><span class="name">⚽ ' + esc(e.scorerName) + (e.assistName ? ' <span class="muted small">(도움 ' + esc(e.assistName) + ')</span>' : '') + '</span></div>');
 
 	html += '<div class="section-title" style="margin-left:0;">👑 MOM</div>';
 	const mom = rr.ok ? rr.mom : [];

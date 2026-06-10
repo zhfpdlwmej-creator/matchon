@@ -54,33 +54,25 @@
 		<div class="card muted small" id="ratedNote" style="display:none;text-align:center;">상대팀 평가를 완료했습니다. 🙏</div>
 	</c:if>
 
-	<!-- 경기 종료 후: 결과 입력/확인 -->
+	<!-- 경기 종료 후: 결과 입력/확인 (접기/펼치기) -->
 	<div class="card" id="resultCard" style="display:none;">
-		<h3>📊 경기 결과 <span class="muted small" style="font-weight:400;">경기 종료 후 입력</span></h3>
-		<div id="scoreView" style="text-align:center;font-size:26px;font-weight:900;margin:8px 0;"></div>
-		<c:if test="${canManage}">
-			<div class="row-2">
-				<div><label class="small">우리 득점</label><input type="number" id="ourScore" min="0" value="0"></div>
-				<div><label class="small">상대 득점</label><input type="number" id="oppScore" min="0" value="0"></div>
-			</div>
-			<button class="btn-primary btn-block" id="saveScore" style="margin-top:8px;">스코어 저장</button>
-		</c:if>
+		<h3 id="resultHead" style="cursor:pointer;display:flex;align-items:center;margin:0;">📊 경기 결과 <span class="muted small" style="font-weight:400;margin-left:6px;">경기 종료 후 입력</span><span id="resultCaret" style="margin-left:auto;color:var(--muted);">▾</span></h3>
+		<div id="resultBody" style="display:none;margin-top:12px;">
+			<div id="scoreView" style="text-align:center;font-size:26px;font-weight:900;margin:0 0 8px;"></div>
+			<c:if test="${canManage}">
+				<div class="row-2">
+					<div><label class="small">우리 득점</label><input type="number" id="ourScore" min="0" value="0"></div>
+					<div><label class="small">상대 득점</label><input type="number" id="oppScore" min="0" value="0"></div>
+				</div>
+				<button class="btn-primary btn-block" id="saveScore" style="margin-top:8px;">스코어 저장</button>
+			</c:if>
 
-		<div class="section-title" style="margin-left:0;">⚽ 득점 / 도움</div>
-		<div id="evtList"></div>
-		<c:if test="${canManage}">
+			<div class="section-title" style="margin-left:0;">👑 MOM 투표</div>
+			<div id="momList"></div>
 			<div style="display:flex;gap:6px;margin-top:8px;">
-				<select id="scSel" style="flex:1;min-width:0;padding:9px;border:1px solid var(--line);border-radius:10px;"></select>
-				<select id="asSel" style="flex:1;min-width:0;padding:9px;border:1px solid var(--line);border-radius:10px;"></select>
-				<button class="btn-primary btn-sm" id="addEvt" style="white-space:nowrap;flex-shrink:0;">＋ 골</button>
+				<select id="msSel" style="flex:1;min-width:0;padding:9px;border:1px solid var(--line);border-radius:10px;"></select>
+				<button class="btn-primary btn-sm" id="voteMom" style="white-space:nowrap;flex-shrink:0;">투표</button>
 			</div>
-		</c:if>
-
-		<div class="section-title" style="margin-left:0;">👑 MOM 투표</div>
-		<div id="momList"></div>
-		<div style="display:flex;gap:6px;margin-top:8px;">
-			<select id="msSel" style="flex:1;min-width:0;padding:9px;border:1px solid var(--line);border-radius:10px;"></select>
-			<button class="btn-primary btn-sm" id="voteMom" style="white-space:nowrap;flex-shrink:0;">투표</button>
 		</div>
 	</div>
 
@@ -145,7 +137,7 @@ const MY_ID = ${user.id};
 const TEAM_NAME = "${fn:escapeXml(team.name)}";
 let isPast = false; // 경기 종료 여부
 let sched = null;   // 현재 일정 (공유용)
-let attendeePool = [], resultPool = []; // 경기 결과 입력용 인원
+let attendeePool = []; // MOM 투표 후보(참석자)
 
 function fmtDate(iso) {
 	const d = new Date(iso + 'T00:00:00');
@@ -271,10 +263,8 @@ async function loadAttendance() {
 		'<div class="member-row"><span class="name">🧤 ' + esc(g.name) + (g.headcount > 1 ? ' (' + g.headcount + '명)' : '') + '</span>' +
 		'<span class="right"><a href="javascript:void(0)" class="guestDel muted small" data-id="' + g.id + '">삭제</a></span></div>'));
 
-	// 경기 결과 입력용 인원 풀 (참석자 + 용병)
+	// MOM 투표 후보 (참석자)
 	attendeePool = (sm.attendList || []).map(m => ({ userId: m.userId, name: m.nickname }));
-	resultPool = attendeePool.slice();
-	guests.forEach(g => { for (let k = 0; k < g.headcount; k++) resultPool.push({ userId: null, name: g.name + (g.headcount > 1 ? (k + 1) : '') }); });
 	if (isPast) loadResult();
 }
 
@@ -287,15 +277,6 @@ async function loadResult() {
 		? '우리 <span style="color:var(--green);">' + res.ourScore + '</span> : <span style="color:var(--red);">' + res.oppScore + '</span> <span class="muted small">상대</span>'
 		: '<span class="muted" style="font-size:14px;font-weight:400;">스코어 미입력</span>');
 	if (CAN_MANAGE && res) { $('#ourScore').val(res.ourScore); $('#oppScore').val(res.oppScore); }
-
-	const el = $('#evtList').empty();
-	const events = rr.ok ? rr.events : [];
-	if (!events.length) el.html('<div class="muted small" style="padding:4px 0;">기록 없음</div>');
-	events.forEach(e => el.append('<div class="member-row"><span class="name">⚽ ' + esc(e.scorerName) + (e.assistName ? ' <span class="muted small">(도움 ' + esc(e.assistName) + ')</span>' : '') + '</span>' + (CAN_MANAGE ? '<span class="right"><a href="javascript:void(0)" class="evtDel muted small" data-eid="' + e.id + '">삭제</a></span>' : '') + '</div>'));
-
-	const sc = $('#scSel').empty().append('<option value="">득점자</option>');
-	const as = $('#asSel').empty().append('<option value="">도움</option>');
-	resultPool.forEach(p => { const v = (p.userId || '') + '|' + p.name; sc.append('<option value="' + v + '">' + esc(p.name) + '</option>'); as.append('<option value="' + v + '">' + esc(p.name) + '</option>'); });
 
 	const mb = $('#momList').empty();
 	const mom = rr.ok ? rr.mom : [];
@@ -340,22 +321,17 @@ $(function () {
 		if (r.ok) { alert('평가 완료! 감사합니다.'); $('#rateCard').hide(); $('#ratedNote').show(); } else alert(r.message || '실패');
 	});
 
+	// 경기 결과 카드 접기/펼치기
+	$('#resultHead').on('click', function () {
+		const body = $('#resultBody');
+		const willOpen = !body.is(':visible');
+		body.slideToggle(150);
+		$('#resultCaret').text(willOpen ? '▴' : '▾');
+	});
+
 	// 경기 결과 입력
 	$('#saveScore').on('click', async function () {
 		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/result', { our: parseInt($('#ourScore').val() || '0', 10), opp: parseInt($('#oppScore').val() || '0', 10) });
-		if (r.ok) loadResult(); else alert(r.message || '실패');
-	});
-	$('#addEvt').on('click', async function () {
-		const sv = $('#scSel').val(); if (!sv) { alert('득점자를 선택하세요.'); return; }
-		const sp = sv.split('|');
-		const av = $('#asSel').val(); let auid = null, aname = null;
-		if (av) { const ap = av.split('|'); auid = ap[0] || null; aname = ap[1]; }
-		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/event', { scorerUserId: sp[0] || null, scorerName: sp[1], assistUserId: auid, assistName: aname });
-		if (r.ok) loadResult(); else alert(r.message || '실패');
-	});
-	$('#evtList').on('click', '.evtDel', async function () {
-		if (!confirm('이 기록을 삭제할까요?')) return;
-		const r = await api.del('/api/schedule/event/' + $(this).data('eid'));
 		if (r.ok) loadResult(); else alert(r.message || '실패');
 	});
 	$('#voteMom').on('click', async function () {
