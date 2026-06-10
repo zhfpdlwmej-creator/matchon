@@ -180,6 +180,17 @@ public class MatchApiController {
 		return Map.of("ok", true);
 	}
 
+	/** 용병(개인) 매너 평가 + 후기 (모집팀 팀장/운영진) */
+	@PostMapping("/{id}/rate-guest")
+	public Map<String, Object> rateGuest(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		Long targetUserId = parseLong(body.get("targetUserId"));
+		int manner = body.get("manner") == null ? 0 : Integer.parseInt(String.valueOf(body.get("manner")));
+		String comment = body.get("comment") == null ? null : String.valueOf(body.get("comment"));
+		matchService.rateGuest(id, uid, targetUserId, manner, comment);
+		return Map.of("ok", true);
+	}
+
 	/** 상대팀 매너/실력 평가 */
 	@PostMapping("/{id}/rate")
 	public Map<String, Object> rate(@PathVariable Long id, @RequestBody Map<String, Object> body) {

@@ -186,9 +186,15 @@ async function loadComments() {
 function threadCard(th, guest, isHost, canManage) {
 	const card = $('<div class="card thread" data-team="' + (th.applicantTeamId || '') + '" data-user="' + (th.applicantUserId || '') + '"></div>');
 	if (isHost) {
-		let head = '<h3 style="margin-bottom:4px;">' + esc(th.name || '지원자') + '</h3>';
-		if (guest && th.accepted) head += '<div class="small" style="color:var(--green);font-weight:700;margin-bottom:6px;">✅ 용병 확정됨</div>';
-		else if (guest && canManage && th.applicationId) head += '<button class="btn-primary btn-sm cmt-accept" data-app-id="' + th.applicationId + '" style="margin-bottom:8px;">🧤 용병으로 확정</button>';
+		const mb = (guest && th.mannerAvg != null) ? ' <span class="lvl-badge" style="background:#f5b301;color:#3a2e00;">' + th.mannerAvg + '★ <span style="opacity:.7;">(' + th.mannerCount + ')</span></span>' : '';
+		let head = '<h3 style="margin-bottom:4px;">' + esc(th.name || '지원자') + mb + '</h3>';
+		if (guest && th.accepted) {
+			head += '<div class="small" style="color:var(--green);font-weight:700;margin-bottom:6px;">✅ 용병 확정됨</div>';
+			if (canManage && !th.ratedByMe) head += guestRateWidget(th.applicantUserId);
+			else if (canManage && th.ratedByMe) head += '<div class="small muted" style="margin-bottom:6px;">매너 평가 완료 🙏</div>';
+		} else if (guest && canManage && th.applicationId) {
+			head += '<button class="btn-primary btn-sm cmt-accept" data-app-id="' + th.applicationId + '" style="margin-bottom:8px;">🧤 용병으로 확정</button>';
+		}
 		card.append(head);
 	}
 	const list = $('<div class="cmt-list"></div>');
@@ -201,6 +207,14 @@ function threadCard(th, guest, isHost, canManage) {
 		'<button class="btn-primary btn-sm cmt-send">전송</button></div>' +
 		'<input type="hidden" class="cmt-parent">');
 	return card;
+}
+function guestRateWidget(uid) {
+	return '<div class="guest-rate" data-uid="' + uid + '" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px;">' +
+		'<div class="small" style="font-weight:700;">이 용병 매너 평가</div>' +
+		'<div class="grstars" style="font-size:26px;color:#f5b301;cursor:pointer;letter-spacing:5px;user-select:none;"><span data-v="1">☆</span><span data-v="2">☆</span><span data-v="3">☆</span><span data-v="4">☆</span><span data-v="5">☆</span></div>' +
+		'<input type="hidden" class="grval">' +
+		'<div style="display:flex;gap:6px;margin-top:4px;"><input type="text" class="grcomment" maxlength="300" placeholder="한줄 후기 (선택)" style="flex:1;min-width:0;padding:8px;border:1px solid var(--line);border-radius:8px;"><button class="btn-primary btn-sm grsubmit">평가</button></div>' +
+		'</div>';
 }
 function renderThread(list, comments, guest) {
 	list.empty();
@@ -249,6 +263,17 @@ $(function () {
 			if (!confirm('이 지원자를 용병으로 확정할까요? 우리 일정에 자동 추가됩니다.')) return;
 			const r = await api.post('/api/match/application/' + $(this).data('app-id') + '/accept-guest', {});
 			if (r.ok) { alert('용병으로 확정했어요!'); loadComments(); } else alert(r.message || '실패');
+		});
+		$('#commentSection').on('click', '.grstars span', function () {
+			const wrap = $(this).closest('.guest-rate'), n = $(this).data('v');
+			wrap.find('.grval').val(n);
+			wrap.find('.grstars span').each(function () { $(this).text($(this).data('v') <= n ? '★' : '☆'); });
+		});
+		$('#commentSection').on('click', '.grsubmit', async function () {
+			const wrap = $(this).closest('.guest-rate'), manner = wrap.find('.grval').val();
+			if (!manner) { alert('별점을 선택해주세요.'); return; }
+			const r = await api.post('/api/match/' + MATCH_ID + '/rate-guest', { targetUserId: wrap.data('uid'), manner: parseInt(manner, 10), comment: wrap.find('.grcomment').val().trim() });
+			if (r.ok) { alert('평가 완료! 감사합니다.'); loadComments(); } else alert(r.message || '실패');
 		});
 	$('#commentSection').on('click', '.cmt-del', async function () {
 		if (!confirm('이 메시지를 삭제할까요?')) return;

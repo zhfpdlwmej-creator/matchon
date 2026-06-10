@@ -72,6 +72,10 @@ public class MatchCommentService {
 			MatchApplication app = appByUser.get(u);
 			th.put("applicationId", app == null ? null : app.getId());
 			th.put("accepted", app != null && app.getStatus() == ApplicationStatus.ACCEPTED);
+			double[] mn = matchService.userMannerSummary(u);
+			th.put("mannerAvg", mn[1] > 0 ? mn[0] : null);
+			th.put("mannerCount", (int) mn[1]);
+			if (canManage) th.put("ratedByMe", matchService.ratedGuest(postId, uid, u));
 			th.put("comments", rows(all.stream().filter(c -> u.equals(c.getApplicantUserId())).toList(), users, uid));
 			threads.add(th);
 		}

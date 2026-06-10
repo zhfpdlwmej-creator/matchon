@@ -5,6 +5,7 @@ import com.jacob.matchon.model.*;
 import com.jacob.matchon.repo.MatchApplicationRepository;
 import com.jacob.matchon.repo.MatchPostRepository;
 import com.jacob.matchon.repo.TeamRatingRepository;
+import com.jacob.matchon.repo.UserRatingRepository;
 import com.jacob.matchon.web.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class MatchService {
 	private final AttendanceService attendanceService;
 	private final UserService userService;
 	private final TeamRatingRepository teamRatingRepo;
+	private final UserRatingRepository userRatingRepo;
 
 	// ---------- 조회 ----------
 
@@ -197,6 +199,39 @@ public class MatchService {
 				.manner(manner).skill(skill)
 				.comment(comment == null || comment.isBlank() ? null : comment.trim())
 				.build());
+	}
+
+	/** 용병(개인) 매너 평가 — 모집팀(팀장/운영진)이 확정된 용병을 평가 */
+	@Transactional
+	public void rateGuest(Long postId, Long raterUid, Long targetUserId, int manner, String comment) {
+		MatchPost post = get(postId);
+		if (!post.isRecruitGuest()) throw new ApiException(400, "용병 모집글이 아닙니다.");
+		teamService.requireLeader(post.getHostTeamId(), raterUid);
+		if (manner < 1 || manner > 5) throw new ApiException(400, "매너 점수는 1~5 입니다.");
+		boolean accepted = appRepo.findByMatchPostIdOrderByCreatedAtAsc(postId).stream()
+				.anyMatch(a -> targetUserId.equals(a.getApplicantUserId()) && a.getStatus() == ApplicationStatus.ACCEPTED);
+		if (!accepted) throw new ApiException(409, "확정된 용병만 평가할 수 있습니다.");
+		if (userRatingRepo.existsByMatchPostIdAndRaterUserIdAndTargetUserId(postId, raterUid, targetUserId)) {
+			throw new ApiException(409, "이미 평가했습니다.");
+		}
+		userRatingRepo.save(UserRating.builder()
+				.targetUserId(targetUserId).raterUserId(raterUid).raterTeamId(post.getHostTeamId())
+				.matchPostId(postId).manner(manner)
+				.comment(comment == null || comment.isBlank() ? null : comment.trim())
+				.build());
+	}
+
+	/** 개인의 평균 매너 [avg, count] */
+	public double[] userMannerSummary(Long userId) {
+		List<UserRating> rs = userRatingRepo.findByTargetUserIdOrderByIdDesc(userId);
+		if (rs.isEmpty()) return new double[]{0, 0};
+		double sum = rs.stream().mapToInt(UserRating::getManner).sum();
+		return new double[]{ Math.round(sum / rs.size() * 10) / 10.0, rs.size() };
+	}
+
+	/** 이미 평가했는지 */
+	public boolean ratedGuest(Long postId, Long raterUid, Long targetUserId) {
+		return userRatingRepo.existsByMatchPostIdAndRaterUserIdAndTargetUserId(postId, raterUid, targetUserId);
 	}
 
 	/** 대상 팀의 평균 매너 [avg, count] */

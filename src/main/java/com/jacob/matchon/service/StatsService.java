@@ -24,6 +24,7 @@ public class StatsService {
 	private final MatchEventRepository eventRepo;
 	private final MomVoteRepository momRepo;
 	private final AttendanceRepository attendanceRepo;
+	private final UserRatingRepository userRatingRepo;
 
 	public List<StatRow> teamStats(Long teamId) {
 		LocalDate today = LocalDate.now();
@@ -142,6 +143,16 @@ public class StatsService {
 		res.put("assists", eventRepo.countByAssistUserId(uid));
 		res.put("mom", momRepo.countByTargetUserId(uid));
 		res.put("noShow", attendanceRepo.countByUserIdAndNoShowTrue(uid));
+
+		List<UserRating> ratings = userRatingRepo.findByTargetUserIdOrderByIdDesc(uid);
+		res.put("mannerCount", ratings.size());
+		res.put("mannerAvg", ratings.isEmpty() ? null
+				: Math.round(ratings.stream().mapToInt(UserRating::getManner).sum() / (double) ratings.size() * 10) / 10.0);
+		res.put("reviews", ratings.stream()
+				.filter(r -> r.getComment() != null && !r.getComment().isBlank())
+				.limit(5)
+				.map(r -> { Map<String, Object> m = new HashMap<>(); m.put("manner", r.getManner()); m.put("comment", r.getComment()); return m; })
+				.collect(Collectors.toList()));
 		return res;
 	}
 

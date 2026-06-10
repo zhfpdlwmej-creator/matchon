@@ -32,6 +32,8 @@
 			<div class="box"><div class="num" style="color:#f5b301;" id="psMom">-</div><div class="lbl">👑 MOM</div></div>
 		</div>
 		<div class="small" id="psNoShow" style="text-align:center;margin-top:10px;"></div>
+		<div class="small" id="psManner" style="text-align:center;margin-top:4px;"></div>
+		<div id="psReviews" style="margin-top:8px;"></div>
 		<div class="muted small" style="text-align:center;margin-top:4px;">가입한 모든 팀의 기록을 합산합니다.</div>
 	</div>
 
@@ -81,6 +83,11 @@
 			$('#psMom').text(r.mom);
 			if (r.noShow > 0) $('#psNoShow').html('🚫 노쇼 <b style="color:var(--red);">' + r.noShow + '회</b>');
 			else $('#psNoShow').html('🚫 노쇼 0회 <span class="muted">· 성실 출석!</span>');
+			if (r.mannerAvg != null) $('#psManner').html('🤝 용병 매너 <b style="color:#b8860b;">' + r.mannerAvg + '★</b> <span class="muted">(' + r.mannerCount + '회 평가)</span>');
+			const rv = $('#psReviews').empty();
+			(r.reviews || []).forEach(function (x) {
+				rv.append('<div class="member-row" style="font-size:13px;"><span class="name" style="color:#f5b301;">' + '★'.repeat(x.manner) + '</span><span class="right small">' + esc(x.comment) + '</span></div>');
+			});
 		});
 	});
 </script>
