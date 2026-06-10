@@ -10,4 +10,5 @@ public interface MomVoteRepository extends JpaRepository<MomVote, Long> {
 	List<MomVote> findByScheduleId(Long scheduleId);
 	List<MomVote> findByTeamId(Long teamId);
 	Optional<MomVote> findByScheduleIdAndVoterUserId(Long scheduleId, Long voterUserId);
+	long countByTargetUserId(Long targetUserId);
 }

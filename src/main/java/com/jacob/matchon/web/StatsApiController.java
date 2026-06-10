@@ -40,6 +40,12 @@ public class StatsApiController {
 		return statsService.teamDashboard(teamId, uid);
 	}
 
+	/** 내 개인 전적 (전 활동 팀 통합) */
+	@GetMapping("/me/stats")
+	public Map<String, Object> myStats() {
+		return statsService.personalStats(CurrentUser.required());
+	}
+
 	/** 알림 발송 이력 */
 	@GetMapping("/notification/list")
 	public Map<String, Object> notifications(@RequestParam Long teamId) {

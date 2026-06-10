@@ -133,6 +133,17 @@ public class StatsService {
 		return res;
 	}
 
+	/** 개인 전적 (모든 활동 팀 통합) */
+	public Map<String, Object> personalStats(Long uid) {
+		Map<String, Object> res = new HashMap<>();
+		res.put("ok", true);
+		res.put("attend", attendanceRepo.countByUserIdAndStatus(uid, AttendanceStatus.ATTEND));
+		res.put("goals", eventRepo.countByScorerUserId(uid));
+		res.put("assists", eventRepo.countByAssistUserId(uid));
+		res.put("mom", momRepo.countByTargetUserId(uid));
+		return res;
+	}
+
 	private List<Map<String, Object>> rankByName(List<String> names) {
 		Map<String, Long> counts = names.stream()
 				.collect(Collectors.groupingBy(n -> n, Collectors.counting()));

@@ -22,6 +22,18 @@
 		<div class="muted small" style="margin-top:6px;">이름은 카카오 계정 이름으로 자동 설정됩니다.</div>
 	</div>
 
+	<!-- 내 전적 (전 활동 팀 통합) -->
+	<div class="section-title" style="margin-top:4px;">내 전적</div>
+	<div class="card" style="margin-bottom:22px;">
+		<div class="att-summary" style="grid-template-columns:repeat(4,1fr);">
+			<div class="box"><div class="num" id="psAttend">-</div><div class="lbl">참석</div></div>
+			<div class="box"><div class="num" style="color:var(--green);" id="psGoals">-</div><div class="lbl">득점</div></div>
+			<div class="box"><div class="num" style="color:var(--blue);" id="psAssists">-</div><div class="lbl">도움</div></div>
+			<div class="box"><div class="num" style="color:#f5b301;" id="psMom">-</div><div class="lbl">👑 MOM</div></div>
+		</div>
+		<div class="muted small" style="text-align:center;margin-top:10px;">가입한 모든 팀의 기록을 합산합니다.</div>
+	</div>
+
 	<!-- 알림 설정 -->
 	<div class="card" style="margin-bottom:24px;">
 		<h3>🔔 알림</h3>
@@ -58,6 +70,17 @@
 </div>
 
 <%@ include file="layout/bottomnav.jsp" %>
+<script>
+	$(function () {
+		api.get('/api/me/stats').then(function (r) {
+			if (!r.ok) return;
+			$('#psAttend').text(r.attend);
+			$('#psGoals').text(r.goals);
+			$('#psAssists').text(r.assists);
+			$('#psMom').text(r.mom);
+		});
+	});
+</script>
 <script src="/js/push.js" defer></script>
 </body>
 </html>
