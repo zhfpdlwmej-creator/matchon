@@ -27,6 +27,23 @@ public class ScheduleService {
 				.orElseThrow(() -> new ApiException(404, "일정을 찾을 수 없습니다."));
 	}
 
+	/** 매칭 성사 등 내부 자동 생성 (권한 검사 없음). 알림 발송 포함. */
+	@Transactional
+	public MatchSchedule createDirect(Long teamId, Long createdBy, String title,
+									  java.time.LocalDate date, java.time.LocalTime start,
+									  String place, Double lat, Double lng, int target) {
+		MatchSchedule s = MatchSchedule.builder()
+				.teamId(teamId).title(title)
+				.matchDate(date).startTime(start)
+				.place(place).lat(lat).lng(lng)
+				.fee(0).targetHeadcount(Math.max(0, target)).limitAttendance(false)
+				.createdBy(createdBy)
+				.build();
+		s = scheduleRepo.save(s);
+		try { notificationService.onScheduleCreated(teamService.get(teamId), s); } catch (Exception ignore) {}
+		return s;
+	}
+
 	/** 팀 전체 일정 */
 	public List<MatchSchedule> list(Long teamId) {
 		return scheduleRepo.findByTeamIdOrderByMatchDateAscStartTimeAsc(teamId);

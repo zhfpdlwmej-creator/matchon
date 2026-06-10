@@ -293,9 +293,9 @@ $(function () {
 	});
 
 	$('#appList').on('click', '.acceptBtn', async function () {
-		if (!confirm('이 팀의 신청을 수락할까요? (매칭이 성사되고 나머지 신청은 거절됩니다)')) return;
+		if (!confirm('이 팀의 신청을 수락할까요?\n성사되면 나머지 신청은 거절되고, 날짜·시간이 있으면 양 팀 일정(달력)에 자동 등록됩니다.')) return;
 		const r = await api.post('/api/match/application/' + $(this).data('id') + '/accept', {});
-		if (r.ok) load(); else alert(r.message || '실패');
+		if (r.ok) { alert('매칭이 성사되었습니다! 일정에 등록됐어요.'); load(); } else alert(r.message || '실패');
 	});
 
 	$('#appList').on('click', '.acceptGuestBtn', async function () {

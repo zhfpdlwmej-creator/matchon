@@ -361,6 +361,16 @@ public class MatchService {
 				other.setStatus(ApplicationStatus.REJECTED);
 			}
 		}
+
+		// 성사 → 양 팀 일정에 자동 등록 (달력 표시 + 출석 등 일반 일정과 동일). 날짜·시간 있을 때만.
+		if (post.getMatchDate() != null && post.getStartTime() != null) {
+			Team host = teamService.get(post.getHostTeamId());
+			Team opp = teamService.get(app.getApplicantTeamId());
+			scheduleService.createDirect(post.getHostTeamId(), userId, "⚔️ vs " + opp.getName(),
+					post.getMatchDate(), post.getStartTime(), post.getPlaceName(), post.getLat(), post.getLng(), post.getHeadcount());
+			scheduleService.createDirect(app.getApplicantTeamId(), app.getApplicantUserId(), "⚔️ vs " + host.getName(),
+					post.getMatchDate(), post.getStartTime(), post.getPlaceName(), post.getLat(), post.getLng(), post.getHeadcount());
+		}
 	}
 
 	private MatchLevel parseLevel(String v) {
