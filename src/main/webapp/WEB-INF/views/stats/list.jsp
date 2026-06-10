@@ -47,7 +47,7 @@
 	</div></div>
 
 	<div class="section-title">경기 결과 · 기록</div>
-	<div class="card muted small">경기를 탭하면 스코어·득점/도움·MOM을 입력/확인할 수 있어요.<c:if test="${not canManage}"><br>스코어·득점 입력은 팀장/운영진만 가능합니다.</c:if></div>
+	<div class="card muted small">지난 경기를 탭하면 스코어·득점/도움·MOM을 확인할 수 있어요. 입력은 <b>일정 상세 화면(경기 종료 후)</b>에서 합니다.</div>
 	<div class="card" id="gameList"><div class="empty">불러오는 중...</div></div>
 
 	<div class="section-title">출석률 통계 (전체 참석률 순)</div>
@@ -88,8 +88,8 @@ async function loadDashboard() {
 	const pills = (t.recent || []).slice(0, 5)
 		.map(m => '<span class="pill ' + m.outcome + '">' + (m.outcome === 'W' ? '승' : m.outcome === 'L' ? '패' : '무') + '</span>').join('');
 	$('#teamSummary').html(
-		'<div class="ts-record"><div class="ts-wdl"><span class="w">' + t.w + '</span> <span class="d">' + t.d + '</span> <span class="l">' + t.l + '</span></div>' +
-		'<span class="muted small">최근 ' + played + '경기 · 승무패</span></div>' +
+		'<div class="ts-record" style="justify-content:space-between;"><span class="muted small">최근 ' + played + '경기 · 승무패</span>' +
+		'<div class="ts-wdl"><span class="w">' + t.w + '</span> <span class="d">' + t.d + '</span> <span class="l">' + t.l + '</span></div></div>' +
 		(pills ? '<div class="ts-form">' + pills + '</div>' : '<div style="height:6px;"></div>') +
 		'<div class="ts-metrics">' +
 		'<div class="ts-metric"><div class="v" style="color:var(--green);">' + t.gf + '</div><div class="l">득점</div></div>' +
@@ -128,13 +128,13 @@ async function loadAttendance() {
 	});
 }
 
-// ===== 경기 결과 · 기록 =====
+// ===== 경기 결과 · 기록 (읽기 전용 · 입력은 일정 상세에서) =====
 async function loadGames() {
 	const r = await api.get('/api/schedule/list?teamId=' + TEAM_ID);
 	const box = $('#gameList').empty();
 	if (!r.ok) return;
-	const games = (r.schedules || []).slice().sort((a, b) => (a.matchDate < b.matchDate ? 1 : -1));
-	if (!games.length) { box.html('<div class="empty">등록된 경기 일정이 없습니다.</div>'); return; }
+	const games = (r.schedules || []).filter(g => g.isPast).slice().sort((a, b) => (a.matchDate < b.matchDate ? 1 : -1));
+	if (!games.length) { box.html('<div class="empty">지난 경기가 없습니다.</div>'); return; }
 	games.forEach(g => {
 		box.append(
 			'<div class="game-row" data-id="' + g.id + '">' +
@@ -145,49 +145,26 @@ async function loadGames() {
 	});
 }
 
-function gameEditorHtml(id) {
-	return '<div id="rbox' + id + '"></div>' +
-		(CAN_MANAGE ? '<div class="row-2" style="margin-top:8px;">' +
-			'<div><label class="small">우리 득점</label><input type="number" id="our' + id + '" min="0" value="0"></div>' +
-			'<div><label class="small">상대 득점</label><input type="number" id="opp' + id + '" min="0" value="0"></div></div>' +
-			'<button class="btn-primary btn-sm btn-block save-result" data-id="' + id + '" style="margin-top:6px;">스코어 저장</button>' : '') +
-		'<div class="section-title" style="margin-left:0;">⚽ 득점 / 도움</div>' +
-		'<div id="evt' + id + '"></div>' +
-		(CAN_MANAGE ? '<div style="display:flex;gap:6px;margin-top:6px;"><select id="sc' + id + '"></select><select id="as' + id + '"></select><button class="btn-primary btn-sm add-evt" data-id="' + id + '">＋골</button></div>' : '') +
-		'<div class="section-title" style="margin-left:0;">👑 MOM 투표</div>' +
-		'<div id="mom' + id + '"></div>' +
-		'<div style="display:flex;gap:6px;margin-top:6px;"><select id="ms' + id + '"></select><button class="btn-primary btn-sm vote-mom" data-id="' + id + '">투표</button></div>';
-}
-
 async function loadGame(id) {
 	const rr = await api.get('/api/schedule/' + id + '/result');
-	const ar = await api.get('/api/attendance/list?scheduleId=' + id);
-	const sm = ar.ok ? ar.summary : { attendList: [], guests: [] };
-	const attendees = (sm.attendList || []).map(m => ({ userId: m.userId, name: m.nickname }));
-	const pool = attendees.slice();
-	(sm.guests || []).forEach(g => { for (let k = 0; k < g.headcount; k++) pool.push({ userId: null, name: g.name + (g.headcount > 1 ? (k + 1) : '') }); });
-
 	const res = rr.ok ? rr.result : null;
-	$('#rbox' + id).html(res ? '<div style="font-size:20px;font-weight:800;text-align:center;color:var(--green);">우리 ' + res.ourScore + ' : ' + res.oppScore + ' <span style="color:var(--text);font-size:14px;">상대</span></div>' : '<div class="muted small">스코어 미입력</div>');
-	if (CAN_MANAGE && res) { $('#our' + id).val(res.ourScore); $('#opp' + id).val(res.oppScore); }
 	$('#score' + id).text(res ? (res.ourScore + ':' + res.oppScore) : '미입력');
 
-	const el = $('#evt' + id).empty();
+	let html = res
+		? '<div style="text-align:center;font-size:20px;font-weight:800;margin:4px 0;">우리 <span style="color:var(--green);">' + res.ourScore + '</span> : <span style="color:var(--red);">' + res.oppScore + '</span> <span class="muted small">상대</span></div>'
+		: '<div class="muted small" style="text-align:center;padding:4px 0;">스코어 미입력</div>';
+
+	html += '<div class="section-title" style="margin-left:0;">⚽ 득점 / 도움</div>';
 	const events = rr.ok ? rr.events : [];
-	if (!events.length) el.html('<div class="muted small" style="padding:4px 0;">기록 없음</div>');
-	events.forEach(e => el.append('<div class="member-row"><span class="name">⚽ ' + esc(e.scorerName) + (e.assistName ? ' <span class="muted small">(도움 ' + esc(e.assistName) + ')</span>' : '') + '</span>' + (CAN_MANAGE ? '<span class="right"><a href="javascript:void(0)" class="evt-del muted small" data-eid="' + e.id + '" data-id="' + id + '">삭제</a></span>' : '') + '</div>'));
+	if (!events.length) html += '<div class="muted small" style="padding:4px 0;">기록 없음</div>';
+	else events.forEach(e => html += '<div class="member-row"><span class="name">⚽ ' + esc(e.scorerName) + (e.assistName ? ' <span class="muted small">(도움 ' + esc(e.assistName) + ')</span>' : '') + '</span></div>');
 
-	const sc = $('#sc' + id).empty().append('<option value="">득점자</option>');
-	const as = $('#as' + id).empty().append('<option value="">도움</option>');
-	pool.forEach(p => { const v = (p.userId || '') + '|' + p.name; sc.append('<option value="' + v + '">' + esc(p.name) + '</option>'); as.append('<option value="' + v + '">' + esc(p.name) + '</option>'); });
-
-	const mb = $('#mom' + id).empty();
+	html += '<div class="section-title" style="margin-left:0;">👑 MOM</div>';
 	const mom = rr.ok ? rr.mom : [];
-	const myVote = rr.ok ? rr.myVote : null;
-	if (!mom.length) mb.html('<div class="muted small" style="padding:4px 0;">아직 투표가 없습니다.</div>');
-	mom.forEach((m, i) => mb.append('<div class="member-row"><span class="name">' + (i === 0 ? '👑 ' : '') + esc(m.name) + '</span><span class="right muted small">' + m.votes + '표' + (m.userId === myVote ? ' · 내 표' : '') + '</span></div>'));
-	const ms = $('#ms' + id).empty().append('<option value="">MOM 선택</option>');
-	attendees.forEach(p => ms.append('<option value="' + p.userId + '"' + (p.userId === myVote ? ' selected' : '') + '>' + esc(p.name) + '</option>'));
+	if (!mom.length) html += '<div class="muted small" style="padding:4px 0;">투표 없음</div>';
+	else mom.forEach((m, i) => html += '<div class="member-row"><span class="name">' + (i === 0 ? '👑 ' : '') + esc(m.name) + '</span><span class="right muted small">' + m.votes + '표</span></div>');
+
+	$('#panel' + id).html(html);
 }
 
 $(function () {
@@ -198,35 +175,9 @@ $(function () {
 	$('#gameList').on('click', '.game-head', function () {
 		const id = $(this).data('id');
 		const panel = $('#panel' + id);
-		if (panel.is(':visible')) { panel.hide(); $('#score' + id).text($('#score' + id).text() === '▾' ? '▾' : $('#score' + id).text()); return; }
-		if (!panel.data('loaded')) { panel.html(gameEditorHtml(id)).data('loaded', true); loadGame(id); }
+		if (panel.is(':visible')) { panel.hide(); return; }
+		if (!panel.data('loaded')) { panel.data('loaded', true); loadGame(id); }
 		panel.show();
-	});
-	$('#gameList').on('click', '.save-result', async function () {
-		const id = $(this).data('id');
-		const r = await api.post('/api/schedule/' + id + '/result', { our: parseInt($('#our' + id).val() || '0', 10), opp: parseInt($('#opp' + id).val() || '0', 10) });
-		if (r.ok) { loadGame(id); loadDashboard(); } else alert(r.message || '실패');
-	});
-	$('#gameList').on('click', '.add-evt', async function () {
-		const id = $(this).data('id');
-		const sv = $('#sc' + id).val(); if (!sv) { alert('득점자를 선택하세요.'); return; }
-		const sp = sv.split('|');
-		const av = $('#as' + id).val(); let auid = null, aname = null;
-		if (av) { const ap = av.split('|'); auid = ap[0] || null; aname = ap[1]; }
-		const r = await api.post('/api/schedule/' + id + '/event', { scorerUserId: sp[0] || null, scorerName: sp[1], assistUserId: auid, assistName: aname });
-		if (r.ok) { loadGame(id); loadDashboard(); } else alert(r.message || '실패');
-	});
-	$('#gameList').on('click', '.evt-del', async function () {
-		if (!confirm('이 기록을 삭제할까요?')) return;
-		const id = $(this).data('id');
-		const r = await api.del('/api/schedule/event/' + $(this).data('eid'));
-		if (r.ok) { loadGame(id); loadDashboard(); } else alert(r.message || '실패');
-	});
-	$('#gameList').on('click', '.vote-mom', async function () {
-		const id = $(this).data('id');
-		const t = $('#ms' + id).val(); if (!t) { alert('MOM 후보를 선택하세요.'); return; }
-		const r = await api.post('/api/schedule/' + id + '/mom', { targetUserId: t });
-		if (r.ok) { alert('투표 완료!'); loadGame(id); loadDashboard(); } else alert(r.message || '실패');
 	});
 });
 </script>
