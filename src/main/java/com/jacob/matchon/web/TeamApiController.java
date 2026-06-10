@@ -1,5 +1,6 @@
 package com.jacob.matchon.web;
 
+import com.jacob.matchon.model.MembershipType;
 import com.jacob.matchon.model.Position;
 import com.jacob.matchon.model.Role;
 import com.jacob.matchon.model.Sport;
@@ -61,6 +62,9 @@ public class TeamApiController {
 	public Map<String, Object> profile(@RequestBody Map<String, String> body) {
 		Long uid = CurrentUser.required();
 		User u = userService.updateProfile(uid, body.get("nickname"), parsePos(body.get("position")));
+		if (body.containsKey("phone")) {
+			userService.setPhone(uid, body.get("phone"));
+		}
 		return Map.of("ok", true, "user", userView(u));
 	}
 
@@ -176,6 +180,8 @@ public class TeamApiController {
 			row.put("nickname", u == null ? "?" : u.getNickname());
 			row.put("position", u == null || u.getPosition() == null ? null : u.getPosition().name());
 			row.put("role", m.getRole().name());
+			row.put("membershipType", m.getMembershipType().name());
+			row.put("membershipLabel", m.getMembershipType().label());
 			row.put("backNumber", m.getBackNumber());
 			return row;
 		}).toList();
@@ -189,6 +195,24 @@ public class TeamApiController {
 		Long targetUserId = Long.valueOf(body.get("userId"));
 		Role role = Role.valueOf(body.get("role"));
 		teamService.changeRole(teamId, uid, targetUserId, role);
+		return Map.of("ok", true);
+	}
+
+	/** 회원 유형 변경 — 회비회원/참가회원 (팀장/운영진) */
+	@PostMapping("/team/{teamId}/member/{userId}/membership")
+	public Map<String, Object> changeMembership(@PathVariable Long teamId, @PathVariable Long userId,
+												@RequestBody Map<String, String> body) {
+		Long uid = CurrentUser.required();
+		MembershipType type = MembershipType.valueOf(body.get("membershipType"));
+		teamService.changeMembership(teamId, uid, userId, type);
+		return Map.of("ok", true);
+	}
+
+	/** 멤버 강퇴 (팀장/운영진) */
+	@PostMapping("/team/{teamId}/member/{userId}/kick")
+	public Map<String, Object> kick(@PathVariable Long teamId, @PathVariable Long userId) {
+		Long uid = CurrentUser.required();
+		teamService.kickMember(teamId, uid, userId);
 		return Map.of("ok", true);
 	}
 
@@ -208,6 +232,7 @@ public class TeamApiController {
 		m.put("id", u.getId());
 		m.put("nickname", u.getNickname());
 		m.put("position", u.getPosition() == null ? null : u.getPosition().name());
+		m.put("phone", u.getPhone());
 		m.put("setupDone", u.isSetupDone());
 		return m;
 	}

@@ -80,6 +80,13 @@ app:
   notify:
     # 카카오 알림톡 발송 모드: log(개발-콘솔출력) | kakao(실발송)
     mode: ${NOTIFY_MODE:log}
+    # 알림톡 실발송(Solapi) — mode=kakao 일 때 사용. 미설정 시 발송 생략.
+    kakao:
+      api-key: ${SOLAPI_API_KEY:}          # Solapi API Key
+      api-secret: ${SOLAPI_API_SECRET:}    # Solapi API Secret
+      pf-id: ${SOLAPI_PF_ID:}              # 카카오 비즈니스 채널 pfId
+      template-id: ${SOLAPI_TEMPLATE_ID:}  # 승인된 알림톡 템플릿 ID (본문 #{내용} 변수 1개)
+      from: ${SOLAPI_FROM:}                # 등록된 발신번호(SMS 대체 발송용)
   naver:
     # 네이버 클라우드 플랫폼 Maps Client ID (지도용)
     maps-client-id: ${NAVER_MAPS_CLIENT_ID:}

@@ -27,6 +27,12 @@ public class TeamMember {
 	@Column(nullable = false, length = 12)
 	private Role role;
 
+	/** 회원 유형(회비회원/참가회원) — 선착순 우선권 등에 사용. 권한(role)과 별개. */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "membership_type", nullable = false, length = 8)
+	@Builder.Default
+	private MembershipType membershipType = MembershipType.DUES;
+
 	@Column(name = "back_number")
 	private Integer backNumber;
 

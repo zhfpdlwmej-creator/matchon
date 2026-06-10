@@ -91,6 +91,18 @@ public class UserService {
 		return u;
 	}
 
+	/** 알림톡 수신용 휴대폰 번호 설정 (숫자만 보관, 빈값=해제) */
+	@Transactional
+	public void setPhone(Long userId, String phone) {
+		User u = get(userId);
+		if (phone == null || phone.isBlank()) { u.setPhone(null); return; }
+		String digits = phone.replaceAll("[^0-9]", "");
+		if (digits.length() < 9 || digits.length() > 11) {
+			throw new ApiException(400, "올바른 휴대폰 번호가 아닙니다.");
+		}
+		u.setPhone(digits);
+	}
+
 	/** id 목록 → id별 User 맵 (목록 화면 조인용) */
 	public Map<Long, User> mapByIds(List<Long> ids) {
 		if (ids == null || ids.isEmpty()) return Map.of();

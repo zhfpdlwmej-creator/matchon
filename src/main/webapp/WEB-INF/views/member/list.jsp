@@ -49,6 +49,8 @@ const TEAM_ID = ${team.id};
 const CAN_MANAGE = ${canManage};
 const MY_ROLE = '${myRole}';
 
+let MY_UID = null;
+
 function roleLabel(r) { return r === 'LEADER' ? '팀장' : (r === 'MANAGER' ? '운영진' : '회원'); }
 
 async function loadRequests() {
@@ -73,21 +75,42 @@ async function load() {
 	if (!r.ok) return;
 	$('#memCount').text(r.members.length + '명');
 	r.members.forEach(m => {
-		let right = '<span class="role-badge role-' + m.role + '" style="background:#eef0f3;color:#444;">' + roleLabel(m.role) + '</span>';
-		// 팀장만 권한 변경 가능 (자기 자신 제외)
+		// 회원 유형(회비/참가) — 운영진 이상만 변경, 일반 회원에겐 배지로 표시
+		let membership;
+		if (CAN_MANAGE) {
+			membership = '<select class="memSel small" data-uid="' + m.userId + '">' +
+				['DUES','GUEST'].map(t => '<option value="' + t + '"' + (t === m.membershipType ? ' selected' : '') + '>' +
+					(t === 'DUES' ? '회비회원' : '참가회원') + '</option>').join('') +
+				'</select>';
+		} else {
+			membership = '<span class="role-badge" style="background:#eef0f3;color:#444;">' + esc(m.membershipLabel) + '</span>';
+		}
+
+		// 권한 — 팀장만 변경, 그 외 배지
+		let role = '<span class="role-badge role-' + m.role + '" style="background:#eef0f3;color:#444;">' + roleLabel(m.role) + '</span>';
 		if (MY_ROLE === 'LEADER') {
-			right = '<select class="roleSel small" data-uid="' + m.userId + '">' +
+			role = '<select class="roleSel small" data-uid="' + m.userId + '">' +
 				['LEADER','MANAGER','MEMBER'].map(r => '<option value="' + r + '"' + (r === m.role ? ' selected' : '') + '>' + roleLabel(r) + '</option>').join('') +
 				'</select>';
 		}
+
+		// 강퇴 — 운영진 이상, 팀장 대상 제외, 본인 제외
+		let kick = '';
+		if (CAN_MANAGE && m.role !== 'LEADER' && m.userId !== MY_UID) {
+			kick = '<button class="btn-ghost btn-sm kickBtn" data-uid="' + m.userId + '" data-name="' + esc(m.nickname) + '" style="color:var(--red);">강퇴</button>';
+		}
+
 		box.append('<div class="member-row">' +
 			'<span class="name">' + esc(m.nickname) + '</span>' +
-			'<span class="right">' + right + '</span></div>');
+			'<span class="right" style="gap:6px;">' + membership + role + kick + '</span></div>');
 	});
 }
 
 $(function () {
-	load();
+	api.get('/api/me').then(r => {
+		if (r && r.ok && r.user) MY_UID = r.user.id;
+		load();
+	});
 	loadRequests();
 	$('#joinReqs').on('click', '.reqApprove', async function () {
 		const r = await api.post('/api/team/request/' + $(this).data('id') + '/approve', {});
@@ -135,6 +158,16 @@ $(function () {
 	$('#memberList').on('change', '.roleSel', async function () {
 		const r = await api.post('/api/team/' + TEAM_ID + '/role', { userId: $(this).data('uid'), role: $(this).val() });
 		if (!r.ok) { alert(r.message || '실패'); load(); }
+	});
+	$('#memberList').on('change', '.memSel', async function () {
+		const r = await api.post('/api/team/' + TEAM_ID + '/member/' + $(this).data('uid') + '/membership', { membershipType: $(this).val() });
+		if (!r.ok) { alert(r.message || '실패'); load(); }
+	});
+	$('#memberList').on('click', '.kickBtn', async function () {
+		const name = $(this).data('name');
+		if (!confirm(name + ' 님을 팀에서 강퇴할까요?\n다시 들어오려면 초대코드로 재가입해야 합니다.')) return;
+		const r = await api.post('/api/team/' + TEAM_ID + '/member/' + $(this).data('uid') + '/kick', {});
+		if (r.ok) load(); else alert(r.message || '실패');
 	});
 
 	$('#leaveBtn').on('click', async function () {

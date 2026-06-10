@@ -2,6 +2,7 @@ package com.jacob.matchon.service;
 
 import com.jacob.matchon.model.ApplicationStatus;
 import com.jacob.matchon.model.JoinRequest;
+import com.jacob.matchon.model.MembershipType;
 import com.jacob.matchon.model.Role;
 import com.jacob.matchon.model.Sport;
 import com.jacob.matchon.model.Team;
@@ -250,6 +251,37 @@ public class TeamService {
 		}
 		TeamMember target = membership(teamId, targetUserId);
 		target.setRole(role);
+	}
+
+	/** 회원 유형 변경 — 회비회원/참가회원 (팀장/운영진) */
+	@Transactional
+	public void changeMembership(Long teamId, Long actorId, Long targetUserId, MembershipType type) {
+		requireManager(teamId, actorId);
+		TeamMember target = membership(teamId, targetUserId);
+		target.setMembershipType(type);
+	}
+
+	/**
+	 * 멤버 강퇴 (팀장/운영진).
+	 * - 팀장은 강퇴 불가, 본인은 강퇴 불가(탈퇴 사용)
+	 * - 운영진은 다른 운영진을 강퇴할 수 없음(팀장만 가능)
+	 */
+	@Transactional
+	public void kickMember(Long teamId, Long actorId, Long targetUserId) {
+		TeamMember actor = requireManager(teamId, actorId);
+		if (actorId.equals(targetUserId)) {
+			throw new ApiException(400, "본인은 강퇴할 수 없습니다. 탈퇴를 이용해주세요.");
+		}
+		TeamMember target = membership(teamId, targetUserId);
+		if (target.getRole() == Role.LEADER) {
+			throw new ApiException(400, "팀장은 강퇴할 수 없습니다.");
+		}
+		if (target.getRole() == Role.MANAGER && actor.getRole() != Role.LEADER) {
+			throw new ApiException(403, "운영진 강퇴는 팀장만 가능합니다.");
+		}
+		// 대기 중인 재가입 신청도 함께 정리
+		joinRepo.findByTeamIdAndUserId(teamId, targetUserId).ifPresent(joinRepo::delete);
+		memberRepo.delete(target);
 	}
 
 	/** 인원부족 알림 기준 설정 (팀장/운영진) */
