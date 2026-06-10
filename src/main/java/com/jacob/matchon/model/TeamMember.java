@@ -33,6 +33,11 @@ public class TeamMember {
 	@Builder.Default
 	private MembershipType membershipType = MembershipType.DUES;
 
+	/** 총무 여부 — 회비 관리 화면 접근 권한. 팀장이 지정. */
+	@Column(nullable = false)
+	@Builder.Default
+	private boolean treasurer = false;
+
 	@Column(name = "back_number")
 	private Integer backNumber;
 

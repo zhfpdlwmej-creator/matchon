@@ -182,6 +182,7 @@ public class TeamApiController {
 			row.put("role", m.getRole().name());
 			row.put("membershipType", m.getMembershipType().name());
 			row.put("membershipLabel", m.getMembershipType().label());
+			row.put("treasurer", m.isTreasurer());
 			row.put("backNumber", m.getBackNumber());
 			return row;
 		}).toList();
@@ -214,6 +215,16 @@ public class TeamApiController {
 		Long uid = CurrentUser.required();
 		teamService.kickMember(teamId, uid, userId);
 		return Map.of("ok", true);
+	}
+
+	/** 총무 지정/해제 (팀장만) */
+	@PostMapping("/team/{teamId}/member/{userId}/treasurer")
+	public Map<String, Object> treasurer(@PathVariable Long teamId, @PathVariable Long userId,
+										 @RequestBody Map<String, Object> body) {
+		Long uid = CurrentUser.required();
+		boolean on = Boolean.parseBoolean(String.valueOf(body.get("treasurer")));
+		teamService.setTreasurer(teamId, uid, userId, on);
+		return Map.of("ok", true, "treasurer", on);
 	}
 
 	/** 인원부족 알림 기준 설정 */

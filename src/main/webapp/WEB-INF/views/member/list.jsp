@@ -7,6 +7,12 @@
 <head>
 	<title>matchon · 팀원</title>
 	<%@ include file="../layout/head.jsp" %>
+	<style>
+		.member-row { flex-wrap: wrap; }
+		.member-row .right { flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; }
+		.mem-tag-tre { display: inline-block; margin-left: 7px; font-size: 11px; font-weight: 700; color: var(--green); background: var(--green-soft); border: 1px solid #d8efe0; padding: 2px 7px; border-radius: 999px; }
+		.treBtn.on { background: var(--green); color: #fff; border-color: var(--green); }
+	</style>
 </head>
 <body>
 <%@ include file="../layout/header.jsp" %>
@@ -94,6 +100,13 @@ async function load() {
 				'</select>';
 		}
 
+		// 총무 — 팀장만 지정/해제, 그 외엔 총무에게 배지 표시
+		let treToggle = '';
+		if (MY_ROLE === 'LEADER') {
+			treToggle = '<button class="btn-ghost btn-sm treBtn' + (m.treasurer ? ' on' : '') + '" data-uid="' + m.userId + '">총무</button>';
+		}
+		const treBadge = (m.treasurer && MY_ROLE !== 'LEADER') ? '<span class="mem-tag-tre">총무</span>' : '';
+
 		// 강퇴 — 운영진 이상, 팀장 대상 제외, 본인 제외
 		let kick = '';
 		if (CAN_MANAGE && m.role !== 'LEADER' && m.userId !== MY_UID) {
@@ -101,8 +114,8 @@ async function load() {
 		}
 
 		box.append('<div class="member-row">' +
-			'<span class="name">' + esc(m.nickname) + '</span>' +
-			'<span class="right" style="gap:6px;">' + membership + role + kick + '</span></div>');
+			'<span class="name">' + esc(m.nickname) + treBadge + '</span>' +
+			'<span class="right" style="gap:6px;">' + membership + role + treToggle + kick + '</span></div>');
 	});
 }
 
@@ -162,6 +175,11 @@ $(function () {
 	$('#memberList').on('change', '.memSel', async function () {
 		const r = await api.post('/api/team/' + TEAM_ID + '/member/' + $(this).data('uid') + '/membership', { membershipType: $(this).val() });
 		if (!r.ok) { alert(r.message || '실패'); load(); }
+	});
+	$('#memberList').on('click', '.treBtn', async function () {
+		const willOn = !$(this).hasClass('on');
+		const r = await api.post('/api/team/' + TEAM_ID + '/member/' + $(this).data('uid') + '/treasurer', { treasurer: willOn });
+		if (r.ok) load(); else alert(r.message || '실패');
 	});
 	$('#memberList').on('click', '.kickBtn', async function () {
 		const name = $(this).data('name');

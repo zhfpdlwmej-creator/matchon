@@ -245,6 +245,16 @@ public class MainController {
 		return "member/list";
 	}
 
+	@GetMapping("/team/{teamId}/dues")
+	public String dues(@PathVariable Long teamId, HttpServletResponse res, Model model) {
+		Long uid = CurrentUser.id();
+		if (uid == null) return "redirect:/login";
+		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
+		if (!teamService.isTreasurer(teamId, uid)) return "redirect:/team/" + teamId;
+		setCurrentTeam(res, teamId);
+		return "dues/list";
+	}
+
 	@GetMapping("/team/{teamId}/stats")
 	public String stats(@PathVariable Long teamId, HttpServletResponse res, Model model) {
 		Long uid = CurrentUser.id();
@@ -290,11 +300,14 @@ public class MainController {
 		model.addAttribute("teams", teams);
 		Long cur = currentTeamId(req, uid);
 		boolean isLeader = false;
+		boolean isTreasurer = false;
 		if (cur != null) {
 			model.addAttribute("team", teamService.get(cur));
 			isLeader = teamService.isLeader(cur, uid);
+			isTreasurer = teamService.isTreasurer(cur, uid);
 		}
 		model.addAttribute("isLeader", isLeader);
+		model.addAttribute("isTreasurer", isTreasurer);
 	}
 
 	@GetMapping("/profile")
@@ -316,6 +329,8 @@ public class MainController {
 		model.addAttribute("team", team);
 		model.addAttribute("myRole", me.getRole().name());
 		model.addAttribute("canManage", me.getRole().canManage());
+		model.addAttribute("isLeader", me.getRole() == Role.LEADER);
+		model.addAttribute("isTreasurer", me.isTreasurer() || me.getRole() == Role.LEADER);
 		model.addAttribute("teams", teamService.myTeams(uid));
 		return true;
 	}

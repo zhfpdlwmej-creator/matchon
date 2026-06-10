@@ -261,6 +261,19 @@ public class TeamService {
 		target.setMembershipType(type);
 	}
 
+	/** 총무 지정/해제 (팀장만) */
+	@Transactional
+	public void setTreasurer(Long teamId, Long actorId, Long targetUserId, boolean treasurer) {
+		requireLeader(teamId, actorId);
+		TeamMember target = membership(teamId, targetUserId);
+		target.setTreasurer(treasurer);
+	}
+
+	public boolean isTreasurer(Long teamId, Long userId) {
+		return memberRepo.findByTeamIdAndUserId(teamId, userId)
+				.map(m -> m.isTreasurer() || m.getRole() == Role.LEADER).orElse(false);
+	}
+
 	/**
 	 * 멤버 강퇴 (팀장/운영진).
 	 * - 팀장은 강퇴 불가, 본인은 강퇴 불가(탈퇴 사용)
