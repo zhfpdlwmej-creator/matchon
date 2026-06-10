@@ -11,12 +11,11 @@
 		<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJsKey}&libraries=services&autoload=false"></script>
 	</c:if>
 	<style>
-		#resultCard label.small { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
-		#resultCard input[type="number"] {
-			box-sizing: border-box; width: 100%; min-height: 46px; padding: 11px 13px;
-			border: 1px solid var(--line); border-radius: 11px; font-size: 15px; background: #fafbfb; font-family: inherit;
-		}
-		#resultCard input[type="number"]:focus { outline: none; border-color: var(--green); background: #fff; }
+		.wdl-btns { display: flex; gap: 8px; }
+		.wdl-btn { flex: 1; padding: 15px 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: 17px; font-weight: 800; color: var(--muted); cursor: pointer; transition: all .12s; }
+		.wdl-btn.on.win { background: var(--green); color: #fff; border-color: var(--green); }
+		.wdl-btn.on.draw { background: #9aa3a0; color: #fff; border-color: #9aa3a0; }
+		.wdl-btn.on.loss { background: var(--red); color: #fff; border-color: var(--red); }
 	</style>
 </head>
 <body>
@@ -58,13 +57,14 @@
 	<div class="card" id="resultCard" style="display:none;">
 		<h3 id="resultHead" style="cursor:pointer;display:flex;align-items:center;margin:0;">📊 경기 결과 <span class="muted small" style="font-weight:400;margin-left:6px;">경기 종료 후 입력</span><span id="resultCaret" style="margin-left:auto;color:var(--muted);">▾</span></h3>
 		<div id="resultBody" style="display:none;margin-top:12px;">
-			<div id="scoreView" style="text-align:center;font-size:26px;font-weight:900;margin:0 0 8px;"></div>
+			<div id="outcomeView" style="text-align:center;font-size:26px;font-weight:900;margin:0 0 12px;"></div>
 			<c:if test="${canManage}">
-				<div class="row-2">
-					<div><label class="small">우리 득점</label><input type="number" id="ourScore" min="0" value="0"></div>
-					<div><label class="small">상대 득점</label><input type="number" id="oppScore" min="0" value="0"></div>
+				<div class="wdl-btns">
+					<button type="button" class="wdl-btn win" data-o="W">승</button>
+					<button type="button" class="wdl-btn draw" data-o="D">무</button>
+					<button type="button" class="wdl-btn loss" data-o="L">패</button>
 				</div>
-				<button class="btn-primary btn-block" id="saveScore" style="margin-top:8px;">스코어 저장</button>
+				<div class="muted small" style="text-align:center;margin-top:6px;">버튼을 누르면 바로 저장됩니다.</div>
 			</c:if>
 
 			<div class="section-title" style="margin-left:0;">👑 MOM 투표</div>
@@ -76,7 +76,7 @@
 		</div>
 	</div>
 
-	<div class="card">
+	<div class="card" id="attendCard">
 		<h3>내 참석 여부</h3>
 		<div class="attend-buttons" id="attendBtns">
 			<button class="att-btn attend" data-s="ATTEND">✅ 참석</button>
@@ -86,7 +86,7 @@
 		<div id="limitStatus" class="small" style="margin-top:10px;text-align:center;"></div>
 	</div>
 
-	<div class="card">
+	<div class="card" id="attendStatusCard">
 		<h3>참석 현황</h3>
 		<div class="att-summary">
 			<div class="box attend"><div class="num" id="sAttend">-</div><div class="lbl">참석</div></div>
@@ -106,7 +106,7 @@
 		<div id="feeList"></div>
 	</div>
 
-	<div class="card">
+	<div class="card" id="guestCard">
 		<h3>용병 <span class="muted small" id="guestSum"></span></h3>
 		<div class="muted small" style="margin-bottom:8px;">팀원이 아닌 외부 참석 인원을 추가해 정확히 집계해요.</div>
 		<div id="guestList"></div>
@@ -117,7 +117,7 @@
 		</div>
 	</div>
 
-	<div class="card">
+	<div class="card" id="commentCard">
 		<h3>댓글 <span class="muted small" id="cmtCount"></span></h3>
 		<div id="commentList"></div>
 		<div class="comment-input">
@@ -157,6 +157,8 @@ async function loadInfo() {
 	$('#dMeta').text(meta);
 	isPast = !!s.isPast;
 	$('#shareBtn').toggle(!isPast);   // 지난 경기엔 일정 공유 숨김
+	// 지난 경기: 참석/현황/용병/댓글 숨기고 결과·평가에 집중
+	$('#attendCard, #attendStatusCard, #guestCard, #commentCard').toggle(!isPast);
 	$('#dMemo').text(s.memo || '');
 	$('#locBtn').toggle(s.lat != null || !!s.place);
 	loadRating();
@@ -269,14 +271,20 @@ async function loadAttendance() {
 }
 
 // ===== 경기 결과 (경기 종료 후) =====
+function outcomeLabel(o) {
+	if (o === 'W') return '<span style="color:var(--green);">승리 🎉</span>';
+	if (o === 'L') return '<span style="color:var(--red);">패배</span>';
+	if (o === 'D') return '<span style="color:#9aa3a0;">무승부</span>';
+	return '<span class="muted" style="font-size:14px;font-weight:400;">결과 미입력</span>';
+}
 async function loadResult() {
 	$('#resultCard').show();
 	const rr = await api.get('/api/schedule/' + SCHEDULE_ID + '/result');
 	const res = rr.ok ? rr.result : null;
-	$('#scoreView').html(res
-		? '우리 <span style="color:var(--green);">' + res.ourScore + '</span> : <span style="color:var(--red);">' + res.oppScore + '</span> <span class="muted small">상대</span>'
-		: '<span class="muted" style="font-size:14px;font-weight:400;">스코어 미입력</span>');
-	if (CAN_MANAGE && res) { $('#ourScore').val(res.ourScore); $('#oppScore').val(res.oppScore); }
+	const outcome = res ? (res.ourScore > res.oppScore ? 'W' : res.ourScore < res.oppScore ? 'L' : 'D') : null;
+	$('#outcomeView').html(outcomeLabel(outcome));
+	$('.wdl-btn').removeClass('on');
+	if (outcome) $('.wdl-btn[data-o="' + outcome + '"]').addClass('on');
 
 	const mb = $('#momList').empty();
 	const mom = rr.ok ? rr.mom : [];
@@ -329,9 +337,10 @@ $(function () {
 		$('#resultCaret').text(willOpen ? '▴' : '▾');
 	});
 
-	// 경기 결과 입력
-	$('#saveScore').on('click', async function () {
-		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/result', { our: parseInt($('#ourScore').val() || '0', 10), opp: parseInt($('#oppScore').val() || '0', 10) });
+	// 경기 결과: 승/무/패 버튼 (클릭 즉시 저장)
+	$('#resultBody').on('click', '.wdl-btn', async function () {
+		const map = { W: { our: 1, opp: 0 }, D: { our: 0, opp: 0 }, L: { our: 0, opp: 1 } };
+		const r = await api.post('/api/schedule/' + SCHEDULE_ID + '/result', map[$(this).data('o')]);
 		if (r.ok) loadResult(); else alert(r.message || '실패');
 	});
 	$('#voteMom').on('click', async function () {
