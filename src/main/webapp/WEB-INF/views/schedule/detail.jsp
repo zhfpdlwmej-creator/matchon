@@ -14,7 +14,18 @@
 <body>
 <%@ include file="../layout/header.jsp" %>
 <div class="app-wrap">
-	<a href="/team/${team.id}/schedules" class="small muted">‹ 일정 목록</a>
+	<div style="display:flex;align-items:center;">
+		<a href="/team/${team.id}/schedules" class="small muted">‹ 일정 목록</a>
+		<c:if test="${canManage}">
+			<a href="javascript:void(0)" id="delSchedBtn" class="small" style="margin-left:auto;color:var(--red);">🗑 삭제</a>
+		</c:if>
+	</div>
+
+	<div class="card" id="pastBanner" style="display:none;margin-top:8px;background:#fff8e6;border:1px solid #f0d999;">
+		<div style="font-weight:700;">🏁 경기가 끝났어요</div>
+		<div class="muted small" style="margin-top:4px;">결과·MOM 기록과 상대팀 매너 평가를 남겨 통계에 반영해 주세요.</div>
+		<a href="/team/${team.id}/stats" class="btn-ghost btn-block" style="margin-top:10px;text-align:center;color:var(--green);font-weight:700;">📊 통계에서 결과 입력 ›</a>
+	</div>
 
 	<div class="card" id="infoCard" style="margin-top:8px;">
 		<div class="date" id="dDate" style="color:var(--green);font-weight:700;"></div>
@@ -26,9 +37,6 @@
 		<div id="schMap" style="width:100%;height:220px;border-radius:12px;margin-top:8px;display:none;"></div>
 		<a href="/team/${team.id}/schedule/${scheduleId}/formation" class="btn-ghost btn-block" style="margin-top:8px;text-align:center;"><c:choose><c:when test="${canManage}">📋 포메이션 짜기</c:when><c:otherwise>📋 포메이션 보기</c:otherwise></c:choose></a>
 		<button class="btn-ghost btn-block" id="recruitBtn" style="margin-top:8px;display:none;color:var(--red);"></button>
-		<c:if test="${canManage}">
-			<button class="btn-ghost btn-block" id="delSchedBtn" style="margin-top:8px;color:var(--red);">🗑 일정 삭제</button>
-		</c:if>
 	</div>
 
 	<c:if test="${canManage}">
@@ -123,6 +131,7 @@ async function loadInfo() {
 	if (s.place) meta += ' · 📍 ' + s.place;
 	$('#dMeta').text(meta);
 	isPast = !!s.isPast;
+	$('#pastBanner').toggle(isPast);
 	$('#dMemo').text(s.memo || '');
 	$('#locBtn').toggle(s.lat != null || !!s.place);
 	loadRating();

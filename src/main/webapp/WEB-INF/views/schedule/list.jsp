@@ -25,6 +25,9 @@
 
 	<div class="section-title">다가오는 일정</div>
 	<div id="scheduleList"><div class="empty">불러오는 중...</div></div>
+
+	<div class="section-title" style="display:flex;align-items:center;">지난 경기 <a href="javascript:void(0)" id="togglePast" class="small muted" style="margin-left:auto;font-weight:400;">펼치기 ▾</a></div>
+	<div id="pastList" style="display:none;"></div>
 </div>
 
 <c:if test="${canManage}">
@@ -107,10 +110,12 @@ async function loadMonth() {
 }
 
 // 달력과 별개로, 다가오는 일정(오늘 이후)을 월에 상관없이 전부 표시
+let allSched = [];
 async function loadUpcoming() {
 	const r = await api.get('/api/schedule/list?teamId=' + TEAM_ID);
-	const all = r.ok ? r.schedules : [];
-	renderList(all.filter(s => !s.isPast));
+	allSched = r.ok ? r.schedules : [];
+	renderList(allSched.filter(s => !s.isPast));
+	renderPast(allSched.filter(s => s.isPast).sort((a, b) => a.matchDate < b.matchDate ? 1 : -1));
 }
 
 function renderCalendar(y, m, schedules) {
@@ -133,20 +138,42 @@ function renderCalendar(y, m, schedules) {
 	}
 }
 
+function schedItemHtml(s) {
+	const dow = ['일','월','화','수','목','금','토'][new Date(s.matchDate + 'T00:00:00').getDay()];
+	const d = s.matchDate.split('-');
+	const editBtn = CAN_MANAGE
+		? '<button class="edit-sched" data-id="' + s.id + '" style="position:absolute;top:12px;right:12px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:12px;color:var(--muted);">수정</button>'
+		: '';
+	return '<div style="position:relative;">' +
+		'<a class="schedule-item ' + (s.isPast ? 'past' : '') + '" href="/team/' + TEAM_ID + '/schedule/' + s.id + '">' +
+		'<div class="date">' + parseInt(d[1]) + '월 ' + parseInt(d[2]) + '일 (' + dow + ')</div>' +
+		'<div class="title">' + esc(s.title) + '</div>' +
+		'<div class="meta">⏰ ' + s.startTime.slice(0,5) + (s.place ? ' · 📍 ' + esc(s.place) : '') + '</div>' +
+		'</a>' + editBtn + '</div>';
+}
+
 function renderList(schedules) {
 	const box = $('#scheduleList').empty();
 	if (!schedules.length) { box.html('<div class="empty">예정된 일정이 없습니다.</div>'); return; }
-	schedules.forEach(s => {
-		const dow = ['일','월','화','수','목','금','토'][new Date(s.matchDate + 'T00:00:00').getDay()];
-		const d = s.matchDate.split('-');
-		box.append(
-			'<a class="schedule-item ' + (s.isPast ? 'past' : '') + '" href="/team/' + TEAM_ID + '/schedule/' + s.id + '">' +
-			'<div class="date">' + parseInt(d[1]) + '월 ' + parseInt(d[2]) + '일 (' + dow + ')</div>' +
-			'<div class="title">' + esc(s.title) + '</div>' +
-			'<div class="meta">⏰ ' + s.startTime.slice(0,5) + (s.place ? ' · 📍 ' + esc(s.place) : '') + '</div>' +
-			'</a>');
-	});
+	schedules.forEach(s => box.append(schedItemHtml(s)));
 }
+
+function renderPast(schedules) {
+	const box = $('#pastList').empty();
+	if (!schedules.length) { box.html('<div class="empty">지난 경기가 없습니다.</div>'); return; }
+	schedules.forEach(s => box.append(schedItemHtml(s)));
+}
+
+// 목록에서 수정/삭제 (모달 내 삭제 버튼 활용)
+$('#scheduleList, #pastList').on('click', '.edit-sched', function(e) {
+	e.preventDefault(); e.stopPropagation();
+	const s = allSched.find(x => String(x.id) === String($(this).data('id')));
+	if (s) openModal(s);
+});
+$('#togglePast').on('click', function() {
+	const box = $('#pastList'); box.toggle();
+	$(this).text(box.is(':visible') ? '접기 ▴' : '펼치기 ▾');
+});
 
 // 모달 제어
 function openModal(s) {

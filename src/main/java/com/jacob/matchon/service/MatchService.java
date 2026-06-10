@@ -36,15 +36,23 @@ public class MatchService {
 				.orElseThrow(() -> new ApiException(404, "매칭을 찾을 수 없습니다."));
 	}
 
-	/** 모집중 매칭 목록 (지역·종목 필터 옵션) */
+	/** 모집중 매칭 목록 (지역·종목 필터 옵션). 날짜 지난 OPEN 글은 자동 마감. */
+	@Transactional
 	public List<MatchPost> listOpen(String region, Sport sport) {
 		List<MatchPost> base = (region != null && !region.isBlank())
 				? postRepo.findByStatusAndRegionContainingOrderByCreatedAtDesc(MatchStatus.OPEN, region.trim())
 				: postRepo.findByStatusOrderByCreatedAtDesc(MatchStatus.OPEN);
-		if (sport != null) {
-			return base.stream().filter(p -> p.getSport() == sport).toList();
+		LocalDate today = LocalDate.now();
+		List<MatchPost> result = new java.util.ArrayList<>();
+		for (MatchPost p : base) {
+			if (p.getMatchDate() != null && p.getMatchDate().isBefore(today)) {
+				p.setStatus(MatchStatus.CLOSED);   // 경기일 지남 → 자동 마감
+				continue;
+			}
+			if (sport != null && p.getSport() != sport) continue;
+			result.add(p);
 		}
-		return base;
+		return result;
 	}
 
 	public List<MatchApplication> applications(Long postId) {
@@ -373,10 +381,10 @@ public class MatchService {
 		if (post.getMatchDate() != null && post.getStartTime() != null) {
 			Team host = teamService.get(post.getHostTeamId());
 			Team opp = teamService.get(app.getApplicantTeamId());
-			scheduleService.createDirect(post.getHostTeamId(), userId, "⚔️ vs " + opp.getName(),
+			scheduleService.createDirect(post.getHostTeamId(), userId, "vs " + opp.getName(),
 					post.getMatchDate(), post.getStartTime(), post.getPlaceName(), post.getLat(), post.getLng(), post.getHeadcount(),
 					post.getId(), opp.getId());
-			scheduleService.createDirect(app.getApplicantTeamId(), app.getApplicantUserId(), "⚔️ vs " + host.getName(),
+			scheduleService.createDirect(app.getApplicantTeamId(), app.getApplicantUserId(), "vs " + host.getName(),
 					post.getMatchDate(), post.getStartTime(), post.getPlaceName(), post.getLat(), post.getLng(), post.getHeadcount(),
 					post.getId(), host.getId());
 		}
