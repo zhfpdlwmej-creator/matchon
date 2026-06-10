@@ -46,6 +46,23 @@
 		<input type="number" id="tMin" min="0" value="${team.minAttendees}">
 		<div class="muted small" style="margin-top:2px;">참석 인원이 이 수보다 적으면 인원부족 알림이 갑니다. (0 = 미사용)</div>
 
+		<label>회비 관리 방식</label>
+		<div class="opt-list" id="tFee">
+			<button type="button" class="opt-item" data-v="NONE">
+				<b>구분 안 함</b><span>회비를 따로 관리하지 않아요 · 회비 관리 메뉴 숨김</span>
+			</button>
+			<button type="button" class="opt-item" data-v="MONTHLY">
+				<b>회비회원제</b><span>매월 정기 회비를 걷어요 · 월별 납부 관리</span>
+			</button>
+			<button type="button" class="opt-item" data-v="PER_GAME">
+				<b>참가회원제</b><span>경기마다 일정 금액을 납부해요</span>
+			</button>
+			<button type="button" class="opt-item" data-v="MIXED">
+				<b>회비회원 + 참가회원 혼합</b><span>두 유형이 함께 있어요 · 팀원관리에서 구분</span>
+			</button>
+		</div>
+		<input type="hidden" id="tFeeV" value="${team.feeMode}">
+
 		<button class="btn-primary btn-block" id="saveBtn" style="margin-top:16px;">저장</button>
 	</div>
 
@@ -63,6 +80,8 @@ $(function () {
 	$('#tLevel .lvl[data-v="' + $('#tLevelV').val() + '"]').addClass('on');
 	$('#tAge .lvl').on('click', function () { $('#tAge .lvl').removeClass('on'); $(this).addClass('on'); $('#tAgeV').val($(this).data('v')); });
 	$('#tLevel .lvl').on('click', function () { $('#tLevel .lvl').removeClass('on'); $(this).addClass('on'); $('#tLevelV').val($(this).data('v')); });
+	$('#tFee .opt-item[data-v="' + $('#tFeeV').val() + '"]').addClass('on');
+	$('#tFee .opt-item').on('click', function () { $('#tFee .opt-item').removeClass('on'); $(this).addClass('on'); $('#tFeeV').val($(this).data('v')); });
 
 	buildRegionPicker('#tRegion', { onChange: function (region) { $('#tRegionV').val(region); $('#tRegionCur').text(region || '미설정'); } });
 
@@ -73,7 +92,8 @@ $(function () {
 			ageGroup: $('#tAgeV').val(),
 			level: $('#tLevelV').val(),
 			region: $('#tRegionV').val().trim(),
-			minAttendees: parseInt($('#tMin').val() || '0', 10)
+			minAttendees: parseInt($('#tMin').val() || '0', 10),
+			feeMode: $('#tFeeV').val()
 		};
 		const r = await api.post('/api/team/' + TEAM_ID + '/settings', body);
 		if (r.ok) { alert('저장했습니다.'); location.reload(); } else alert(r.message || '저장 실패');

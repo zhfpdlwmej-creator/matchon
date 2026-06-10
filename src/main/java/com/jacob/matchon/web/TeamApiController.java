@@ -33,7 +33,8 @@ public class TeamApiController {
 				? null : Integer.valueOf(String.valueOf(body.get("minAttendees")));
 		teamService.updateSettings(teamId, uid,
 				str(body.get("name")), str(body.get("description")),
-				str(body.get("ageGroup")), str(body.get("level")), str(body.get("region")), min);
+				str(body.get("ageGroup")), str(body.get("level")), str(body.get("region")), min,
+				str(body.get("feeMode")));
 		return Map.of("ok", true);
 	}
 

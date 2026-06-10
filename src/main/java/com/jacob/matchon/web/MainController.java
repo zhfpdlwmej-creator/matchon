@@ -251,6 +251,8 @@ public class MainController {
 		if (uid == null) return "redirect:/login";
 		if (!putTeamContext(teamId, uid, model)) return "redirect:/";
 		if (!teamService.isTreasurer(teamId, uid)) return "redirect:/team/" + teamId;
+		// 회비 구분 안 함(NONE) 팀은 회비 관리 미사용
+		if (teamService.get(teamId).getFeeMode() == FeeMode.NONE) return "redirect:/team/" + teamId;
 		setCurrentTeam(res, teamId);
 		return "dues/list";
 	}

@@ -52,7 +52,7 @@
 			<a href="/team/${team.id}/board" class="d-item"><span class="ic">📝</span>팀 게시판</a>
 			<a href="/team/${team.id}/venues" class="d-item"><span class="ic">📍</span>구장 정보</a>
 			<a href="/team/${team.id}/members" class="d-item"><span class="ic">👥</span>팀원 관리</a>
-			<c:if test="${isTreasurer}">
+			<c:if test="${isTreasurer and team.feeMode ne 'NONE'}">
 				<a href="/team/${team.id}/dues" class="d-item"><span class="ic">💰</span>회비 관리</a>
 			</c:if>
 			<c:if test="${myRole == 'LEADER' or myRole == 'MANAGER'}">

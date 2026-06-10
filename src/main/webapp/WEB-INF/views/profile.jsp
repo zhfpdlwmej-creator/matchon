@@ -25,10 +25,8 @@
 	<!-- 내 전적 (전 활동 팀 통합) -->
 	<div class="section-title" style="margin-top:4px;">내 전적</div>
 	<div class="card" style="margin-bottom:22px;">
-		<div class="att-summary" style="grid-template-columns:repeat(4,1fr);">
+		<div class="att-summary">
 			<div class="box"><div class="num" id="psAttend">-</div><div class="lbl">참석</div></div>
-			<div class="box"><div class="num" style="color:var(--green);" id="psGoals">-</div><div class="lbl">득점</div></div>
-			<div class="box"><div class="num" style="color:var(--blue);" id="psAssists">-</div><div class="lbl">도움</div></div>
 			<div class="box"><div class="num" style="color:#f5b301;" id="psMom">-</div><div class="lbl">👑 MOM</div></div>
 		</div>
 		<div class="small" id="psNoShow" style="text-align:center;margin-top:10px;"></div>
@@ -92,8 +90,6 @@
 			$('#levelPick .region-chip').removeClass('on');
 			if (r.level) $('#levelPick .region-chip[data-v="' + r.level + '"]').addClass('on');
 			$('#psAttend').text(r.attend);
-			$('#psGoals').text(r.goals);
-			$('#psAssists').text(r.assists);
 			$('#psMom').text(r.mom);
 			if (r.noShow > 0) $('#psNoShow').html('🚫 노쇼 <b style="color:var(--red);">' + r.noShow + '회</b>');
 			else $('#psNoShow').html('🚫 노쇼 0회 <span class="muted">· 성실 출석!</span>');

@@ -118,7 +118,8 @@ public class TeamService {
 	/** 팀 프로필/설정 수정 (팀장/운영진) */
 	@Transactional
 	public Team updateSettings(Long teamId, Long userId, String name, String description,
-							   String ageGroup, String level, String region, Integer minAttendees) {
+							   String ageGroup, String level, String region, Integer minAttendees,
+							   String feeMode) {
 		requireManager(teamId, userId);
 		Team t = get(teamId);
 		if (name != null && !name.isBlank()) t.setName(name.trim().length() > 40 ? name.trim().substring(0, 40) : name.trim());
@@ -127,6 +128,7 @@ public class TeamService {
 		t.setLevel(blankUpper(level));
 		t.setRegion(region == null || region.isBlank() ? null : region.trim());
 		if (minAttendees != null) t.setMinAttendees(Math.max(0, minAttendees));
+		if (feeMode != null && !feeMode.isBlank()) t.setFeeMode(FeeMode.parse(feeMode));
 		return t;
 	}
 
