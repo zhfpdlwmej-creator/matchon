@@ -54,6 +54,7 @@
 const TEAM_ID = ${team.id};
 const CAN_MANAGE = ${canManage};
 const MY_ROLE = '${myRole}';
+const IS_MIXED = '${team.feeMode}' === 'MIXED'; // 혼합 모드에서만 회비/참가 구분 콤보박스 노출
 
 let MY_UID = null;
 
@@ -81,15 +82,17 @@ async function load() {
 	if (!r.ok) return;
 	$('#memCount').text(r.members.length + '명');
 	r.members.forEach(m => {
-		// 회원 유형(회비/참가) — 운영진 이상만 변경, 일반 회원에겐 배지로 표시
-		let membership;
-		if (CAN_MANAGE) {
-			membership = '<select class="memSel small" data-uid="' + m.userId + '">' +
-				['DUES','GUEST'].map(t => '<option value="' + t + '"' + (t === m.membershipType ? ' selected' : '') + '>' +
-					(t === 'DUES' ? '회비회원' : '참가회원') + '</option>').join('') +
-				'</select>';
-		} else {
-			membership = '<span class="role-badge" style="background:#eef0f3;color:#444;">' + esc(m.membershipLabel) + '</span>';
+		// 회원 유형(회비/참가) — '혼합' 모드에서만 노출. 운영진 이상은 변경, 일반 회원은 배지
+		let membership = '';
+		if (IS_MIXED) {
+			if (CAN_MANAGE) {
+				membership = '<select class="memSel small" data-uid="' + m.userId + '">' +
+					['DUES','GUEST'].map(t => '<option value="' + t + '"' + (t === m.membershipType ? ' selected' : '') + '>' +
+						(t === 'DUES' ? '회비회원' : '참가회원') + '</option>').join('') +
+					'</select>';
+			} else {
+				membership = '<span class="role-badge" style="background:#eef0f3;color:#444;">' + esc(m.membershipLabel) + '</span>';
+			}
 		}
 
 		// 권한 — 팀장만 변경, 그 외 배지

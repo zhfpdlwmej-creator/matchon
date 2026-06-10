@@ -44,6 +44,9 @@
 			<button type="button" class="opt-item" data-v="PER_GAME">
 				<b>참가회원제</b><span>경기마다 일정 금액을 납부해요</span>
 			</button>
+			<button type="button" class="opt-item" data-v="MIXED">
+				<b>회비회원 + 참가회원 혼합</b><span>두 유형이 함께 있어요 · 팀원별로 구분해서 관리</span>
+			</button>
 		</div>
 		<button type="submit" class="btn-primary btn-block" style="margin-top:14px;">팀 생성</button>
 	</form>
