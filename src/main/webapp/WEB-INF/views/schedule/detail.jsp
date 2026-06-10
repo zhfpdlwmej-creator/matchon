@@ -10,6 +10,14 @@
 	<c:if test="${not empty kakaoJsKey}">
 		<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJsKey}&libraries=services&autoload=false"></script>
 	</c:if>
+	<style>
+		#resultCard label.small { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
+		#resultCard input[type="number"] {
+			box-sizing: border-box; width: 100%; min-height: 46px; padding: 11px 13px;
+			border: 1px solid var(--line); border-radius: 11px; font-size: 15px; background: #fafbfb; font-family: inherit;
+		}
+		#resultCard input[type="number"]:focus { outline: none; border-color: var(--green); background: #fff; }
+	</style>
 </head>
 <body>
 <%@ include file="../layout/header.jsp" %>
@@ -156,13 +164,14 @@ async function loadInfo() {
 	if (s.place) meta += ' · 📍 ' + s.place;
 	$('#dMeta').text(meta);
 	isPast = !!s.isPast;
+	$('#shareBtn').toggle(!isPast);   // 지난 경기엔 일정 공유 숨김
 	$('#dMemo').text(s.memo || '');
 	$('#locBtn').toggle(s.lat != null || !!s.place);
 	loadRating();
 }
 
 async function loadRating() {
-	if (!CAN_MANAGE || !sched || !sched.matchPostId) return;
+	if (!isPast || !CAN_MANAGE || !sched || !sched.matchPostId) return; // 경기 종료 후에만
 	const r = await api.get('/api/match/' + sched.matchPostId + '/rate-info');
 	if (!r.ok) return;
 	$('#rateOpp').text(sched.opponentName || r.targetTeamName || '상대팀');
@@ -210,7 +219,7 @@ async function loadAttendance() {
 	const target = sched ? sched.targetHeadcount : 0;
 	const filled = sm.attend + (sm.guestCount || 0);
 	const shortage = target - filled;
-	if (CAN_MANAGE && shortage > 0) $('#recruitBtn').show().text('🆘 용병 ' + shortage + '명 모집글 올리기');
+	if (CAN_MANAGE && shortage > 0 && !isPast) $('#recruitBtn').show().text('🆘 용병 ' + shortage + '명 모집글 올리기');
 	else $('#recruitBtn').hide();
 
 	// 선착순 마감 상태 표시
