@@ -19,17 +19,10 @@
 		.game-head .score { margin-left: auto; font-weight: 700; }
 		.game-panel { padding: 4px 2px 12px; }
 		.game-panel input, .game-panel select { padding: 9px; border: 1px solid var(--line); border-radius: 10px; width: 100%; }
-		.ts-record { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-		.ts-wdl { font-size: 30px; font-weight: 900; letter-spacing: 1px; }
-		.ts-wdl .w { color: var(--green); } .ts-wdl .d { color: #9aa3a0; } .ts-wdl .l { color: var(--red); }
-		.ts-form { display: flex; gap: 5px; margin: 10px 0 14px; }
-		.ts-form .pill { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
-		.ts-form .pill.W { background: var(--green); } .ts-form .pill.D { background: #9aa3a0; } .ts-form .pill.L { background: var(--red); }
-		.ts-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-		.ts-metric { background: #f6f8f7; border: 1px solid var(--line); border-radius: 12px; padding: 11px 4px; text-align: center; }
-		.ts-metric .v { font-size: 18px; font-weight: 800; }
-		.ts-metric .l { font-size: 11px; color: var(--muted); margin-top: 3px; }
-		.ts-recent { margin-top: 14px; }
+		.ts-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+		.ts-metric { background: #f6f8f7; border: 1px solid var(--line); border-radius: 10px; padding: 7px 4px; text-align: center; }
+		.ts-metric .v { font-size: 17px; font-weight: 800; line-height: 1.2; }
+		.ts-metric .l { font-size: 11px; color: var(--muted); margin-top: 1px; }
 	</style>
 </head>
 <body>
@@ -70,35 +63,17 @@ function rankList(box, rows, unit) {
 	rows.forEach((r, i) => el.append('<div class="ri"><span><span class="n">' + (i + 1) + '</span>' + esc(r.name) + '</span><b>' + r.count + unit + '</b></div>'));
 }
 
-function recentRow(m) {
-	const o = m.outcome === 'W' ? '<span style="color:var(--green);font-weight:700;">승</span>'
-		: m.outcome === 'L' ? '<span style="color:var(--red);font-weight:700;">패</span>'
-		: '<span class="muted" style="font-weight:700;">무</span>';
-	return '<div class="member-row"><span class="name small">' + m.date.slice(5).replace('-', '.') + ' ' + esc(m.title) + (m.opponent ? ' <span class="muted">vs ' + esc(m.opponent) + '</span>' : '') + '</span>' +
-		'<span class="right small"><b>' + m.our + ':' + m.opp + '</b> ' + o + '</span></div>';
-}
-
 async function loadDashboard() {
 	const r = await api.get('/api/stats/dashboard?teamId=' + TEAM_ID);
 	if (!r.ok) return;
 	const t = r.team;
-	const played = t.w + t.d + t.l;
-	const diff = t.gf - t.ga;
-	const diffStr = (diff > 0 ? '+' : '') + diff;
-	const pills = (t.recent || []).slice(0, 5)
-		.map(m => '<span class="pill ' + m.outcome + '">' + (m.outcome === 'W' ? '승' : m.outcome === 'L' ? '패' : '무') + '</span>').join('');
 	$('#teamSummary').html(
-		'<div class="ts-record" style="justify-content:space-between;"><span class="muted small">최근 ' + played + '경기 · 승무패</span>' +
-		'<div class="ts-wdl"><span class="w">' + t.w + '</span> <span class="d">' + t.d + '</span> <span class="l">' + t.l + '</span></div></div>' +
-		(pills ? '<div class="ts-form">' + pills + '</div>' : '<div style="height:6px;"></div>') +
 		'<div class="ts-metrics">' +
-		'<div class="ts-metric"><div class="v" style="color:var(--green);">' + t.gf + '</div><div class="l">득점</div></div>' +
-		'<div class="ts-metric"><div class="v" style="color:var(--red);">' + t.ga + '</div><div class="l">실점</div></div>' +
-		'<div class="ts-metric"><div class="v" style="color:' + (diff >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + diffStr + '</div><div class="l">득실차</div></div>' +
+		'<div class="ts-metric"><div class="v" style="color:var(--green);">' + t.w + '</div><div class="l">승</div></div>' +
+		'<div class="ts-metric"><div class="v" style="color:#9aa3a0;">' + t.d + '</div><div class="l">무</div></div>' +
+		'<div class="ts-metric"><div class="v" style="color:var(--red);">' + t.l + '</div><div class="l">패</div></div>' +
 		'<div class="ts-metric"><div class="v" style="color:#b8860b;">' + (t.mannerAvg != null ? t.mannerAvg + '★' : '–') + '</div><div class="l">매너' + (t.mannerCount ? ' (' + t.mannerCount + ')' : '') + '</div></div>' +
-		'</div>' +
-		(t.recent.length ? '<div class="ts-recent">' + t.recent.map(recentRow).join('') + '</div>'
-			: '<div class="muted small" style="margin-top:12px;text-align:center;">기록된 경기 결과가 없습니다.<br>아래 경기 결과에서 스코어를 입력해보세요.</div>')
+		'</div>'
 	);
 	rankList('#rkScorers', r.scorers, '골');
 	rankList('#rkAssists', r.assisters, '');
