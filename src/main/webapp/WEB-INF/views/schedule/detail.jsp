@@ -36,7 +36,7 @@
 		<button class="btn-primary btn-block" id="shareBtn" style="margin-top:14px;">📢 카카오톡으로 일정 공유</button>
 		<button class="btn-ghost btn-block" id="locBtn" style="margin-top:8px;display:none;">📍 위치 확인</button>
 		<div id="schMap" style="width:100%;height:220px;border-radius:12px;margin-top:8px;display:none;"></div>
-		<a href="/team/${team.id}/schedule/${scheduleId}/formation" class="btn-ghost btn-block" style="margin-top:8px;text-align:center;"><c:choose><c:when test="${canManage}">📋 포메이션 짜기</c:when><c:otherwise>📋 포메이션 보기</c:otherwise></c:choose></a>
+		<a href="/team/${team.id}/schedule/${scheduleId}/formation" id="formationBtn" class="btn-ghost btn-block" style="margin-top:8px;text-align:center;"><c:choose><c:when test="${canManage}">📋 포메이션 짜기</c:when><c:otherwise>📋 포메이션 보기</c:otherwise></c:choose></a>
 		<button class="btn-ghost btn-block" id="recruitBtn" style="margin-top:8px;display:none;color:var(--red);"></button>
 	</div>
 
@@ -157,6 +157,7 @@ async function loadInfo() {
 	$('#dMeta').text(meta);
 	isPast = !!s.isPast;
 	$('#shareBtn').toggle(!isPast);   // 지난 경기엔 일정 공유 숨김
+	$('#formationBtn').toggle(!isPast);   // 지난 경기엔 포메이션 버튼 숨김
 	// 지난 경기: 참석/현황/용병/댓글 숨기고 결과·평가에 집중
 	$('#attendCard, #attendStatusCard, #guestCard, #commentCard').toggle(!isPast);
 	$('#dMemo').text(s.memo || '');
